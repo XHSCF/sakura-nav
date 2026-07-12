@@ -16,13 +16,24 @@
   <meta property="og:title" content="关于｜SAKURA手记">
   <meta property="og:description" content="一个个人维护的轻量网址导航与网络内容收藏站。">
   <meta property="og:url" content="https://skrto.top/about/">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://skrto.top/assets/images/og-sakura.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SAKURA手记，个人网址导航与网络收藏">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="关于｜SAKURA手记">
+  <meta name="twitter:description" content="了解这个个人维护、纯静态、无广告的网址导航站。">
+  <meta name="twitter:image" content="https://skrto.top/assets/images/og-sakura.png">
+  <meta name="apple-mobile-web-app-title" content="SAKURA">
   <link rel="icon" href="../assets/images/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/icons/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
   <link rel="stylesheet" href="../assets/fontawesome-5.15.4/css/all.min.css">
   <link rel="stylesheet" href="../assets/css/sakura.css">
   <script>
     (function () {
-      var saved = localStorage.getItem("sakura-theme");
+      var saved = null;
+      try { saved = localStorage.getItem("sakura-theme"); } catch (_) {}
       document.documentElement.dataset.theme = saved === "light" || saved === "dark"
         ? saved
         : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -61,7 +72,7 @@
 
       <article class="prose-card">
         <h2>这个网站是什么</h2>
-        <p>SAKURA手记是一个个人维护的导航站，用来整理常用网站、动漫影视资源、工具、下载、iOS 以及其他网络内容。它保持纯静态、无广告，不要求登录，也不会建立用户画像。</p>
+        <p>SAKURA手记是一个个人维护的导航站，用来整理常用网站、动漫影视资源、工具、下载、iOS 以及其他网络内容。它保持纯静态、无广告，不要求登录，也不会建立用户画像。收藏与最近访问只保存在当前浏览器。</p>
 
         <h2>设计原则</h2>
         <ul class="feature-list">
@@ -75,7 +86,7 @@
         <p>本站只提供外部网站的导航入口，不存储或提供第三方网站内容。链接状态和页面内容可能随时间变化，请自行判断并遵守目标网站的服务条款与所在地法律法规。</p>
 
         <h2>项目维护</h2>
-                        <p>网站数据集中保存在项目的数据文件中，页面由原生 JavaScript 渲染，并通过 GitHub Pages 部署。项目源码可在 <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">XHSCF/sakura-nav</a> 查看。</p>
+        <p>网站数据集中保存在项目的数据文件中，页面由原生 JavaScript 渲染。GitHub 的 <code>main</code> 分支连接 Cloudflare，推送后自动构建并部署到 skrto.top 与 www.skrto.top。项目源码可在 <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">XHSCF/sakura-nav</a> 查看。</p>
       </article>
     </div>
   </main>
@@ -88,9 +99,9 @@
           <p>个人维护的轻量网址导航与网络内容收藏站。</p>
         </div>
         <div><h2 class="footer-title">站内导航</h2><div class="footer-links"><a href="../">首页</a><a href="../commit.html">网站提交</a><a href="../#friends">友情链接</a></div></div>
-                <div><h2 class="footer-title">项目信息</h2><div class="footer-links"><a href="https://skrto.top">skrto.top</a><a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a></div></div>
+        <div><h2 class="footer-title">项目信息</h2><div class="footer-links"><a href="https://skrto.top">skrto.top</a><a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a></div></div>
       </div>
-      <div class="footer-bottom"><span>© <span data-current-year></span> SAKURA手记</span><span>纯静态 · 无广告 · 无统计追踪</span></div>
+      <div class="footer-bottom"><span>© <span data-current-year></span> SAKURA手记</span><span>纯静态 · 无广告 · 无统计追踪 · Cloudflare 自动部署</span></div>
     </div>
   </footer>
 

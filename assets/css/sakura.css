@@ -454,6 +454,36 @@ select {
   font-size: 12px;
 }
 
+.content-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.clear-history-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.clear-history-button[hidden] {
+  display: none;
+}
+
+.clear-history-button:hover {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+  color: var(--danger);
+}
+
 .category-shell {
   position: sticky;
   z-index: 20;
@@ -513,7 +543,7 @@ select {
   height: 100%;
   align-items: center;
   gap: 14px;
-  padding: 17px;
+  padding: 17px 48px 17px 17px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -525,12 +555,45 @@ select {
 .site-card-link::after {
   position: absolute;
   top: 14px;
-  right: 14px;
+  right: 17px;
+  bottom: 14px;
+  top: auto;
   color: color-mix(in srgb, var(--muted) 50%, transparent);
   font-family: "Font Awesome 5 Free";
   font-size: 10px;
   font-weight: 900;
   content: "\f35d";
+}
+
+.favorite-button {
+  position: absolute;
+  z-index: 2;
+  top: 11px;
+  right: 11px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--muted) 62%, transparent);
+  background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
+  box-shadow: 0 4px 14px rgba(45, 38, 77, 0.08);
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.favorite-button:hover {
+  border-color: color-mix(in srgb, var(--pink) 42%, var(--line));
+  color: var(--pink);
+  transform: translateY(-1px);
+}
+
+.favorite-button.is-active,
+.favorite-button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--pink) 42%, var(--line));
+  color: #fff;
+  background: linear-gradient(135deg, var(--pink), var(--primary));
 }
 
 .site-card-link:hover {
@@ -1028,6 +1091,12 @@ textarea.form-control {
     gap: 6px;
   }
 
+  .content-actions {
+    width: 100%;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
   .site-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1036,7 +1105,7 @@ textarea.form-control {
     min-height: 124px;
     align-items: flex-start;
     gap: 11px;
-    padding: 14px;
+    padding: 14px 46px 14px 14px;
   }
 
   .site-icon {

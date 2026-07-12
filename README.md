@@ -1,199 +1,157 @@
 # SAKURA手记
 
-一个个人维护的轻量网址导航站，用于整理常用网站、动漫影视、资源下载、实用工具、iOS 以及其他网络内容。
+一个个人维护的轻量网址导航与网络收藏站，用于整理常用网站、动漫影视、资源下载、实用工具、iOS 以及其他网络内容。
 
-- 在线地址：[https://skrto.top](https://skrto.top)
+- 主域名：[https://skrto.top](https://skrto.top)
+- 备用域名：[https://www.skrto.top](https://www.skrto.top)
 - 仓库：`XHSCF/sakura-nav`
-- 部署方式：GitHub Pages
+- 部署：GitHub `main` → Cloudflare 自动部署 → `skrto.top` / `www.skrto.top`
 - 英文说明：[README-en.md](README-en.md)
 
 ## 项目特点
 
-- 纯静态 HTML、CSS、JavaScript，不需要构建或后端
-- 网站数据集中管理，新增网站不必修改页面结构
-- 网站名称、描述、URL 和分类即时搜索
-- 分类筛选可与搜索组合使用
-- 常用推荐、最近收录和热门网站视图
-- 默认跟随系统主题，手动选择后保存在 `localStorage`
-- 手机、平板和电脑响应式布局
-- 键盘快捷键、焦点样式和减少动画支持
-- 无广告、无统计追踪、无外部 API 核心依赖
+- 纯静态 HTML、CSS 和原生 JavaScript，无框架、无构建步骤
+- 无后端、数据库、账号系统或服务端接口
+- 分类、网站与友情链接集中保存在 `assets/js/sites-data.js`
+- 搜索支持名称、描述、URL、分类、keywords、英文缩写和多关键词
+- 分类与站长推荐、最近收录、热门网站、我的常用、最近访问可以组合筛选
+- 我的常用和最近访问只保存在当前浏览器的 `localStorage`
+- 默认跟随系统主题，手动选择后会记住设置
+- 手机、平板和桌面响应式布局
+- 轻量 PWA 主屏信息，不注册 Service Worker，不做激进页面缓存
+- 无广告、无统计追踪、无外部字体或核心 CDN 依赖
 
-## 页面截图
-
-仓库暂未维护固定截图。请直接访问 [skrto.top](https://skrto.top) 查看当前版本，避免文档截图与线上界面不同步。
-
-## 技术栈
-
-- HTML5
-- CSS3
-- 原生 JavaScript
-- Font Awesome 5.15.4（本地资源）
-- GitHub Pages
-
-项目没有 `package.json`、Node.js 依赖或构建步骤。
-
-## 目录结构
+## 技术与目录
 
 ```text
 sakura-nav/
-├── index.html                    # 首页骨架
-├── commit.html                   # 网站收录建议页面
-├── 404.html                      # GitHub Pages 404 页面
-├── CNAME                         # 自定义域名，保持 skrto.top
-├── README.md                     # 中文项目说明
-├── README-en.md                  # 英文项目说明
-├── about/
-│   └── index.html                # 关于页面
-└── assets/
-    ├── css/
-    │   └── sakura.css            # 全站共享样式
-    ├── js/
-    │   ├── sites-data.js         # 分类、网站与友情链接数据
-    │   └── sakura-app.js         # 搜索、筛选、主题与表单逻辑
-    ├── images/
-    │   └── logos/                # 网站图标与默认图标
-    └── fontawesome-5.15.4/       # 本地图标库及其许可证
+├── index.html                       # 首页
+├── about/index.html                 # 关于页面
+├── commit.html                      # 网站建议文本生成器
+├── 404.html                         # 自定义 404 页面
+├── manifest.webmanifest             # PWA 主屏信息
+├── robots.txt                       # 搜索引擎抓取规则
+├── sitemap.xml                      # 主要页面地图
+├── _headers                         # Cloudflare 静态安全响应头
+├── README.md / README-en.md          # 中英文说明
+├── assets/
+│   ├── css/sakura.css               # 全站样式
+│   ├── js/sites-data.js             # 分类、网站与友情链接
+│   ├── js/sakura-app.js              # 搜索、筛选、收藏、主题和表单逻辑
+│   ├── images/                       # favicon、分享图、PWA 图标和站点图标
+│   └── fontawesome-5.15.4/           # 本地图标字体及许可证
+└── tools/validate_site.py            # 无第三方依赖的站点检查工具
 ```
 
-仓库只保留当前网站实际引用的图标、字体和页面资源；旧模板依赖、未引用图标、开发源文件及宣传素材均未迁移。
+根目录不再包含 `CNAME`。Cloudflare 的自定义域名与 DNS 绑定在 Cloudflare 控制台中管理，不由 GitHub 仓库文件控制。
 
-## 网站数据存放位置
+## 网站数据
 
-分类、网站和友情链接统一保存在：
+分类、网站和友情链接统一位于：
 
 ```text
 assets/js/sites-data.js
 ```
 
-数据通过 `window.SAKURA_DATA` 提供给首页，保持 GitHub Pages 和普通本地静态服务器兼容，不需要额外请求 JSON 文件。
-
-## 新增一个网站
-
-打开 `assets/js/sites-data.js`，在 `sites` 数组中增加一项：
+每个网站必须拥有稳定且唯一的 `id`。`id` 用于保存用户的收藏和最近访问记录，不能使用数组序号，也不应在没有迁移方案时随意修改。
 
 ```js
 {
+  id: "example",
   name: "网站名称",
   url: "https://example.com/",
   description: "一句简短描述",
   icon: "assets/images/logos/example.png",
-  category: "tools"
+  category: "tools",
+  keywords: ["缩写", "别名", "用途"],
+  featured: true
 }
 ```
 
 可选标记：
 
-- `featured: true`：显示在“常用推荐”
-- `recent: true`：显示在“最近收录”
-- `popular: true`：显示在“热门网站”
+- `featured`：站长推荐
+- `recent`：最近收录
+- `popular`：人工整理的热门视图，不代表真实流量排名
 
-这些视图是人工整理标签，不代表访问量统计或公开排行。
+图标加载失败时会统一回退到 `assets/images/logos/sakura-default.svg`。
 
-## 修改分类
+## 浏览器本地数据
 
-分类也位于 `assets/js/sites-data.js` 的 `categories` 数组：
+网站不会上传收藏或访问记录：
 
-```js
-{ id: "tools", name: "工具相关", icon: "fa-tools" }
-```
+- `sakura-theme`：浅色/深色主题
+- `sakura-favorites`：用户收藏的网站 ID 数组
+- `sakura-recent-visits`：最多 12 条不同网站的 ID 与访问时间
 
-注意：
+损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。本站不记录搜索内容。
 
-1. `id` 应使用简短、稳定的英文标识。
-2. 网站的 `category` 必须与分类 `id` 完全一致。
-3. `icon` 使用 Font Awesome 5 的图标类名。
+## 本地预览与验证
 
-## 更换网站图标
-
-1. 将图标放入 `assets/images/logos/`。
-2. 推荐使用正方形 PNG、WebP 或 SVG。
-3. 修改网站条目的 `icon` 路径。
-4. 图标加载失败时，页面自动回退到 `assets/images/logos/sakura-default.svg`。
-
-也可以使用远程 favicon，但本地图标通常更稳定、更利于控制加载体验。
-
-## 本地预览
-
-项目应通过 HTTP 静态服务器预览，不建议直接双击 HTML：
+在仓库根目录运行：
 
 ```bash
-# Python 3
+python tools/validate_site.py
 python -m http.server 8000
-
-# 然后访问
-# http://localhost:8000
 ```
 
-如果已安装其他静态服务器，也可以直接把仓库根目录作为站点目录。
+然后访问 `http://localhost:8000`。验证脚本不需要安装第三方 Python 包，会检查主要页面、静态资源、网站 ID、分类、图标、占位内容、旧部署说明、Mixed Content 和 sitemap。
 
-## GitHub Pages 部署
+## Cloudflare 自动部署
 
-1. 将修改提交并推送到 `main`。
-2. 打开仓库 `Settings → Pages`。
-3. 选择从分支部署。
-4. 分支选择 `main`，目录选择 `/ (root)`。
-5. 等待 Pages 发布完成。
+当前仓库通过 Cloudflare Workers & Pages 的 Git 集成发布静态内容。仓库中没有 Wrangler、Pages Functions 或 Worker 源码，也没有构建依赖；Cloudflare 直接使用仓库根目录的静态文件。
 
-本项目没有构建输出目录，GitHub Pages 直接发布仓库中的静态文件。
-
-## CNAME 与自定义域名
-
-根目录的 `CNAME` 内容必须保持：
+部署链路：
 
 ```text
-skrto.top
+GitHub main 分支
+→ Cloudflare 自动构建和部署
+→ https://skrto.top / https://www.skrto.top
 ```
 
-不要删除、改名或在部署脚本中覆盖此文件，否则 GitHub Pages 的自定义域名可能失效。修改 DNS 前请先确认当前域名解析和 Pages 设置。
+正常发布：
 
-## 深色模式
+1. 在本地完成修改并运行 `python tools/validate_site.py`。
+2. 提交并推送到 GitHub `main`。
+3. Cloudflare 自动收到推送并开始生产部署。
 
-- 初次访问默认跟随操作系统主题。
-- 点击导航栏主题按钮后，选择写入浏览器 `localStorage`。
-- 使用的键名为 `sakura-theme`，值为 `light` 或 `dark`。
-- 本站不使用主题 Cookie。
+查看状态：打开 Cloudflare Dashboard → `Workers & Pages` → 选择连接 `XHSCF/sakura-nav` 的项目 → `Deployments`。构建日志、当前生产版本和回滚入口都在这里。
 
-## 网站提交页面
+需要在不改文件的情况下重新部署时，可推送一个空提交：
 
-`commit.html` 是诚实的静态建议整理工具：
+```bash
+git commit --allow-empty -m "Trigger Cloudflare production deployment"
+git push origin main
+```
 
-- 在浏览器中校验网站名称、URL、分类和描述
-- 生成可以复制的 GitHub Issue 文本
-- 不自动发送、不上传、不保存表单内容
-- 不要求填写邮箱或联系方式
+自定义域名、DNS 记录、`skrto.top` 与 `www.skrto.top` 的绑定均在 Cloudflare 控制台管理，不在本仓库中管理。不要为了普通代码发布修改 Cloudflare DNS。
+
+`_headers` 同时适用于 Cloudflare Pages 和 Workers Static Assets，为静态响应添加 `nosniff`、严格来源策略、权限策略和防嵌入响应头。项目没有启用严格 CSP，以避免误拦截现有站点图标和脚本。
+
+## PWA、SEO 与缓存
+
+- `manifest.webmanifest` 提供 iPhone、iPad 和 Android 主屏信息。
+- PWA 图标由仓库现有 SAKURA 樱花标志导出。
+- `assets/images/og-sakura.png` 是 1200×630 分享图。
+- `robots.txt` 与 `sitemap.xml` 使用主域名 `https://skrto.top/`。
+- 项目故意不注册 Service Worker，避免代码更新后长期显示旧页面。
+
+## 内容与隐私说明
+
+SAKURA手记只提供外部网站入口，不托管第三方内容。链接状态、内容和服务条款由对应网站负责。本站为个人维护项目，不含广告和统计追踪，不使用 Cookie，也不会上传本地收藏、最近访问或表单草稿。
+
+第三方图标和字体仍受各自许可证约束，Font Awesome 许可证保存在仓库中。
 
 ## 常见问题
 
-### 修改数据后首页没有变化
+### 修改数据后搜索不到
 
-确认语法没有遗漏逗号或引号，然后使用 `Ctrl + F5` 强制刷新。GitHub Pages 发布可能需要等待数分钟。
+先运行验证脚本，确认 `id` 唯一、分类存在、字段和逗号完整。然后通过本地 HTTP 服务检查浏览器控制台。
 
-### 网站图标显示为默认图标
+### 推送后网站没有更新
 
-远程 favicon 可能禁止跨站加载或已经失效。将图标下载到 `assets/images/logos/` 并改用本地路径即可。
+先到 Cloudflare 的 `Deployments` 检查生产部署是否成功；必要时推送空提交重新触发。不要通过添加 Service Worker 或修改 DNS 来解决普通缓存问题。
 
-### 搜索不到某个网站
+### 某个网站图标不显示
 
-搜索范围包括网站名称、描述、URL 和分类。确认网站条目位于 `sites` 数组，并且分类 ID 存在。
-
-### 直接双击 index.html 是否可用
-
-主要页面可以打开，但建议使用本地 HTTP 服务器，以获得与 GitHub Pages 更一致的路径和安全行为。
-
-## 更新说明
-
-### 2026-07
-
-- 完成 SAKURA手记全站现代化重构
-- 将导航数据迁移到独立 JavaScript 文件
-- 重写首页搜索、分类、推荐视图和主题逻辑
-- 统一 about、404 与网站提交页面设计
-- 清理旧模板品牌和无关第三方运行脚本
-- 更新 SEO、无障碍支持和中英文文档
-
-## 学习和使用声明
-
-本项目用于个人学习、整理与日常使用。本站只提供外部网站入口，不存储第三方网站内容，也不对外部网站的可用性、安全性或内容负责。使用任何外部资源时，请遵守对应网站的服务条款及所在地法律法规。
-
-仓库中的第三方资源继续遵循各自许可证。Font Awesome 的许可证文件保留在 `assets/fontawesome-5.15.4/LICENSE.txt`。
+页面会自动使用统一默认图标。若要换成本地图标，将文件放入 `assets/images/logos/`，更新数据路径，再运行验证脚本。

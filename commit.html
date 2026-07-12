@@ -16,13 +16,24 @@
   <meta property="og:title" content="网站提交｜SAKURA手记">
   <meta property="og:description" content="提供网站收录建议，内容不会由页面自动上传或保存。">
   <meta property="og:url" content="https://skrto.top/commit.html">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://skrto.top/assets/images/og-sakura.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SAKURA手记，个人网址导航与网络收藏">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="网站提交｜SAKURA手记">
+  <meta name="twitter:description" content="整理可复制的网站收录建议，内容不会由页面自动上传。">
+  <meta name="twitter:image" content="https://skrto.top/assets/images/og-sakura.png">
+  <meta name="apple-mobile-web-app-title" content="SAKURA">
   <link rel="icon" href="./assets/images/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/images/icons/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./assets/fontawesome-5.15.4/css/all.min.css">
   <link rel="stylesheet" href="./assets/css/sakura.css">
   <script>
     (function () {
-      var saved = localStorage.getItem("sakura-theme");
+      var saved = null;
+      try { saved = localStorage.getItem("sakura-theme"); } catch (_) {}
       document.documentElement.dataset.theme = saved === "light" || saved === "dark"
         ? saved
         : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -119,7 +130,7 @@
           <pre data-submission-text></pre>
           <div class="form-actions">
             <button class="button button-primary" type="button" data-copy-submission><i class="fas fa-copy" aria-hidden="true"></i>复制内容</button>
-                        <a class="button button-secondary" href="https://github.com/XHSCF/sakura-nav/issues/new" target="_blank" rel="noopener noreferrer"><i class="fab fa-github" aria-hidden="true"></i>打开 GitHub Issues</a>
+            <a class="button button-secondary" href="https://github.com/XHSCF/sakura-nav/issues/new" target="_blank" rel="noopener noreferrer"><i class="fab fa-github" aria-hidden="true"></i>打开 GitHub Issues</a>
           </div>
         </section>
       </form>
@@ -131,9 +142,9 @@
       <div class="footer-grid">
         <div class="footer-brand"><a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><i class="fas fa-seedling"></i></span><span>SAKURA手记</span></a><p>个人维护的轻量网址导航与网络内容收藏站。</p></div>
         <div><h2 class="footer-title">站内导航</h2><div class="footer-links"><a href="./">首页</a><a href="./about/">关于本站</a><a href="./#friends">友情链接</a></div></div>
-                <div><h2 class="footer-title">项目信息</h2><div class="footer-links"><a href="https://skrto.top">skrto.top</a><a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a></div></div>
+        <div><h2 class="footer-title">项目信息</h2><div class="footer-links"><a href="https://skrto.top">skrto.top</a><a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a></div></div>
       </div>
-      <div class="footer-bottom"><span>© <span data-current-year></span> SAKURA手记</span><span>不保存表单内容</span></div>
+      <div class="footer-bottom"><span>© <span data-current-year></span> SAKURA手记</span><span>不保存表单内容 · Cloudflare 自动部署</span></div>
     </div>
   </footer>
 

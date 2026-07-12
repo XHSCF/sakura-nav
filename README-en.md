@@ -1,80 +1,99 @@
 # SAKURA Notes
 
-SAKURA Notes is a lightweight personal start page for organizing frequently used websites, anime and video resources, downloads, utilities, iOS links, and other web content.
+SAKURA Notes is a lightweight personal start page for frequently used websites, video and anime resources, downloads, utilities, iOS links, and other web content.
 
-- Live site: [https://skrto.top](https://skrto.top)
+- Primary domain: [https://skrto.top](https://skrto.top)
+- Alternate domain: [https://www.skrto.top](https://www.skrto.top)
 - Repository: `XHSCF/sakura-nav`
-- Hosting: GitHub Pages
+- Deployment: GitHub `main` → automatic Cloudflare deployment → both domains
 - Chinese documentation: [README.md](README.md)
 
 ## Features
 
 - Fully static HTML, CSS, and vanilla JavaScript
-- Centralized navigation data in `assets/js/sites-data.js`
-- Instant search across names, descriptions, URLs, and categories
-- Category filters that work together with search
-- Curated, recently added, and popular views based on explicit data flags
-- System-aware light and dark themes with a saved preference
-- Responsive layouts for mobile, tablet, and desktop
-- Keyboard access, visible focus states, and reduced-motion support
-- No ads, analytics, build system, backend, or required external API
+- No backend, database, account system, build step, or package dependency
+- Centralized categories, websites, and friend links in `assets/js/sites-data.js`
+- Search by name, description, URL, category, keywords, abbreviations, and multiple terms
+- Combined category and curated-view filters
+- Browser-only favorites and recent visits with defensive localStorage parsing
+- System-aware light/dark theme and responsive mobile, tablet, and desktop layouts
+- Lightweight install metadata without a Service Worker or aggressive page cache
+- No ads, analytics, online fonts, or required third-party CDN
 
 ## Core structure
 
 ```text
-index.html                      Home page
-about/index.html                About page
-commit.html                     Static website suggestion helper
-404.html                        Custom error page
-CNAME                           Custom domain: skrto.top
-assets/css/sakura.css           Shared design system
-assets/js/sites-data.js         Categories, websites, and friend links
-assets/js/sakura-app.js         Search, filters, theme, menu, and form logic
-assets/images/logos/            Website icons and fallback icon
+index.html                         Home page
+about/index.html                   About page
+commit.html                        Static suggestion helper
+404.html                           Custom error page
+manifest.webmanifest               PWA install metadata
+robots.txt                         Crawler rules
+sitemap.xml                        Canonical public pages
+_headers                           Cloudflare static security headers
+assets/css/sakura.css              Shared design system
+assets/js/sites-data.js            Categories, websites, and friend links
+assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and form logic
+assets/images/                      Favicons, social image, PWA icons, and site icons
+tools/validate_site.py              Dependency-free repository validator
 ```
 
-## Add a website
+There is no root `CNAME` file. Custom domains and DNS bindings are managed in the Cloudflare dashboard, not in this Git repository.
 
-Edit the `sites` array in `assets/js/sites-data.js`:
+## Website data
 
-```js
-{
-  name: "Example",
-  url: "https://example.com/",
-  description: "A short description",
-  icon: "assets/images/logos/example.png",
-  category: "tools"
-}
-```
+Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and recent visits use this ID, so do not replace it with an array index or change it casually.
 
-Optional flags are `featured`, `recent`, and `popular`. They are manually curated labels and do not represent traffic statistics.
+Optional fields include `keywords`, `featured`, `recent`, and `popular`. These labels are manually curated and do not represent measured traffic statistics. Failed icons fall back to `assets/images/logos/sakura-default.svg`.
 
-## Add or edit a category
+## Browser-only data
 
-Edit the `categories` array in `assets/js/sites-data.js`. A site's `category` value must match an existing category `id`.
+- `sakura-theme`: saved theme
+- `sakura-favorites`: favorite site IDs
+- `sakura-recent-visits`: up to 12 unique site IDs and timestamps
 
-## Local preview
+Malformed, stale, or unavailable localStorage data is ignored safely. Search queries are not stored, and no local data is uploaded.
 
-Serve the repository root over HTTP:
+## Local preview and validation
+
+Run from the repository root:
 
 ```bash
+python tools/validate_site.py
 python -m http.server 8000
 ```
 
-Then open `http://localhost:8000`.
+Open `http://localhost:8000`. The validator checks pages, local references, IDs, categories, icons, placeholders, obsolete deployment wording, mixed content, and sitemap targets without third-party packages.
 
-## GitHub Pages
+## Cloudflare deployment
 
-Publish the `main` branch from the repository root. The project has no build output. Keep the root `CNAME` file unchanged so the custom domain remains `skrto.top`.
+This repository is connected through Cloudflare Workers & Pages Git integration. It contains no Wrangler configuration, Pages Functions, Worker source, or build dependencies; Cloudflare publishes the repository root as static assets.
 
-## Theme behavior
+```text
+GitHub main
+→ automatic Cloudflare build and production deployment
+→ https://skrto.top and https://www.skrto.top
+```
 
-The initial theme follows the operating system. A manual choice is saved to `localStorage` under `sakura-theme`; no theme cookie is used.
+Pushing to `main` starts a deployment automatically. To inspect it, open Cloudflare Dashboard → `Workers & Pages` → the project connected to `XHSCF/sakura-nav` → `Deployments`.
 
-## Website suggestions
+Trigger a fresh deployment without changing files:
 
-`commit.html` validates input locally and produces text that can be copied into a GitHub Issue. It does not upload, transmit, or store form data.
+```bash
+git commit --allow-empty -m "Trigger Cloudflare production deployment"
+git push origin main
+```
 
-## Notice
+Custom domains, DNS records, and host bindings live in Cloudflare, not in the repository. Routine releases must not change DNS.
 
-This is a personal learning and organization project. It links to external websites but does not host their content. Third-party assets remain subject to their respective licenses, including the Font Awesome license stored in the repository.
+The root `_headers` file is supported by both Cloudflare Pages and Workers Static Assets. It adds MIME sniffing protection, a strict referrer policy, a browser permissions policy, and frame protection. A strict CSP is intentionally not enabled yet.
+
+## PWA and SEO
+
+The manifest and local icons improve iPhone, iPad, and Android home-screen use. No Service Worker is registered, preventing stale application-shell caching. The repository also includes a 1200×630 Open Graph image, `robots.txt`, and `sitemap.xml` using the primary canonical host.
+
+## Privacy and content notice
+
+SAKURA Notes only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or analytics, uses no cookies, and does not transmit favorites, visit history, or form drafts.
+
+Third-party assets remain subject to their licenses, including the Font Awesome license stored in the repository.

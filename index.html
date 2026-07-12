@@ -16,16 +16,25 @@
   <meta property="og:title" content="SAKURA手记｜个人网址导航与网络收藏">
   <meta property="og:description" content="整理常用网站、动漫影视、资源下载、实用工具与 iOS 内容的个人导航站。">
   <meta property="og:url" content="https://skrto.top/">
-  <meta property="og:image" content="https://skrto.top/assets/images/favicon.png">
+  <meta property="og:image" content="https://skrto.top/assets/images/og-sakura.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SAKURA手记，个人网址导航与网络收藏">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SAKURA手记">
   <meta name="twitter:description" content="简洁、轻量的个人网址导航与网络收藏站。">
+  <meta name="twitter:image" content="https://skrto.top/assets/images/og-sakura.png">
+  <meta name="apple-mobile-web-app-title" content="SAKURA">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="./assets/images/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/images/icons/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./assets/fontawesome-5.15.4/css/all.min.css">
   <link rel="stylesheet" href="./assets/css/sakura.css">
   <script>
     (function () {
-      var saved = localStorage.getItem("sakura-theme");
+      var saved = null;
+      try { saved = localStorage.getItem("sakura-theme"); } catch (_) {}
       var theme = saved === "light" || saved === "dark"
         ? saved
         : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -82,15 +91,17 @@
           </form>
           <div class="search-meta">
             <span class="search-result" data-search-result aria-live="polite">正在整理收藏…</span>
-            <span>支持名称、描述与分类组合搜索</span>
+          <span>支持名称、描述、分类、缩写与多关键词搜索</span>
           </div>
         </div>
 
         <div class="view-switcher" data-view-switcher aria-label="推荐视图">
           <button class="filter-chip is-active" type="button" data-view="all" aria-pressed="true">全部站点</button>
-          <button class="filter-chip" type="button" data-view="featured" aria-pressed="false"><i class="fas fa-star" aria-hidden="true"></i> 常用推荐</button>
+          <button class="filter-chip" type="button" data-view="featured" aria-pressed="false"><i class="fas fa-seedling" aria-hidden="true"></i> 站长推荐</button>
           <button class="filter-chip" type="button" data-view="recent" aria-pressed="false"><i class="fas fa-clock" aria-hidden="true"></i> 最近收录</button>
           <button class="filter-chip" type="button" data-view="popular" aria-pressed="false"><i class="fas fa-fire" aria-hidden="true"></i> 热门网站</button>
+          <button class="filter-chip" type="button" data-view="favorites" aria-pressed="false"><i class="fas fa-star" aria-hidden="true"></i> 我的常用</button>
+          <button class="filter-chip" type="button" data-view="history" aria-pressed="false"><i class="fas fa-history" aria-hidden="true"></i> 最近访问</button>
         </div>
       </div>
     </section>
@@ -102,7 +113,10 @@
             <span class="eyebrow">CURATED COLLECTION</span>
             <h2 id="collection-title">我的收藏</h2>
           </div>
-          <span class="content-note">推荐视图依据现有收录顺序整理，不代表访问量排行</span>
+          <div class="content-actions">
+            <span class="content-note">推荐标签由站长人工整理，不代表访问量排行</span>
+            <button class="clear-history-button" type="button" data-clear-recent hidden><i class="fas fa-trash-alt" aria-hidden="true"></i> 清空最近访问</button>
+          </div>
         </div>
       </div>
 
@@ -116,8 +130,8 @@
         <div data-site-groups></div>
         <div class="empty-state" data-empty-state role="status">
           <i class="fas fa-search" aria-hidden="true"></i>
-          <strong>没有找到匹配的网站</strong>
-          <div>试试更短的关键词，或切换到“全部”分类。</div>
+          <strong data-empty-title>没有找到匹配的网站</strong>
+          <div data-empty-message>试试更短的关键词，或切换到“全部”分类。</div>
         </div>
       </div>
     </section>
@@ -140,7 +154,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><i class="fas fa-seedling"></i></span><span>SAKURA手记</span></a>
-          <p>一个个人维护的轻量导航站，用于整理常用网站和网络内容。本站仅供个人学习与使用，外部内容由对应网站负责。</p>
+          <p>个人维护的纯静态导航站，无广告、无统计追踪。本站只提供入口，外部内容由对应网站负责。</p>
         </div>
         <div>
           <h2 class="footer-title">站内导航</h2>
@@ -154,14 +168,14 @@
           <h2 class="footer-title">项目信息</h2>
           <div class="footer-links">
             <a href="https://skrto.top">skrto.top</a>
-                    <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">京ICP备2023018588号</a>
+            <a href="https://www.skrto.top">www.skrto.top</a>
+            <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
           </div>
         </div>
       </div>
       <div class="footer-bottom">
         <span>© <span data-current-year></span> SAKURA手记</span>
-        <span>纯静态 · 无广告 · 无统计追踪</span>
+        <span>纯静态 · 无广告 · 无统计追踪 · Cloudflare 自动部署</span>
       </div>
     </div>
   </footer>
