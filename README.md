@@ -38,7 +38,7 @@ sakura-nav/
 │   ├── css/sakura.css               # 全站样式
 │   ├── js/sites-data.js             # 分类、网站与友情链接
 │   ├── js/sakura-app.js              # 搜索、筛选、收藏、主题和表单逻辑
-│   ├── images/                       # favicon、分享图、PWA 图标和站点图标
+│   ├── images/                       # 统一樱花图标、favicon、分享图和 PWA 图标
 │   └── fontawesome-5.15.4/           # 本地图标字体及许可证
 └── tools/validate_site.py            # 无第三方依赖的站点检查工具
 ```
@@ -61,7 +61,6 @@ assets/js/sites-data.js
   name: "网站名称",
   url: "https://example.com/",
   description: "一句简短描述",
-  icon: "assets/images/logos/example.png",
   category: "tools",
   keywords: ["缩写", "别名", "用途"],
   featured: true
@@ -74,7 +73,15 @@ assets/js/sites-data.js
 - `recent`：最近收录
 - `popular`：人工整理的热门视图，不代表真实流量排名
 
-图标加载失败时会统一回退到 `assets/images/logos/sakura-default.svg`。
+新增网站不需要、也不允许填写 `icon` 字段。所有网站卡片和友情链接自动使用统一的本地樱花图标，不会请求 Google favicon、目标网站 favicon 或其他远程图标服务。
+
+唯一品牌矢量源文件：
+
+```text
+assets/images/icons/sakura-mark.svg
+```
+
+浏览器 SVG favicon 和页面品牌标志直接引用该文件；`favicon.png`、`apple-touch-icon.png`、`pwa-192.png` 与 `pwa-512.png` 均从它本地导出。修改品牌图标时，只需替换这个 SVG，并重新导出上述兼容资源，不要在网站数据中恢复独立图标字段。
 
 ## 浏览器本地数据
 
@@ -152,6 +159,6 @@ SAKURA手记只提供外部网站入口，不托管第三方内容。链接状�
 
 先到 Cloudflare 的 `Deployments` 检查生产部署是否成功；必要时推送空提交重新触发。不要通过添加 Service Worker 或修改 DNS 来解决普通缓存问题。
 
-### 某个网站图标不显示
+### 如何修改全站品牌图标
 
-页面会自动使用统一默认图标。若要换成本地图标，将文件放入 `assets/images/logos/`，更新数据路径，再运行验证脚本。
+替换 `assets/images/icons/sakura-mark.svg`，再从该 SVG 重新导出 favicon 和 180/192/512 PNG，最后运行验证脚本。不要为单个网站下载或填写独立图标。

@@ -142,7 +142,7 @@
     const viewSwitcher = document.querySelector("[data-view-switcher]");
     const clearRecent = document.querySelector("[data-clear-recent]");
     const friendsRoot = document.querySelector("[data-friends]");
-    const defaultIcon = "assets/images/logos/sakura-default.svg";
+    const siteIconPath = "assets/images/icons/sakura-mark.svg";
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
@@ -259,18 +259,12 @@
 
       const image = document.createElement("img");
       image.className = "site-icon";
-      image.src = site.icon || defaultIcon;
+      image.src = siteIconPath;
       image.alt = "";
       image.width = 48;
       image.height = 48;
       image.loading = "lazy";
       image.decoding = "async";
-      image.addEventListener("error", () => {
-        if (!image.dataset.fallbackApplied) {
-          image.dataset.fallbackApplied = "true";
-          image.src = defaultIcon;
-        }
-      });
 
       const copy = document.createElement("div");
       copy.className = "site-card-copy";
@@ -430,6 +424,12 @@
         link.href = friend.url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
+        const image = document.createElement("img");
+        image.className = "friend-icon";
+        image.src = siteIconPath;
+        image.alt = "";
+        image.width = 36;
+        image.height = 36;
         const copy = document.createElement("span");
         const name = document.createElement("strong");
         const description = document.createElement("span");
@@ -439,7 +439,7 @@
         icon.className = "fas fa-arrow-up-right-from-square fa-external-link-alt";
         icon.setAttribute("aria-hidden", "true");
         copy.append(name, description);
-        link.append(copy, icon);
+        link.append(image, copy, icon);
         fragment.appendChild(link);
       });
       friendsRoot.appendChild(fragment);

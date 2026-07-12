@@ -18,6 +18,7 @@ REQUIRED_FILES = (
     "assets/css/sakura.css",
     "assets/js/sites-data.js",
     "assets/js/sakura-app.js",
+    "assets/images/icons/sakura-mark.svg",
     "assets/images/favicon.png",
     "assets/images/og-sakura.png",
     "assets/images/icons/apple-touch-icon.png",
@@ -30,6 +31,9 @@ REQUIRED_FILES = (
 )
 LOCAL_REF_RE = re.compile(r"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
 SITE_RE = re.compile(r"\{(?=[^{}]*\bid:\s*\")[^{}]*\burl:\s*\"[^{}]+?\bcategory:\s*\"[^{}]+?\}")
+REMOTE_FAVICON_RE = re.compile(
+    r"google\.com/s2/favicons|gstatic\.com|https?://[^\s\"']*favicon", re.I
+)
 
 
 def field(block: str, name: str) -> str:
@@ -45,6 +49,10 @@ def validate() -> tuple[list[str], list[str]]:
         if not (ROOT / relative).is_file():
             errors.append(f"缺少必要文件：{relative}")
 
+    legacy_logo_dir = ROOT / "assets/images/logos"
+    if legacy_logo_dir.exists() and any(legacy_logo_dir.rglob("*")):
+        errors.append("旧图标目录 assets/images/logos 仍包含文件")
+
     for relative in MAIN_PAGES:
         page = ROOT / relative
         if not page.is_file():
@@ -52,6 +60,16 @@ def validate() -> tuple[list[str], list[str]]:
         html = page.read_text(encoding="utf-8")
         if not re.search(r'<html\s+[^>]*lang="zh-CN"', html, re.I):
             errors.append(f"{relative} 缺少正确的 lang 属性")
+        prefix = "../" if relative.startswith("about/") else "./"
+        expected_refs = (
+            f'{prefix}assets/images/icons/sakura-mark.svg',
+            f'{prefix}assets/images/favicon.png',
+            f'{prefix}assets/images/icons/apple-touch-icon.png',
+            f'{prefix}manifest.webmanifest',
+        )
+        for reference in expected_refs:
+            if reference not in html:
+                errors.append(f"{relative} 缺少统一图标引用：{reference}")
         for reference in LOCAL_REF_RE.findall(html):
             if reference.startswith(("http://", "https://", "#", "mailto:", "tel:", "javascript:", "data:")):
                 continue
@@ -76,20 +94,18 @@ def validate() -> tuple[list[str], list[str]]:
         ids: list[str] = []
         urls: list[str] = []
         for block in sites:
-            values = {name: field(block, name) for name in ("id", "name", "url", "description", "icon", "category")}
+            values = {name: field(block, name) for name in ("id", "name", "url", "description", "category")}
             for name, value in values.items():
                 if not value:
-                    errors.append(f"网站数据必填字段为空：{values.get('id') or values.get('name') or '未知'} / {name}")
+                    identity = values.get("id") or values.get("name") or "未知"
+                    errors.append(f"网站数据必填字段为空：{identity} / {name}")
             site_id = values["id"]
             ids.append(site_id)
             urls.append(values["url"])
+            if re.search(r"\bicon\s*:", block):
+                errors.append(f"网站 {site_id} 不应包含 icon 字段")
             if values["category"] not in category_ids:
                 errors.append(f"网站 {site_id} 引用了不存在的分类：{values['category']}")
-            icon = values["icon"]
-            if icon.startswith("http://"):
-                errors.append(f"网站 {site_id} 使用 HTTP 图片，可能造成 Mixed Content：{icon}")
-            elif icon and not icon.startswith(("https://", "data:")) and not (ROOT / icon).is_file():
-                errors.append(f"网站 {site_id} 的本地图标不存在：{icon}")
             if values["url"].startswith("http://"):
                 warnings.append(f"网站 {site_id} 仍使用未验证 HTTPS 的导航地址：{values['url']}")
 
@@ -102,19 +118,39 @@ def validate() -> tuple[list[str], list[str]]:
         if re.search(r"待添加|TODO|placeholder", data_text, re.I):
             errors.append("网站数据中仍有占位内容")
 
+    app_path = ROOT / "assets/js/sakura-app.js"
+    if app_path.is_file():
+        app_text = app_path.read_text(encoding="utf-8")
+        if "site.icon" in app_text:
+            errors.append("sakura-app.js 仍依赖 site.icon")
+        if 'assets/images/icons/sakura-mark.svg' not in app_text:
+            errors.append("sakura-app.js 未引用统一樱花图标")
+
     for path in ROOT.rglob("*"):
         if not path.is_file() or ".git" in path.parts or "tools" in path.parts:
             continue
-        if path.suffix.lower() not in {".html", ".md", ".js", ".txt", ".xml"}:
+        if path.suffix.lower() not in {".html", ".md", ".js", ".txt", ".xml", ".webmanifest"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
+        relative = path.relative_to(ROOT)
+        if REMOTE_FAVICON_RE.search(text):
+            errors.append(f"仍有远程 favicon 依赖：{relative}")
+        if re.search(r"assets/images/logos/", text, re.I):
+            errors.append(f"仍有旧图标目录引用：{relative}")
         if re.search(r"GitHub Pages|Settings\s*(?:→|->)\s*Pages", text, re.I):
-            errors.append(f"仍有失效的 GitHub Pages 说明：{path.relative_to(ROOT)}")
+            errors.append(f"仍有失效的 GitHub Pages 说明：{relative}")
 
     manifest_path = ROOT / "manifest.webmanifest"
     if manifest_path.is_file():
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            expected_manifest_icons = {
+                "/assets/images/icons/pwa-192.png",
+                "/assets/images/icons/pwa-512.png",
+            }
+            actual_manifest_icons = {str(icon.get("src", "")) for icon in manifest.get("icons", [])}
+            if not expected_manifest_icons.issubset(actual_manifest_icons):
+                errors.append("manifest 缺少统一的 192 或 512 像素 PWA 图标")
             for icon in manifest.get("icons", []):
                 src = str(icon.get("src", "")).lstrip("/")
                 if not src or not (ROOT / src).is_file():

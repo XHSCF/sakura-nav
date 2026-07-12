@@ -34,7 +34,7 @@ _headers                           Cloudflare static security headers
 assets/css/sakura.css              Shared design system
 assets/js/sites-data.js            Categories, websites, and friend links
 assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and form logic
-assets/images/                      Favicons, social image, PWA icons, and site icons
+assets/images/                      Unified SAKURA mark, favicons, social image, and PWA icons
 tools/validate_site.py              Dependency-free repository validator
 ```
 
@@ -42,9 +42,28 @@ There is no root `CNAME` file. Custom domains and DNS bindings are managed in th
 
 ## Website data
 
-Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and recent visits use this ID, so do not replace it with an array index or change it casually.
+Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and recent visits use this ID, so do not replace it with an array index or change it casually. A new entry only needs `id`, `name`, `url`, `description`, `category`, `keywords`, and optional curated flags:
 
-Optional fields include `keywords`, `featured`, `recent`, and `popular`. These labels are manually curated and do not represent measured traffic statistics. Failed icons fall back to `assets/images/logos/sakura-default.svg`.
+```js
+{
+  id: "example",
+  name: "Example",
+  url: "https://example.com/",
+  description: "A short description",
+  category: "tools",
+  keywords: ["example"]
+}
+```
+
+Optional flags include `featured`, `recent`, and `popular`. These labels are manually curated and do not represent measured traffic statistics.
+
+Do not add an `icon` field and do not use Google favicon, destination-site favicons, or any remote icon service. Every website card and friend link automatically uses the single local vector source:
+
+```text
+assets/images/icons/sakura-mark.svg
+```
+
+The SVG favicon and brand marks reference this file directly. `favicon.png`, `apple-touch-icon.png`, `pwa-192.png`, and `pwa-512.png` are locally derived from it. To change the brand icon, replace the SVG and re-export those PNG resources; do not restore per-site icons.
 
 ## Browser-only data
 
