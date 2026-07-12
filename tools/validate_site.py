@@ -28,6 +28,7 @@ REQUIRED_FILES = (
     "robots.txt",
     "sitemap.xml",
     "_headers",
+    "wrangler.jsonc",
 )
 LOCAL_REF_RE = re.compile(r"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
 SITE_RE = re.compile(r"\{(?=[^{}]*\bid:\s*\")[^{}]*\burl:\s*\"[^{}]+?\bcategory:\s*\"[^{}]+?\}")
@@ -62,7 +63,7 @@ def validate() -> tuple[list[str], list[str]]:
         html = page.read_text(encoding="utf-8")
         if not re.search(r'<html\s+[^>]*lang="zh-CN"', html, re.I):
             errors.append(f"{relative} 缺少正确的 lang 属性")
-        prefix = "../" if relative.startswith("about/") else "./"
+        prefix = "/" if relative == "404.html" else ("../" if relative.startswith("about/") else "./")
         expected_refs = (
             f'{prefix}assets/images/icons/sakura-mark.svg',
             f'{prefix}assets/images/favicon.png',
@@ -82,7 +83,7 @@ def validate() -> tuple[list[str], list[str]]:
             clean = reference.split("#", 1)[0].split("?", 1)[0]
             if not clean:
                 continue
-            target = (page.parent / clean).resolve()
+            target = (ROOT / clean.lstrip("/")).resolve() if clean.startswith("/") else (page.parent / clean).resolve()
             if clean.endswith("/"):
                 target /= "index.html"
             if not target.exists():
@@ -137,6 +138,47 @@ def validate() -> tuple[list[str], list[str]]:
             errors.append("sakura-app.js 仍包含已删除的提交或友情链接逻辑")
         if "Date.UTC(2026, 6, 12)" not in app_text:
             errors.append("sakura-app.js 缺少 2026-07-12 运行起始日期")
+
+    wrangler_path = ROOT / "wrangler.jsonc"
+    if wrangler_path.is_file():
+        try:
+            wrangler = json.loads(wrangler_path.read_text(encoding="utf-8"))
+            assets = wrangler.get("assets")
+            if not isinstance(assets, dict):
+                errors.append("wrangler.jsonc 缺少 assets 配置")
+            else:
+                if assets.get("directory") != ".":
+                    errors.append("wrangler assets.directory 必须保持为 .")
+                if assets.get("not_found_handling") != "404-page":
+                    errors.append("wrangler assets.not_found_handling 必须为 404-page")
+            flags = wrangler.get("compatibility_flags", [])
+            if not isinstance(flags, list):
+                errors.append("wrangler compatibility_flags 必须为数组")
+            elif {"nodejs_compat", "nodejs_compat_v2"}.intersection(map(str, flags)):
+                errors.append("纯静态站点不应启用 Node.js compatibility flag")
+            if "observability" in wrangler:
+                errors.append("wrangler.jsonc 不应包含 observability 配置")
+            if "main" in wrangler:
+                errors.append("纯静态站点不应配置 Worker main 入口")
+        except (json.JSONDecodeError, TypeError) as exc:
+            errors.append(f"wrangler.jsonc 无效：{exc}")
+
+    privacy_files = ("index.html", "about/index.html", "README.md", "README-en.md")
+    obsolete_privacy_phrases = (
+        "无统计追踪",
+        "统计追踪脚本",
+        "广告和统计追踪",
+        "no ads, analytics",
+        "no advertising or analytics",
+    )
+    for relative in privacy_files:
+        path = ROOT / relative
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8").lower()
+        for phrase in obsolete_privacy_phrases:
+            if phrase.lower() in text:
+                errors.append(f"{relative} 仍包含不准确的隐私表述：{phrase}")
 
     for path in ROOT.rglob("*"):
         if not path.is_file() or ".git" in path.parts or "tools" in path.parts or "fontawesome-5.15.4" in path.parts:

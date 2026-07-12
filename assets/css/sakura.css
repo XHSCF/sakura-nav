@@ -986,10 +986,10 @@ select {
     justify-content: flex-start;
     gap: 6px;
     margin-top: 13px;
-    margin-right: -16px;
-    margin-left: -16px;
-    padding: 0 16px 3px;
-    scroll-padding-inline: 16px;
+    margin-right: 0;
+    margin-left: 0;
+    padding: 0 2px 3px;
+    scroll-padding-inline: 2px;
     overscroll-behavior-inline: contain;
   }
 
@@ -1030,13 +1030,9 @@ select {
     margin-left: auto;
   }
 
-  .category-shell .container {
-    width: 100%;
-  }
-
   .category-bar {
-    padding: 1px 16px 2px;
-    scroll-padding-inline: 16px;
+    padding: 1px 2px 2px;
+    scroll-padding-inline: 2px;
     overscroll-behavior-inline: contain;
   }
 

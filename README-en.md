@@ -19,7 +19,7 @@ SAKURA Notes is a lightweight personal start page for frequently used websites, 
 - System-aware light/dark theme and responsive mobile, tablet, and desktop layouts
 - Local-date runtime counter starting on July 12, 2026
 - Lightweight install metadata without a Service Worker or aggressive page cache
-- No ads, analytics, online fonts, or required third-party CDN
+- No ads, third-party analytics scripts, online fonts, or required third-party CDN
 
 ## Core structure
 
@@ -114,6 +114,6 @@ The manifest and local icons improve iPhone, iPad, and Android home-screen use. 
 
 ## Privacy and content notice
 
-SAKURA Notes only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or analytics, uses no cookies, and does not transmit favorites or visit history.
+SAKURA Notes only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or third-party analytics scripts, uses no cookies, and does not transmit favorites or visit history.
 
 Third-party assets remain subject to their licenses, including the Font Awesome license stored in the repository.
