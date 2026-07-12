@@ -984,19 +984,25 @@ select {
 
   .view-switcher {
     justify-content: flex-start;
+    flex-wrap: nowrap;
     gap: 6px;
     margin-top: 13px;
     margin-right: 0;
     margin-left: 0;
-    padding: 0 2px 3px;
+    overflow-y: hidden;
+    padding: 1px 2px 3px;
     scroll-padding-inline: 2px;
+    scroll-snap-type: x proximity;
     overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .view-switcher .filter-chip {
     min-height: 32px;
     padding: 5px 10px;
     font-size: 11px;
+    white-space: nowrap;
+    scroll-snap-align: center;
   }
 
   .content-section {

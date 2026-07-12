@@ -395,6 +395,17 @@
       });
     }
 
+    function centerViewButton(button) {
+      if (!viewSwitcher || !button || !window.matchMedia("(max-width: 768px)").matches) return;
+      const maxScrollLeft = Math.max(0, viewSwitcher.scrollWidth - viewSwitcher.clientWidth);
+      const targetLeft = button.offsetLeft - (viewSwitcher.clientWidth - button.offsetWidth) / 2;
+      const nextLeft = Math.min(maxScrollLeft, Math.max(0, targetLeft));
+      viewSwitcher.scrollTo({
+        left: nextLeft,
+        behavior: reducedMotion ? "auto" : "smooth"
+      });
+    }
+
     function scheduleResultScroll() {
       const token = ++scrollRequestToken;
       window.scrollTo({ top: window.scrollY, behavior: "auto" });
@@ -435,6 +446,7 @@
       state.view = button.dataset.view;
       updatePressed(viewSwitcher, "view", state.view);
       render();
+      centerViewButton(button);
       scheduleResultScroll();
     });
 
