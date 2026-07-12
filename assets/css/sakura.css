@@ -580,7 +580,7 @@ select {
 }
 
 .category-scroll-button {
-  display: grid;
+  display: none;
   flex: 0 0 36px;
   width: 36px;
   height: 36px;
@@ -602,6 +602,12 @@ select {
 
 .category-scroll-button[hidden] {
   display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .category-scroll-button:not([hidden]) {
+    display: grid;
+  }
 }
 
 .site-group {

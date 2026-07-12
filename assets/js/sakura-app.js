@@ -389,7 +389,7 @@
     }
 
     function centerCategoryButton(button) {
-      if (!categoryBar || !button || !window.matchMedia("(max-width: 768px)").matches) return;
+      if (!categoryBar || !button || !window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)").matches) return;
       const maxScrollLeft = Math.max(0, categoryBar.scrollWidth - categoryBar.clientWidth);
       const targetLeft = button.offsetLeft - (categoryBar.clientWidth - button.offsetWidth) / 2;
       const nextLeft = Math.min(maxScrollLeft, Math.max(0, targetLeft));
@@ -400,7 +400,7 @@
     }
 
     function centerViewButton(button) {
-      if (!viewSwitcher || !button || !window.matchMedia("(max-width: 768px)").matches) return;
+      if (!viewSwitcher || !button || !window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)").matches) return;
       const maxScrollLeft = Math.max(0, viewSwitcher.scrollWidth - viewSwitcher.clientWidth);
       const targetLeft = button.offsetLeft - (viewSwitcher.clientWidth - button.offsetWidth) / 2;
       const nextLeft = Math.min(maxScrollLeft, Math.max(0, targetLeft));
@@ -412,7 +412,7 @@
 
     function updateCategoryScrollControls() {
       if (!categoryBar || !categoryScrollLeft || !categoryScrollRight) return;
-      if (!window.matchMedia("(min-width: 769px)").matches) {
+      if (!window.matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)").matches) {
         categoryScrollLeft.hidden = true;
         categoryScrollRight.hidden = true;
         return;
@@ -436,7 +436,7 @@
     }
 
     function scrollCategories(direction) {
-      if (!categoryBar || !window.matchMedia("(min-width: 769px)").matches) return;
+      if (!categoryBar || !window.matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)").matches) return;
       categoryBar.scrollBy({
         left: direction * categoryBar.clientWidth * 0.7,
         behavior: reducedMotion ? "auto" : "smooth"
