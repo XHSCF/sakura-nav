@@ -14,6 +14,9 @@
   --danger: #c9566f;
   --shadow-sm: 0 8px 24px rgba(45, 38, 77, 0.06);
   --shadow-md: 0 18px 52px rgba(45, 38, 77, 0.11);
+  --sakura-icon-bg: color-mix(in srgb, var(--pink) 10%, var(--surface-solid));
+  --sakura-icon-border: color-mix(in srgb, var(--pink) 35%, var(--line));
+  --sakura-icon-shadow: var(--shadow-sm);
   --radius-sm: 12px;
   --radius-md: 18px;
   --radius-lg: 26px;
@@ -165,11 +168,11 @@ select {
   width: 34px;
   height: 34px;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--pink) 35%, var(--line));
+  border: 1px solid var(--sakura-icon-border);
   border-radius: 11px;
   color: var(--pink);
-  background: color-mix(in srgb, var(--pink) 10%, var(--surface-solid));
-  box-shadow: var(--shadow-sm);
+  background: var(--sakura-icon-bg);
+  box-shadow: var(--sakura-icon-shadow);
 }
 
 .brand-mark img {
@@ -729,10 +732,10 @@ select {
   height: 48px;
   padding: 0;
   object-fit: contain;
-  border: 1px solid var(--line);
+  border: 1px solid var(--sakura-icon-border);
   border-radius: 14px;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
+  background: var(--sakura-icon-bg);
+  box-shadow: var(--sakura-icon-shadow);
 }
 
 .site-card-copy {
