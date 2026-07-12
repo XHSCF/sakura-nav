@@ -12,7 +12,7 @@ from xml.etree import ElementTree
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN_PAGES = ("index.html", "about/index.html", "commit.html", "404.html")
+MAIN_PAGES = ("index.html", "about/index.html", "404.html")
 REQUIRED_FILES = (
     *MAIN_PAGES,
     "assets/css/sakura.css",
@@ -52,6 +52,8 @@ def validate() -> tuple[list[str], list[str]]:
     legacy_logo_dir = ROOT / "assets/images/logos"
     if legacy_logo_dir.exists() and any(legacy_logo_dir.rglob("*")):
         errors.append("旧图标目录 assets/images/logos 仍包含文件")
+    if (ROOT / "commit.html").exists():
+        errors.append("已停用的 commit.html 仍然存在")
 
     for relative in MAIN_PAGES:
         page = ROOT / relative
@@ -70,6 +72,10 @@ def validate() -> tuple[list[str], list[str]]:
         for reference in expected_refs:
             if reference not in html:
                 errors.append(f"{relative} 缺少统一图标引用：{reference}")
+        if "commit.html" in html or "#friends" in html:
+            errors.append(f"{relative} 仍包含已删除功能的链接")
+        if relative in {"index.html", "about/index.html"} and "data-runtime-days" not in html:
+            errors.append(f"{relative} 缺少网站运行天数")
         for reference in LOCAL_REF_RE.findall(html):
             if reference.startswith(("http://", "https://", "#", "mailto:", "tel:", "javascript:", "data:")):
                 continue
@@ -89,6 +95,8 @@ def validate() -> tuple[list[str], list[str]]:
     if data_path.is_file():
         data_text = data_path.read_text(encoding="utf-8")
         category_section = data_text.split("sites: [", 1)[0]
+        if re.search(r"\bfriends\s*:", data_text):
+            errors.append("sites-data.js 仍包含友情链接数据")
         category_ids = set(re.findall(r'\bid:\s*"([a-z0-9-]+)"', category_section))
         sites = SITE_RE.findall(data_text)
         ids: list[str] = []
@@ -125,14 +133,24 @@ def validate() -> tuple[list[str], list[str]]:
             errors.append("sakura-app.js 仍依赖 site.icon")
         if 'assets/images/icons/sakura-mark.svg' not in app_text:
             errors.append("sakura-app.js 未引用统一樱花图标")
+        if re.search(r"data-friends|data\.friends|setupSubmissionForm|data-submission", app_text):
+            errors.append("sakura-app.js 仍包含已删除的提交或友情链接逻辑")
+        if "Date.UTC(2026, 6, 12)" not in app_text:
+            errors.append("sakura-app.js 缺少 2026-07-12 运行起始日期")
 
     for path in ROOT.rglob("*"):
-        if not path.is_file() or ".git" in path.parts or "tools" in path.parts:
+        if not path.is_file() or ".git" in path.parts or "tools" in path.parts or "fontawesome-5.15.4" in path.parts:
             continue
-        if path.suffix.lower() not in {".html", ".md", ".js", ".txt", ".xml", ".webmanifest"}:
+        if path.suffix.lower() not in {".html", ".md", ".js", ".css", ".txt", ".xml", ".webmanifest"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         relative = path.relative_to(ROOT)
+        removed_feature_pattern = (
+            r"commit\.html|网站提交|友情链接|FRIEND LINKS|data-friends|data\.friends|"
+            r"\bfriends\s*:|setupSubmissionForm|data-submission|submission-output|friend-(?:grid|link|icon)"
+        )
+        if re.search(removed_feature_pattern, text, re.I):
+            errors.append(f"仍有已删除的提交或友情链接内容：{relative}")
         if REMOTE_FAVICON_RE.search(text):
             errors.append(f"仍有远程 favicon 依赖：{relative}")
         if re.search(r"assets/images/logos/", text, re.I):
@@ -164,10 +182,13 @@ def validate() -> tuple[list[str], list[str]]:
             tree = ElementTree.parse(sitemap_path)
             namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
             locations = [node.text or "" for node in tree.findall("s:url/s:loc", namespace)]
-            expected = {"https://skrto.top/", "https://skrto.top/about/", "https://skrto.top/commit.html"}
+            expected = {"https://skrto.top/", "https://skrto.top/about/"}
             missing = expected.difference(locations)
             if missing:
                 errors.append(f"sitemap 缺少页面：{', '.join(sorted(missing))}")
+            unexpected = {"https://skrto.top/commit.html"}.intersection(locations)
+            if unexpected:
+                errors.append("sitemap 仍包含已删除的 commit.html")
             for location in locations:
                 parsed = urlparse(location)
                 relative = parsed.path.lstrip("/")

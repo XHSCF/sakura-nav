@@ -12,11 +12,12 @@ SAKURA Notes is a lightweight personal start page for frequently used websites, 
 
 - Fully static HTML, CSS, and vanilla JavaScript
 - No backend, database, account system, build step, or package dependency
-- Centralized categories, websites, and friend links in `assets/js/sites-data.js`
+- Centralized categories and websites in `assets/js/sites-data.js`
 - Search by name, description, URL, category, keywords, abbreviations, and multiple terms
 - Combined category and curated-view filters
 - Browser-only favorites and recent visits with defensive localStorage parsing
 - System-aware light/dark theme and responsive mobile, tablet, and desktop layouts
+- Local-date runtime counter starting on July 12, 2026
 - Lightweight install metadata without a Service Worker or aggressive page cache
 - No ads, analytics, online fonts, or required third-party CDN
 
@@ -25,15 +26,15 @@ SAKURA Notes is a lightweight personal start page for frequently used websites, 
 ```text
 index.html                         Home page
 about/index.html                   About page
-commit.html                        Static suggestion helper
 404.html                           Custom error page
 manifest.webmanifest               PWA install metadata
 robots.txt                         Crawler rules
 sitemap.xml                        Canonical public pages
 _headers                           Cloudflare static security headers
+wrangler.jsonc                     Cloudflare Workers static-assets configuration
 assets/css/sakura.css              Shared design system
-assets/js/sites-data.js            Categories, websites, and friend links
-assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and form logic
+assets/js/sites-data.js            Categories and websites
+assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and global UI logic
 assets/images/                      Unified SAKURA mark, favicons, social image, and PWA icons
 tools/validate_site.py              Dependency-free repository validator
 ```
@@ -57,7 +58,7 @@ Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and 
 
 Optional flags include `featured`, `recent`, and `popular`. These labels are manually curated and do not represent measured traffic statistics.
 
-Do not add an `icon` field and do not use Google favicon, destination-site favicons, or any remote icon service. Every website card and friend link automatically uses the single local vector source:
+Do not add an `icon` field and do not use Google favicon, destination-site favicons, or any remote icon service. Every website card automatically uses the single local vector source:
 
 ```text
 assets/images/icons/sakura-mark.svg
@@ -86,7 +87,7 @@ Open `http://localhost:8000`. The validator checks pages, local references, IDs,
 
 ## Cloudflare deployment
 
-This repository is connected through Cloudflare Workers & Pages Git integration. It contains no Wrangler configuration, Pages Functions, Worker source, or build dependencies; Cloudflare publishes the repository root as static assets.
+This repository is connected through Cloudflare Workers & Pages Git integration. `wrangler.jsonc` configures the repository root as the static-assets directory; there are no Pages Functions, application Worker source files, or build dependencies.
 
 ```text
 GitHub main
@@ -113,6 +114,6 @@ The manifest and local icons improve iPhone, iPad, and Android home-screen use. 
 
 ## Privacy and content notice
 
-SAKURA Notes only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or analytics, uses no cookies, and does not transmit favorites, visit history, or form drafts.
+SAKURA Notes only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or analytics, uses no cookies, and does not transmit favorites or visit history.
 
 Third-party assets remain subject to their licenses, including the Font Awesome license stored in the repository.

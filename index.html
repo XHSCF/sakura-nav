@@ -56,8 +56,6 @@
       <nav class="site-nav" data-site-nav aria-label="主要导航">
         <a class="nav-link" href="./" aria-current="page"><i class="fas fa-home" aria-hidden="true"></i>首页</a>
         <a class="nav-link" href="./about/"><i class="fas fa-book-open" aria-hidden="true"></i>关于</a>
-        <a class="nav-link" href="./commit.html"><i class="fas fa-paper-plane" aria-hidden="true"></i>网站提交</a>
-        <a class="nav-link" href="#friends"><i class="fas fa-link" aria-hidden="true"></i>友情链接</a>
       </nav>
 
       <div class="header-actions">
@@ -137,43 +135,20 @@
       </div>
     </section>
 
-    <section class="friends-section" id="friends" aria-labelledby="friends-title">
-      <div class="container">
-        <div class="content-heading">
-          <div>
-            <span class="eyebrow">FRIEND LINKS</span>
-            <h2 id="friends-title">友情链接</h2>
-          </div>
-        </div>
-        <div class="friend-grid" data-friends></div>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><img src="./assets/images/icons/sakura-mark.svg" alt="" width="28" height="28"></span><span>SAKURA手记</span></a>
-          <p>个人维护的纯静态导航站，无广告、无统计追踪。本站只提供入口，外部内容由对应网站负责。</p>
-        </div>
-        <div>
-          <h2 class="footer-title">站内导航</h2>
-          <div class="footer-links">
-            <a href="./about/">关于本站</a>
-            <a href="./commit.html">网站提交</a>
-            <a href="#friends">友情链接</a>
-          </div>
-        </div>
-        <div>
-          <h2 class="footer-title">项目信息</h2>
-          <div class="footer-links">
-            <a href="https://skrto.top">skrto.top</a>
-            <a href="https://www.skrto.top">www.skrto.top</a>
-            <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
-          </div>
-        </div>
+    <div class="container footer-compact">
+      <div class="footer-brand">
+        <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><img src="./assets/images/icons/sakura-mark.svg" alt="" width="28" height="28"></span><span>SAKURA手记</span></a>
+        <p>个人维护的纯静态导航站，无广告、无统计追踪。<br>本站只提供入口，外部内容由对应网站负责。</p>
       </div>
+      <nav class="footer-project-links" aria-label="项目链接">
+        <a href="https://skrto.top">skrto.top</a><span aria-hidden="true">·</span>
+        <a href="https://www.skrto.top">www.skrto.top</a><span aria-hidden="true">·</span>
+        <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
+      </nav>
+      <p class="site-runtime"><i class="fas fa-clock" aria-hidden="true"></i><span data-runtime-days>本站已运行 1 天</span></p>
       <div class="footer-bottom">
         <span>© <span data-current-year></span> SAKURA手记</span>
         <span>纯静态 · 无广告 · 无统计追踪 · Cloudflare 自动部署</span>

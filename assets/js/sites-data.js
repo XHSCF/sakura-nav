@@ -51,11 +51,5 @@ window.SAKURA_DATA = Object.freeze({
 
     { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], recent: true },
     { id: "500d", name: "500丁", url: "http://ppt.500d.me/", description: "PPT 模板共享平台。", category: "ppt", keywords: ["500丁", "500d", "ppt", "模板"], recent: true }
-  ],
-  friends: [
-    { name: "CSDN", url: "https://csdn.net", description: "程序员社区" },
-    { name: "程序设计网", url: "https://gitapp.cn/", description: "程序设计网" },
-    { name: "掘金社区", url: "https://juejin.im", description: "掘金社区" },
-    { name: "阿里云社区", url: "https://aliyun.com", description: "阿里云社区" }
   ]
 });

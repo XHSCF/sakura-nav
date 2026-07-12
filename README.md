@@ -12,12 +12,13 @@
 
 - 纯静态 HTML、CSS 和原生 JavaScript，无框架、无构建步骤
 - 无后端、数据库、账号系统或服务端接口
-- 分类、网站与友情链接集中保存在 `assets/js/sites-data.js`
+- 分类与网站集中保存在 `assets/js/sites-data.js`
 - 搜索支持名称、描述、URL、分类、keywords、英文缩写和多关键词
 - 分类与站长推荐、最近收录、热门网站、我的常用、最近访问可以组合筛选
 - 我的常用和最近访问只保存在当前浏览器的 `localStorage`
 - 默认跟随系统主题，手动选择后会记住设置
 - 手机、平板和桌面响应式布局
+- 页脚按本地日期显示从 2026-07-12 开始的网站运行天数
 - 轻量 PWA 主屏信息，不注册 Service Worker，不做激进页面缓存
 - 无广告、无统计追踪、无外部字体或核心 CDN 依赖
 
@@ -27,17 +28,17 @@
 sakura-nav/
 ├── index.html                       # 首页
 ├── about/index.html                 # 关于页面
-├── commit.html                      # 网站建议文本生成器
 ├── 404.html                         # 自定义 404 页面
 ├── manifest.webmanifest             # PWA 主屏信息
 ├── robots.txt                       # 搜索引擎抓取规则
 ├── sitemap.xml                      # 主要页面地图
 ├── _headers                         # Cloudflare 静态安全响应头
+├── wrangler.jsonc                   # Cloudflare Workers 静态资源配置
 ├── README.md / README-en.md          # 中英文说明
 ├── assets/
 │   ├── css/sakura.css               # 全站样式
-│   ├── js/sites-data.js             # 分类、网站与友情链接
-│   ├── js/sakura-app.js              # 搜索、筛选、收藏、主题和表单逻辑
+│   ├── js/sites-data.js             # 分类与网站数据
+│   ├── js/sakura-app.js              # 搜索、筛选、收藏、主题和全局界面逻辑
 │   ├── images/                       # 统一樱花图标、favicon、分享图和 PWA 图标
 │   └── fontawesome-5.15.4/           # 本地图标字体及许可证
 └── tools/validate_site.py            # 无第三方依赖的站点检查工具
@@ -47,7 +48,7 @@ sakura-nav/
 
 ## 网站数据
 
-分类、网站和友情链接统一位于：
+分类和网站统一位于：
 
 ```text
 assets/js/sites-data.js
@@ -73,7 +74,7 @@ assets/js/sites-data.js
 - `recent`：最近收录
 - `popular`：人工整理的热门视图，不代表真实流量排名
 
-新增网站不需要、也不允许填写 `icon` 字段。所有网站卡片和友情链接自动使用统一的本地樱花图标，不会请求 Google favicon、目标网站 favicon 或其他远程图标服务。
+新增网站不需要、也不允许填写 `icon` 字段。所有网站卡片自动使用统一的本地樱花图标，不会请求 Google favicon、目标网站 favicon 或其他远程图标服务。
 
 唯一品牌矢量源文件：
 
@@ -106,7 +107,7 @@ python -m http.server 8000
 
 ## Cloudflare 自动部署
 
-当前仓库通过 Cloudflare Workers & Pages 的 Git 集成发布静态内容。仓库中没有 Wrangler、Pages Functions 或 Worker 源码，也没有构建依赖；Cloudflare 直接使用仓库根目录的静态文件。
+当前仓库通过 Cloudflare Workers & Pages 的 Git 集成发布静态内容。`wrangler.jsonc` 将仓库根目录配置为静态资源目录；项目没有 Pages Functions、Worker 业务源码或构建依赖。
 
 部署链路：
 
@@ -145,7 +146,7 @@ git push origin main
 
 ## 内容与隐私说明
 
-SAKURA手记只提供外部网站入口，不托管第三方内容。链接状态、内容和服务条款由对应网站负责。本站为个人维护项目，不含广告和统计追踪，不使用 Cookie，也不会上传本地收藏、最近访问或表单草稿。
+SAKURA手记只提供外部网站入口，不托管第三方内容。链接状态、内容和服务条款由对应网站负责。本站为个人维护项目，不含广告和统计追踪，不使用 Cookie，也不会上传本地收藏或最近访问。
 
 第三方图标和字体仍受各自许可证约束，Font Awesome 许可证保存在仓库中。
 

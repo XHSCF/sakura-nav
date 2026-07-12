@@ -117,6 +117,15 @@
     document.querySelectorAll("[data-current-year]").forEach((node) => {
       node.textContent = String(new Date().getFullYear());
     });
+
+    const today = new Date();
+    const startDay = Date.UTC(2026, 6, 12);
+    const todayDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const elapsed = Math.floor((todayDay - startDay) / 86400000) + 1;
+    const runtimeDays = Number.isFinite(elapsed) ? Math.max(1, elapsed) : 1;
+    document.querySelectorAll("[data-runtime-days]").forEach((node) => {
+      node.textContent = `本站已运行 ${runtimeDays} 天`;
+    });
   }
 
   function normalize(value) {
@@ -141,7 +150,6 @@
     const categoryBar = document.querySelector("[data-category-bar]");
     const viewSwitcher = document.querySelector("[data-view-switcher]");
     const clearRecent = document.querySelector("[data-clear-recent]");
-    const friendsRoot = document.querySelector("[data-friends]");
     const siteIconPath = "assets/images/icons/sakura-mark.svg";
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
@@ -416,140 +424,11 @@
       });
     }
 
-    if (friendsRoot) {
-      const fragment = document.createDocumentFragment();
-      data.friends.forEach((friend) => {
-        const link = document.createElement("a");
-        link.className = "friend-link";
-        link.href = friend.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        const image = document.createElement("img");
-        image.className = "friend-icon";
-        image.src = siteIconPath;
-        image.alt = "";
-        image.width = 36;
-        image.height = 36;
-        const copy = document.createElement("span");
-        const name = document.createElement("strong");
-        const description = document.createElement("span");
-        const icon = document.createElement("i");
-        name.textContent = friend.name;
-        description.textContent = friend.description;
-        icon.className = "fas fa-arrow-up-right-from-square fa-external-link-alt";
-        icon.setAttribute("aria-hidden", "true");
-        copy.append(name, description);
-        link.append(image, copy, icon);
-        fragment.appendChild(link);
-      });
-      friendsRoot.appendChild(fragment);
-    }
-
     render();
-  }
-
-  function setupSubmissionForm() {
-    const form = document.querySelector("[data-submission-form]");
-    if (!form) return;
-
-    const description = form.querySelector("#description");
-    const counter = document.querySelector("[data-description-count]");
-    const output = document.querySelector("[data-submission-output]");
-    const outputText = document.querySelector("[data-submission-text]");
-    const copyButton = document.querySelector("[data-copy-submission]");
-
-    function setError(field, message) {
-      field.setAttribute("aria-invalid", message ? "true" : "false");
-      const error = document.getElementById(`${field.id}-error`);
-      if (error) error.textContent = message;
-      return !message;
-    }
-
-    function validate() {
-      const name = form.elements.siteName;
-      const url = form.elements.siteUrl;
-      const category = form.elements.category;
-      const desc = form.elements.description;
-      let valid = true;
-
-      valid = setError(name, name.value.trim() ? "" : "请填写网站名称。") && valid;
-
-      let validUrl = false;
-      try {
-        const parsed = new URL(url.value.trim());
-        validUrl = parsed.protocol === "http:" || parsed.protocol === "https:";
-      } catch (_) {
-        validUrl = false;
-      }
-      valid = setError(url, validUrl ? "" : "请输入以 http:// 或 https:// 开头的有效网址。") && valid;
-      valid = setError(category, category.value ? "" : "请选择网站分类。") && valid;
-      valid = setError(desc, desc.value.trim() ? "" : "请填写简短描述。") && valid;
-      return valid;
-    }
-
-    description?.addEventListener("input", () => {
-      if (counter) counter.textContent = String(description.value.length);
-    });
-
-    form.querySelectorAll(".form-control").forEach((field) => {
-      field.addEventListener("input", () => setError(field, ""));
-      field.addEventListener("change", () => setError(field, ""));
-    });
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      if (!validate()) {
-        form.querySelector('[aria-invalid="true"]')?.focus();
-        return;
-      }
-
-      const values = new FormData(form);
-      const text = [
-        "## 网站收录建议",
-        "",
-        `- 网站名称：${String(values.get("siteName")).trim()}`,
-        `- 网站地址：${String(values.get("siteUrl")).trim()}`,
-        `- 建议分类：${String(values.get("category")).trim()}`,
-        `- 网站描述：${String(values.get("description")).trim()}`,
-        `- 补充说明：${String(values.get("note") || "无").trim() || "无"}`
-      ].join("\n");
-
-      if (outputText) outputText.textContent = text;
-      output?.classList.add("is-visible");
-      output?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "nearest" });
-    });
-
-    form.addEventListener("reset", () => {
-      window.requestAnimationFrame(() => {
-        if (counter) counter.textContent = "0";
-        form.querySelectorAll(".form-control").forEach((field) => {
-          field.setAttribute("aria-invalid", "false");
-          const error = document.getElementById(`${field.id}-error`);
-          if (error) error.textContent = "";
-        });
-        output?.classList.remove("is-visible");
-      });
-    });
-
-    copyButton?.addEventListener("click", async () => {
-      const text = outputText?.textContent || "";
-      if (!text) return;
-      try {
-        await navigator.clipboard.writeText(text);
-        copyButton.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> 已复制';
-      } catch (_) {
-        const range = document.createRange();
-        range.selectNodeContents(outputText);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     setupGlobalUI();
     setupHome();
-    setupSubmissionForm();
   });
 })();
