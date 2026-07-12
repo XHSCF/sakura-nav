@@ -148,13 +148,17 @@
     const emptyTitle = document.querySelector("[data-empty-title]");
     const emptyMessage = document.querySelector("[data-empty-message]");
     const categoryBar = document.querySelector("[data-category-bar]");
+    const categoryShell = categoryBar?.closest(".category-shell");
     const viewSwitcher = document.querySelector("[data-view-switcher]");
     const clearRecent = document.querySelector("[data-clear-recent]");
+    const siteHeader = document.querySelector(".site-header");
     const siteIconPath = "assets/images/icons/sakura-mark.svg";
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
     const state = { terms: [], category: "all", view: "all" };
+    let scrollRequestToken = 0;
+    empty?.setAttribute("data-result-scroll-target", "empty");
 
     const storedFavorites = readJsonStorage(favoritesKey, []);
     const favorites = new Set(
@@ -305,6 +309,7 @@
       section.id = `category-${category.id}`;
       const heading = document.createElement("h3");
       heading.className = "group-heading";
+      heading.dataset.resultScrollTarget = category.id;
       const icon = document.createElement("i");
       icon.className = `fas ${category.icon}`;
       icon.setAttribute("aria-hidden", "true");
@@ -338,6 +343,7 @@
     }
 
     function render() {
+      scrollRequestToken += 1;
       const sites = filteredSites();
       const fragment = document.createDocumentFragment();
       gridRoot.replaceChildren();
@@ -361,6 +367,43 @@
       }
     }
 
+    function visibleStickyHeight(element) {
+      if (!element) return 0;
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      if (style.display === "none" || style.visibility === "hidden" || rect.height <= 0) return 0;
+      return style.position === "sticky" || style.position === "fixed" ? rect.height : 0;
+    }
+
+    function activeResultTarget() {
+      if (empty?.classList.contains("is-visible")) return empty;
+      const headings = Array.from(gridRoot.querySelectorAll("[data-result-scroll-target]"));
+      if (state.category !== "all") {
+        return headings.find((heading) => heading.dataset.resultScrollTarget === state.category) || headings[0] || null;
+      }
+      return headings[0] || null;
+    }
+
+    function scheduleResultScroll() {
+      const token = ++scrollRequestToken;
+      window.scrollTo({ top: window.scrollY, behavior: "auto" });
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (token !== scrollRequestToken) return;
+          const target = activeResultTarget();
+          if (!target) return;
+          const visualGap = window.matchMedia("(max-width: 768px)").matches ? 18 : 22;
+          const offset = visibleStickyHeight(siteHeader) + visibleStickyHeight(categoryShell) + visualGap;
+          root.style.setProperty("--result-scroll-offset", `${offset}px`);
+          const targetTop = window.scrollY + target.getBoundingClientRect().top - offset;
+          window.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: reducedMotion ? "auto" : "smooth"
+          });
+        });
+      });
+    }
+
     if (categoryBar) {
       categoryBar.appendChild(createButton("全部", "all", "category"));
       data.categories.forEach((category) => categoryBar.appendChild(createButton(category.name, category.id, "category")));
@@ -370,6 +413,7 @@
         state.category = button.dataset.category;
         updatePressed(categoryBar, "category", state.category);
         render();
+        scheduleResultScroll();
       });
     }
 
@@ -379,6 +423,7 @@
       state.view = button.dataset.view;
       updatePressed(viewSwitcher, "view", state.view);
       render();
+      scheduleResultScroll();
     });
 
     clearRecent?.addEventListener("click", () => {

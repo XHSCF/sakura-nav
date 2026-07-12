@@ -517,6 +517,11 @@ select {
   font-weight: 780;
 }
 
+.group-heading[data-result-scroll-target],
+.empty-state[data-result-scroll-target] {
+  scroll-margin-top: var(--result-scroll-offset, calc(var(--header-height) + 84px));
+}
+
 .group-heading i {
   color: var(--primary);
 }
