@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f5fa">
+  <title>SAKURA手记｜个人网址导航与网络收藏</title>
+  <meta name="description" content="SAKURA手记是一个个人维护的网址导航站，整理动漫影视、资源下载、实用工具、iOS 与其他常用网络内容。">
+  <meta name="keywords" content="SAKURA手记,个人导航,网址收藏,动漫影视,实用工具">
+  <link rel="canonical" href="https://skrto.top/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="SAKURA手记">
+  <meta property="og:title" content="SAKURA手记｜个人网址导航与网络收藏">
+  <meta property="og:description" content="整理常用网站、动漫影视、资源下载、实用工具与 iOS 内容的个人导航站。">
+  <meta property="og:url" content="https://skrto.top/">
+  <meta property="og:image" content="https://skrto.top/assets/images/favicon.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SAKURA手记">
+  <meta name="twitter:description" content="简洁、轻量的个人网址导航与网络收藏站。">
+  <link rel="icon" href="./assets/images/favicon.png">
+  <link rel="stylesheet" href="./assets/fontawesome-5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="./assets/css/sakura.css">
+  <script>
+    (function () {
+      var saved = localStorage.getItem("sakura-theme");
+      var theme = saved === "light" || saved === "dark"
+        ? saved
+        : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="SAKURA手记首页">
+        <span class="brand-mark" aria-hidden="true"><i class="fas fa-seedling"></i></span>
+        <span>SAKURA手记</span>
+      </a>
+
+      <nav class="site-nav" data-site-nav aria-label="主要导航">
+        <a class="nav-link" href="./" aria-current="page"><i class="fas fa-home" aria-hidden="true"></i>首页</a>
+        <a class="nav-link" href="./about/"><i class="fas fa-book-open" aria-hidden="true"></i>关于</a>
+        <a class="nav-link" href="./commit.html"><i class="fas fa-paper-plane" aria-hidden="true"></i>网站提交</a>
+        <a class="nav-link" href="#friends"><i class="fas fa-link" aria-hidden="true"></i>友情链接</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" type="button" data-theme-toggle aria-label="切换深色模式" title="深色模式">
+          <i class="fas fa-moon" aria-hidden="true"></i>
+        </button>
+        <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="打开导航菜单" aria-expanded="false">
+          <i class="fas fa-bars" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container">
+        <div class="hero-copy">
+          <span class="eyebrow"><i class="fas fa-seedling" aria-hidden="true"></i>PERSONAL START PAGE</span>
+          <h1 id="hero-title">收藏常用，也收藏<span>灵感</span></h1>
+          <p class="hero-description">SAKURA手记整理动漫影视、资源下载、实用工具、iOS 与其他常用网络内容，让每次出发更简单。</p>
+        </div>
+
+        <div class="search-wrap">
+          <form class="search-box" role="search" onsubmit="return false">
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+            <label class="sr-only" for="site-search">搜索网站</label>
+            <input class="search-input" id="site-search" type="search" data-site-search placeholder="搜索网站、描述或分类…" autocomplete="off" spellcheck="false">
+            <kbd class="search-shortcut" aria-hidden="true">Ctrl K</kbd>
+            <button class="search-clear" type="button" data-search-clear aria-label="清空搜索">
+              <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+          </form>
+          <div class="search-meta">
+            <span class="search-result" data-search-result aria-live="polite">正在整理收藏…</span>
+            <span>支持名称、描述与分类组合搜索</span>
+          </div>
+        </div>
+
+        <div class="view-switcher" data-view-switcher aria-label="推荐视图">
+          <button class="filter-chip is-active" type="button" data-view="all" aria-pressed="true">全部站点</button>
+          <button class="filter-chip" type="button" data-view="featured" aria-pressed="false"><i class="fas fa-star" aria-hidden="true"></i> 常用推荐</button>
+          <button class="filter-chip" type="button" data-view="recent" aria-pressed="false"><i class="fas fa-clock" aria-hidden="true"></i> 最近收录</button>
+          <button class="filter-chip" type="button" data-view="popular" aria-pressed="false"><i class="fas fa-fire" aria-hidden="true"></i> 热门网站</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" aria-labelledby="collection-title">
+      <div class="container">
+        <div class="content-heading">
+          <div>
+            <span class="eyebrow">CURATED COLLECTION</span>
+            <h2 id="collection-title">我的收藏</h2>
+          </div>
+          <span class="content-note">推荐视图依据现有收录顺序整理，不代表访问量排行</span>
+        </div>
+      </div>
+
+      <div class="category-shell">
+        <div class="container">
+          <div class="category-bar" data-category-bar aria-label="网站分类"></div>
+        </div>
+      </div>
+
+      <div class="container">
+        <div data-site-groups></div>
+        <div class="empty-state" data-empty-state role="status">
+          <i class="fas fa-search" aria-hidden="true"></i>
+          <strong>没有找到匹配的网站</strong>
+          <div>试试更短的关键词，或切换到“全部”分类。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="friends-section" id="friends" aria-labelledby="friends-title">
+      <div class="container">
+        <div class="content-heading">
+          <div>
+            <span class="eyebrow">FRIEND LINKS</span>
+            <h2 id="friends-title">友情链接</h2>
+          </div>
+        </div>
+        <div class="friend-grid" data-friends></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><i class="fas fa-seedling"></i></span><span>SAKURA手记</span></a>
+          <p>一个个人维护的轻量导航站，用于整理常用网站和网络内容。本站仅供个人学习与使用，外部内容由对应网站负责。</p>
+        </div>
+        <div>
+          <h2 class="footer-title">站内导航</h2>
+          <div class="footer-links">
+            <a href="./about/">关于本站</a>
+            <a href="./commit.html">网站提交</a>
+            <a href="#friends">友情链接</a>
+          </div>
+        </div>
+        <div>
+          <h2 class="footer-title">项目信息</h2>
+          <div class="footer-links">
+            <a href="https://skrto.top">skrto.top</a>
+                    <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">京ICP备2023018588号</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-current-year></span> SAKURA手记</span>
+        <span>纯静态 · 无广告 · 无统计追踪</span>
+      </div>
+    </div>
+  </footer>
+
+  <button class="icon-button back-to-top" type="button" data-back-to-top aria-label="返回顶部" title="返回顶部">
+    <i class="fas fa-arrow-up" aria-hidden="true"></i>
+  </button>
+
+  <script src="./assets/js/sites-data.js" defer></script>
+  <script src="./assets/js/sakura-app.js" defer></script>
+</body>
+</html>

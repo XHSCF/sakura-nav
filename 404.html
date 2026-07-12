@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f5fa">
+  <meta name="robots" content="noindex,follow">
+  <title>页面不存在｜SAKURA手记</title>
+  <meta name="description" content="你访问的页面不存在，返回 SAKURA手记继续浏览收藏的网站。">
+  <link rel="canonical" href="https://skrto.top/404.html">
+  <link rel="icon" href="./assets/images/favicon.png">
+  <link rel="stylesheet" href="./assets/fontawesome-5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="./assets/css/sakura.css">
+  <script>
+    (function () {
+      var saved = localStorage.getItem("sakura-theme");
+      document.documentElement.dataset.theme = saved === "light" || saved === "dark"
+        ? saved
+        : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    })();
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="SAKURA手记首页"><span class="brand-mark" aria-hidden="true"><i class="fas fa-seedling"></i></span><span>SAKURA手记</span></a>
+      <div class="header-actions">
+        <button class="icon-button" type="button" data-theme-toggle aria-label="切换深色模式"><i class="fas fa-moon" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="error-page">
+    <div>
+      <p class="error-code" aria-hidden="true">404</p>
+      <h1>这一页暂时找不到</h1>
+      <p>链接可能已经移动、失效，或者地址输入有误。返回首页继续浏览收藏内容吧。</p>
+      <a class="button button-primary" href="./"><i class="fas fa-home" aria-hidden="true"></i>返回首页</a>
+    </div>
+  </main>
+
+  <script src="./assets/js/sakura-app.js" defer></script>
+</body>
+</html>

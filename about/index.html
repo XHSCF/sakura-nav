@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f5fa">
+  <title>关于｜SAKURA手记</title>
+  <meta name="description" content="了解 SAKURA手记：一个个人维护的轻量网址导航与网络内容收藏站。">
+  <meta name="keywords" content="SAKURA手记,关于本站,个人导航">
+  <link rel="canonical" href="https://skrto.top/about/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="SAKURA手记">
+  <meta property="og:title" content="关于｜SAKURA手记">
+  <meta property="og:description" content="一个个人维护的轻量网址导航与网络内容收藏站。">
+  <meta property="og:url" content="https://skrto.top/about/">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="../assets/images/favicon.png">
+  <link rel="stylesheet" href="../assets/fontawesome-5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/sakura.css">
+  <script>
+    (function () {
+      var saved = localStorage.getItem("sakura-theme");
+      document.documentElement.dataset.theme = saved === "light" || saved === "dark"
+        ? saved
+        : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="../" aria-label="SAKURA手记首页">
+        <span class="brand-mark" aria-hidden="true"><i class="fas fa-seedling"></i></span>
+        <span>SAKURA手记</span>
+      </a>
+      <nav class="site-nav" data-site-nav aria-label="主要导航">
+        <a class="nav-link" href="../"><i class="fas fa-home" aria-hidden="true"></i>首页</a>
+        <a class="nav-link" href="./" aria-current="page"><i class="fas fa-book-open" aria-hidden="true"></i>关于</a>
+        <a class="nav-link" href="../commit.html"><i class="fas fa-paper-plane" aria-hidden="true"></i>网站提交</a>
+        <a class="nav-link" href="../#friends"><i class="fas fa-link" aria-hidden="true"></i>友情链接</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-button" type="button" data-theme-toggle aria-label="切换深色模式"><i class="fas fa-moon" aria-hidden="true"></i></button>
+        <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="打开导航菜单" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+    <div class="container">
+      <header class="page-heading">
+        <span class="eyebrow">ABOUT SAKURA</span>
+        <h1>关于 SAKURA手记</h1>
+        <p>把散落在网络各处的常用内容，整理成清楚、轻量、随时可用的个人起始页。</p>
+      </header>
+
+      <article class="prose-card">
+        <h2>这个网站是什么</h2>
+        <p>SAKURA手记是一个个人维护的导航站，用来整理常用网站、动漫影视资源、工具、下载、iOS 以及其他网络内容。它保持纯静态、无广告，不要求登录，也不会建立用户画像。</p>
+
+        <h2>设计原则</h2>
+        <ul class="feature-list">
+          <li><i class="fas fa-feather-alt" aria-hidden="true"></i>轻量、直接，减少不必要的等待</li>
+          <li><i class="fas fa-mobile-alt" aria-hidden="true"></i>手机端优先，兼顾电脑和平板</li>
+          <li><i class="fas fa-moon" aria-hidden="true"></i>跟随系统主题，也支持手动切换</li>
+          <li><i class="fas fa-user-shield" aria-hidden="true"></i>不添加广告和统计追踪脚本</li>
+        </ul>
+
+        <h2>内容说明</h2>
+        <p>本站只提供外部网站的导航入口，不存储或提供第三方网站内容。链接状态和页面内容可能随时间变化，请自行判断并遵守目标网站的服务条款与所在地法律法规。</p>
+
+        <h2>项目维护</h2>
+                        <p>网站数据集中保存在项目的数据文件中，页面由原生 JavaScript 渲染，并通过 GitHub Pages 部署。项目源码可在 <a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">XHSCF/sakura-nav</a> 查看。</p>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i class="fas fa-seedling"></i></span><span>SAKURA手记</span></a>
+          <p>个人维护的轻量网址导航与网络内容收藏站。</p>
+        </div>
+        <div><h2 class="footer-title">站内导航</h2><div class="footer-links"><a href="../">首页</a><a href="../commit.html">网站提交</a><a href="../#friends">友情链接</a></div></div>
+                <div><h2 class="footer-title">项目信息</h2><div class="footer-links"><a href="https://skrto.top">skrto.top</a><a href="https://github.com/XHSCF/sakura-nav" target="_blank" rel="noopener noreferrer">GitHub 仓库</a></div></div>
+      </div>
+      <div class="footer-bottom"><span>© <span data-current-year></span> SAKURA手记</span><span>纯静态 · 无广告 · 无统计追踪</span></div>
+    </div>
+  </footer>
+
+  <button class="icon-button back-to-top" type="button" data-back-to-top aria-label="返回顶部"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+  <script src="../assets/js/sakura-app.js" defer></script>
+</body>
+</html>
