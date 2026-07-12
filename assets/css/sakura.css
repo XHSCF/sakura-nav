@@ -1022,6 +1022,9 @@ select {
   .category-shell {
     margin-bottom: 20px;
     padding: 7px 0;
+    border-block: 0;
+    background: transparent;
+    backdrop-filter: none;
   }
 
   .content-actions {
