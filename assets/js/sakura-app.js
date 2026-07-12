@@ -149,6 +149,8 @@
     const emptyMessage = document.querySelector("[data-empty-message]");
     const categoryBar = document.querySelector("[data-category-bar]");
     const categoryShell = categoryBar?.closest(".category-shell");
+    const categoryScrollLeft = document.querySelector("[data-category-scroll=\"left\"]");
+    const categoryScrollRight = document.querySelector("[data-category-scroll=\"right\"]");
     const viewSwitcher = document.querySelector("[data-view-switcher]");
     const clearRecent = document.querySelector("[data-clear-recent]");
     const siteHeader = document.querySelector(".site-header");
@@ -158,6 +160,7 @@
     const validIds = new Set(siteMap.keys());
     const state = { terms: [], category: "all", view: "all" };
     let scrollRequestToken = 0;
+    let categoryControlFrame = 0;
     empty?.setAttribute("data-result-scroll-target", "empty");
 
     const storedFavorites = readJsonStorage(favoritesKey, []);
@@ -365,6 +368,7 @@
           ? `找到 ${sites.length} / ${data.sites.length} 个站点`
           : `${data.sites.length} 个站点 · ${data.categories.length} 个分类`;
       }
+      scheduleCategoryScrollControls();
     }
 
     function visibleStickyHeight(element) {
@@ -406,6 +410,39 @@
       });
     }
 
+    function updateCategoryScrollControls() {
+      if (!categoryBar || !categoryScrollLeft || !categoryScrollRight) return;
+      if (!window.matchMedia("(min-width: 769px)").matches) {
+        categoryScrollLeft.hidden = true;
+        categoryScrollRight.hidden = true;
+        return;
+      }
+      const maxScrollLeft = Math.max(0, categoryBar.scrollWidth - categoryBar.clientWidth);
+      const hasOverflow = maxScrollLeft > 1;
+      const atStart = categoryBar.scrollLeft <= 1;
+      const atEnd = categoryBar.scrollLeft >= maxScrollLeft - 1;
+      categoryScrollLeft.hidden = !hasOverflow || atStart;
+      categoryScrollRight.hidden = !hasOverflow || atEnd;
+      categoryScrollLeft.disabled = !hasOverflow || atStart;
+      categoryScrollRight.disabled = !hasOverflow || atEnd;
+    }
+
+    function scheduleCategoryScrollControls() {
+      window.cancelAnimationFrame(categoryControlFrame);
+      categoryControlFrame = window.requestAnimationFrame(() => {
+        updateCategoryScrollControls();
+        window.requestAnimationFrame(updateCategoryScrollControls);
+      });
+    }
+
+    function scrollCategories(direction) {
+      if (!categoryBar || !window.matchMedia("(min-width: 769px)").matches) return;
+      categoryBar.scrollBy({
+        left: direction * categoryBar.clientWidth * 0.7,
+        behavior: reducedMotion ? "auto" : "smooth"
+      });
+    }
+
     function scheduleResultScroll() {
       const token = ++scrollRequestToken;
       window.scrollTo({ top: window.scrollY, behavior: "auto" });
@@ -438,6 +475,12 @@
         centerCategoryButton(button);
         scheduleResultScroll();
       });
+      categoryBar.addEventListener("scroll", updateCategoryScrollControls, { passive: true });
+      categoryScrollLeft?.addEventListener("click", () => scrollCategories(-1));
+      categoryScrollRight?.addEventListener("click", () => scrollCategories(1));
+      window.addEventListener("resize", scheduleCategoryScrollControls);
+      if (window.ResizeObserver) new ResizeObserver(scheduleCategoryScrollControls).observe(categoryBar);
+      document.fonts?.ready.then(scheduleCategoryScrollControls);
     }
 
     viewSwitcher?.addEventListener("click", (event) => {
