@@ -28,6 +28,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "trex", name: "团长资源", url: "http://t-rex.tzfile.com/", description: "网盘资源分享。", category: "downloads", keywords: ["团长", "trex", "网盘", "资源"] },
     { id: "kkdm", name: "快快动漫", url: "https://kkdm.xyz/", description: "日韩动漫资源分享。", category: "downloads", keywords: ["快快动漫", "kkdm", "日韩动漫", "下载"] },
     { id: "yinfans", name: "音范丝", url: "https://www.yinfans.me/", description: "4K 蓝光原盘资源。", category: "downloads", keywords: ["音范丝", "yinfans", "4k", "蓝光", "原盘"] },
+    { id: "vcb-studio", name: "VCB-Studio", url: "https://vcb-s.com/", description: "动漫 BDRip 压制作品发布。", category: "downloads", keywords: ["VCB-Studio", "VCB-S", "vcb-s", "VCB压制组", "动漫压制", "BDRip", "动漫资源"], recent: true },
     { id: "yiove-resources", name: "综合资源区", url: "https://bbs.yiove.com/forum-4.htm", description: "影视网盘资源分享。", category: "downloads", keywords: ["yiove", "综合资源", "网盘", "影视"] },
     { id: "srtku", name: "字幕库", url: "https://srtku.com/", description: "字幕分享与下载。", category: "downloads", keywords: ["字幕库", "srtku", "srt", "字幕下载"] },
     { id: "assrt", name: "伪射手网", url: "https://assrt.net/", description: "影视字幕下载。", category: "downloads", keywords: ["伪射手", "assrt", "字幕", "srt"] },
