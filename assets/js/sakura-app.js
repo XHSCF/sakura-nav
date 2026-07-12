@@ -384,6 +384,17 @@
       return headings[0] || null;
     }
 
+    function centerCategoryButton(button) {
+      if (!categoryBar || !button || !window.matchMedia("(max-width: 768px)").matches) return;
+      const maxScrollLeft = Math.max(0, categoryBar.scrollWidth - categoryBar.clientWidth);
+      const targetLeft = button.offsetLeft - (categoryBar.clientWidth - button.offsetWidth) / 2;
+      const nextLeft = Math.min(maxScrollLeft, Math.max(0, targetLeft));
+      categoryBar.scrollTo({
+        left: nextLeft,
+        behavior: reducedMotion ? "auto" : "smooth"
+      });
+    }
+
     function scheduleResultScroll() {
       const token = ++scrollRequestToken;
       window.scrollTo({ top: window.scrollY, behavior: "auto" });
@@ -413,6 +424,7 @@
         state.category = button.dataset.category;
         updatePressed(categoryBar, "category", state.category);
         render();
+        centerCategoryButton(button);
         scheduleResultScroll();
       });
     }

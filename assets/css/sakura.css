@@ -993,8 +993,7 @@ select {
     overscroll-behavior-inline: contain;
   }
 
-  .view-switcher .filter-chip,
-  .category-bar .filter-chip {
+  .view-switcher .filter-chip {
     min-height: 32px;
     padding: 5px 10px;
     font-size: 11px;
@@ -1031,9 +1030,49 @@ select {
   }
 
   .category-bar {
-    padding: 1px 2px 2px;
-    scroll-padding-inline: 2px;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 5px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    box-shadow: var(--shadow-sm);
+    scroll-padding-inline: 5px;
+    scroll-snap-type: x proximity;
     overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .category-bar .filter-chip {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 7px 17px;
+    border: 0;
+    border-radius: 999px;
+    color: var(--muted);
+    background: transparent;
+    box-shadow: none;
+    font-size: 12px;
+    white-space: nowrap;
+    scroll-snap-align: center;
+    transform: none;
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .category-bar .filter-chip:hover {
+    color: var(--primary-strong);
+    transform: none;
+  }
+
+  .category-bar .filter-chip.is-active,
+  .category-bar .filter-chip[aria-pressed="true"] {
+    color: var(--text);
+    background: var(--surface-soft);
+    box-shadow: 0 4px 14px rgba(45, 38, 77, 0.08);
+    transform: none;
   }
 
   .site-group {
