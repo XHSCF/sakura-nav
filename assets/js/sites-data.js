@@ -51,6 +51,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "ios-update-blocker", name: "iOS 屏蔽系统更新", url: "https://f.itsnebula.net/noota-26.mobileconfig", description: "用于屏蔽 iOS 系统更新的描述文件。", category: "ios", keywords: ["ios", "屏蔽更新", "描述文件", "mobileconfig"], addedAt: "2026-07-12" },
     { id: "applewalls", name: "iPhone 壁纸", url: "https://applewalls.com/", description: "iPhone 原图壁纸。", category: "ios", keywords: ["iphone", "applewalls", "壁纸", "wallpaper"], addedAt: "2026-07-12" },
     { id: "ios-icons", name: "图标下载", url: "https://jiejingku.net/icon/", description: "iOS 应用图标下载。", category: "ios", keywords: ["ios", "应用图标", "icon", "捷径库"], addedAt: "2026-07-12" },
+    { id: "douyin-parser", name: "抖音万能解析", url: "https://www.icloud.com/shortcuts/eb7052fb90d640ccafe843419c24fa6c", description: "解析并保存抖音无水印视频的 iOS 快捷指令。", category: "ios", keywords: ["抖音万能解析", "抖音解析", "douyin", "抖音去水印", "无水印视频", "iOS快捷指令"], addedAt: "2026-07-14" },
 
     { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], addedAt: "2026-07-12" },
 
