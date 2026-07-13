@@ -73,7 +73,7 @@ The SVG favicon and brand marks reference this file directly. `favicon.png`, `ap
 - `sakura-favorites`: favorite site IDs
 - `sakura-recent-visits`: up to 12 unique site IDs and timestamps
 
-Malformed, stale, or unavailable localStorage data is ignored safely. Search and filter state is kept only in the current page URL; it is not uploaded or written to localStorage.
+Malformed, stale, or unavailable localStorage data is ignored safely. Search and filter state is written only to the current address bar, not to localStorage, and ordinary filter changes make no additional network request. When a parameterized URL is refreshed or opened, its query string is sent to the hosting service as part of the normal page request.
 
 ## Local preview and validation
 
@@ -85,6 +85,36 @@ python -m http.server 8000
 ```
 
 Open `http://localhost:8000`. The validator checks pages, local references, IDs, categories, icons, placeholders, obsolete deployment wording, mixed content, and sitemap targets without third-party packages.
+
+## Link health checks
+
+The manual-only workflow is stored at:
+
+```text
+.github/workflows/link-health.yml
+```
+
+It has no scheduled trigger. To run it on GitHub, open:
+
+```text
+Repository
+→ Actions
+→ Navigation link health report
+→ Run workflow
+→ select main
+→ Run workflow
+```
+
+After completion, read the report in the job Summary or download the `navigation-link-health-report` artifact. Artifacts are retained for 30 days.
+
+Run the same report locally with:
+
+```bash
+python tools/check_links.py
+python tools/check_links.py --output link-health-report.md
+```
+
+The report never deletes sites, replaces URLs, commits changes, or opens a Pull Request. Results involving 403 responses, TLS errors, Cloudflare challenges, or timeouts require manual review.
 
 ## Cloudflare deployment
 

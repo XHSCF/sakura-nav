@@ -133,7 +133,7 @@ def describe_error(error: object) -> str:
 
 def fetch(url: str, timeout: float) -> Observation:
     observation = request_once(url, "HEAD", timeout)
-    if observation.code in {405, 501}:
+    if observation.code in {403, 405, 406, 501}:
         return request_once(url, "GET", timeout)
     return observation
 
@@ -157,6 +157,8 @@ def check_site(site: Site, timeout: float) -> Result:
     if code in {403, 429} or (code in {403, 429, 503} and cloudflare_or_antibot(observation)):
         return Result(site, observation.final_url, "需要人工确认", detail, "可能存在访问限制、Cloudflare 验证或反爬策略，请在正常浏览器和目标地区人工复核。")
     if code is None:
+        if observation.error.startswith("证书或 TLS 错误："):
+            return Result(site, observation.final_url, "TLS 异常，需要人工确认", detail, "网站可能存在证书链不完整、证书过期或 TLS 配置问题，请使用正常浏览器人工复核；不要仅凭一次自动检查结果删除条目。")
         return Result(site, observation.final_url, "连接失败", detail, "检查 DNS、证书、网络可达性或稍后重试；不要仅凭单次结果删除条目。")
     if 400 <= code < 500:
         return Result(site, observation.final_url, "4xx", detail, "人工确认链接、权限、地区限制及站点访问策略。")

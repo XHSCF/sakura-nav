@@ -93,7 +93,7 @@ assets/images/icons/sakura-mark.svg
 - `sakura-favorites`：用户收藏的网站 ID 数组
 - `sakura-recent-visits`：最多 12 条不同网站的 ID 与访问时间
 
-损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。搜索条件只会写入当前页面网址，不会上传或写入 localStorage。
+损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。搜索和筛选条件只写入当前地址栏，不写入 localStorage，正常筛选操作不会发起额外网络请求；刷新或打开带参数的网址时，查询参数会随正常页面请求发送给托管服务。
 
 ## 本地预览与验证
 
@@ -105,6 +105,36 @@ python -m http.server 8000
 ```
 
 然后访问 `http://localhost:8000`。验证脚本不需要安装第三方 Python 包，会检查主要页面、静态资源、网站 ID、分类、图标、占位内容、旧部署说明、Mixed Content 和 sitemap。
+
+## 链接健康检查
+
+链接检查工作流位于：
+
+```text
+.github/workflows/link-health.yml
+```
+
+该工作流只支持手动运行，不会定时自动执行。在 GitHub 网页中依次选择：
+
+```text
+仓库
+→ Actions
+→ Navigation link health report
+→ Run workflow
+→ 选择 main
+→ Run workflow
+```
+
+运行完成后，可在 Summary 中直接查看报告，也可在 Artifacts 中下载 `navigation-link-health-report`；Artifact 保存 30 天。
+
+本地运行：
+
+```bash
+python tools/check_links.py
+python tools/check_links.py --output link-health-report.md
+```
+
+报告不会自动删除网站、替换网址、提交修改或创建 Pull Request。403、TLS、Cloudflare 验证、超时等结果都需要人工确认。
 
 ## Cloudflare 自动部署
 
