@@ -20,12 +20,12 @@
 
 ## 当前板块对应关系
 
-- 影视在线观看 → `movies`
+- 在线影视 → `movies`
 - 动漫番剧 → `anime`
 - 资源下载 → `downloads`
 - 在线工具 → `tools`
 - iOS 相关 → `ios`
-- 游戏相关 → `games`
+- 游戏专区 → `games`
 - 软件专区 → `software`
 
 旧的 `ppt` 分类参数仅作为 `software` 的 URL 兼容别名保留；新增或修改网站数据时必须使用 `software`，不得继续写入 `ppt`。

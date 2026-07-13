@@ -1,11 +1,11 @@
 window.SAKURA_DATA = Object.freeze({
   categories: [
-    { id: "movies", name: "影视在线观看", icon: "fa-film" },
+    { id: "movies", name: "在线影视", icon: "fa-film" },
     { id: "anime", name: "动漫番剧", icon: "fa-play-circle" },
     { id: "downloads", name: "资源下载", icon: "fa-cloud-download-alt" },
     { id: "tools", name: "在线工具", icon: "fa-tools" },
     { id: "ios", name: "iOS 相关", icon: "fa-mobile-alt" },
-    { id: "games", name: "游戏相关", icon: "fa-gamepad" },
+    { id: "games", name: "游戏专区", icon: "fa-gamepad" },
     { id: "software", name: "软件专区", icon: "fa-laptop-code" }
   ],
   sites: [
