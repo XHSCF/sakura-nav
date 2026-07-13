@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 from urllib.parse import urlparse
 from xml.etree import ElementTree
@@ -113,6 +114,33 @@ def validate() -> tuple[list[str], list[str]]:
             urls.append(values["url"])
             if re.search(r"\bicon\s*:", block):
                 errors.append(f"网站 {site_id} 不应包含 icon 字段")
+            if re.search(r"\brecent\s*:", block):
+                errors.append(f"网站 {site_id} 仍使用已停用的 recent 字段")
+            added_at = re.search(r'\baddedAt\s*:\s*"([^"]*)"', block)
+            if re.search(r"\baddedAt\s*:", block) and not added_at:
+                errors.append(f"网站 {site_id} 的 addedAt 必须为 YYYY-MM-DD 字符串")
+            elif added_at:
+                value = added_at.group(1)
+                try:
+                    parsed_date = date.fromisoformat(value)
+                    if parsed_date.isoformat() != value:
+                        raise ValueError
+                except ValueError:
+                    errors.append(f"网站 {site_id} 的 addedAt 不是合法 YYYY-MM-DD 日期：{value}")
+            for flag in ("featured", "popular"):
+                flag_match = re.search(rf"\b{flag}\s*:\s*([^,}}\n]+)", block)
+                if flag_match and flag_match.group(1).strip() not in {"true", "false"}:
+                    errors.append(f"网站 {site_id} 的 {flag} 必须为布尔值")
+            keywords_match = re.search(r"\bkeywords\s*:\s*(\[[^\]]*\])", block)
+            if not keywords_match:
+                errors.append(f"网站 {site_id} 的 keywords 必须为字符串数组")
+            else:
+                try:
+                    keywords = json.loads(keywords_match.group(1))
+                    if not isinstance(keywords, list) or not all(isinstance(keyword, str) for keyword in keywords):
+                        raise ValueError
+                except (json.JSONDecodeError, ValueError):
+                    errors.append(f"网站 {site_id} 的 keywords 必须为字符串数组")
             if values["category"] not in category_ids:
                 errors.append(f"网站 {site_id} 引用了不存在的分类：{values['category']}")
             if values["url"].startswith("http://"):

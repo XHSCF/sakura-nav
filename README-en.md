@@ -52,11 +52,12 @@ Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and 
   url: "https://example.com/",
   description: "A short description",
   category: "tools",
-  keywords: ["example"]
+  keywords: ["example"],
+  addedAt: "2026-07-13"
 }
 ```
 
-Optional flags include `featured`, `recent`, and `popular`. These labels are manually curated and do not represent measured traffic statistics.
+Optional fields include the Boolean flags `featured` and `popular`, plus `addedAt` as a valid `YYYY-MM-DD` collection date. The recent view sorts dated entries from newest to oldest and shows at most 12. Curated labels do not represent measured traffic statistics.
 
 Do not add an `icon` field and do not use Google favicon, destination-site favicons, or any remote icon service. Every website card automatically uses the single local vector source:
 
@@ -72,7 +73,7 @@ The SVG favicon and brand marks reference this file directly. `favicon.png`, `ap
 - `sakura-favorites`: favorite site IDs
 - `sakura-recent-visits`: up to 12 unique site IDs and timestamps
 
-Malformed, stale, or unavailable localStorage data is ignored safely. Search queries are not stored, and no local data is uploaded.
+Malformed, stale, or unavailable localStorage data is ignored safely. Search and filter state is kept only in the current page URL; it is not uploaded or written to localStorage.
 
 ## Local preview and validation
 

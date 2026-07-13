@@ -262,7 +262,7 @@
 
     function matchesView(site) {
       if (state.view === "featured") return Boolean(site.featured);
-      if (state.view === "recent") return Boolean(site.recent);
+      if (state.view === "recent") return Boolean(site.addedAt);
       if (state.view === "popular") return Boolean(site.popular);
       if (state.view === "favorites") return favorites.has(site.id);
       if (state.view === "history") return recentVisits.some((entry) => entry.id === site.id);
@@ -287,6 +287,9 @@
       if (state.view === "history") {
         const order = new Map(recentVisits.map((entry, index) => [entry.id, index]));
         sites.sort((a, b) => order.get(a.id) - order.get(b.id));
+      } else if (state.view === "recent") {
+        sites.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+        return sites.slice(0, 12);
       }
       return sites;
     }
@@ -410,8 +413,11 @@
       gridRoot.replaceChildren();
       gridRoot.classList.toggle("hide-card-categories", state.view === "all" && !state.terms.length);
 
-      if (state.view === "history" && sites.length) {
-        fragment.appendChild(createGroup({ id: "history", name: "最近访问", icon: "fa-history" }, sites));
+      if ((state.view === "history" || state.view === "recent") && sites.length) {
+        const group = state.view === "history"
+          ? { id: "history", name: "最近访问", icon: "fa-history" }
+          : { id: "recent", name: "最近收录", icon: "fa-clock" };
+        fragment.appendChild(createGroup(group, sites));
       } else {
         data.categories.forEach((category) => {
           const categorySites = sites.filter((site) => site.category === category.id);

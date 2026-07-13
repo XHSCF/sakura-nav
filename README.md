@@ -64,14 +64,15 @@ assets/js/sites-data.js
   description: "一句简短描述",
   category: "tools",
   keywords: ["缩写", "别名", "用途"],
-  featured: true
+  featured: true,
+  addedAt: "2026-07-13"
 }
 ```
 
 可选标记：
 
 - `featured`：站长推荐
-- `recent`：最近收录
+- `addedAt`：收录日期，使用合法的 `YYYY-MM-DD`；“最近收录”按日期倒序显示最多 12 条
 - `popular`：人工整理的热门视图，不代表真实流量排名
 
 新增网站不需要、也不允许填写 `icon` 字段。所有网站卡片自动使用统一的本地樱花图标，不会请求 Google favicon、目标网站 favicon 或其他远程图标服务。
@@ -92,7 +93,7 @@ assets/images/icons/sakura-mark.svg
 - `sakura-favorites`：用户收藏的网站 ID 数组
 - `sakura-recent-visits`：最多 12 条不同网站的 ID 与访问时间
 
-损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。本站不记录搜索内容。
+损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。搜索条件只会写入当前页面网址，不会上传或写入 localStorage。
 
 ## 本地预览与验证
 
