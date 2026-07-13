@@ -55,6 +55,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], addedAt: "2026-07-12" },
 
     { id: "qbittorrent", name: "qBittorrent", url: "https://www.qbittorrent.org/", description: "开源、无广告的跨平台 BitTorrent 客户端。", category: "software", keywords: ["qBittorrent", "qbittorrent", "BitTorrent", "BT下载", "磁力链接", "下载工具"], addedAt: "2026-07-14" },
-    { id: "bitcomet", name: "BitComet", url: "https://www.bitcomet.com/en", description: "支持 BitTorrent、HTTP 与 FTP 的下载客户端。", category: "software", keywords: ["BitComet", "bitcomet", "比特彗星", "BitTorrent", "BT下载", "磁力链接"], addedAt: "2026-07-14" }
+    { id: "bitcomet", name: "BitComet", url: "https://www.bitcomet.com/en", description: "支持 BitTorrent、HTTP 与 FTP 的下载客户端。", category: "software", keywords: ["BitComet", "bitcomet", "比特彗星", "BitTorrent", "BT下载", "磁力链接"], addedAt: "2026-07-14" },
+    { id: "trackerslist", name: "TrackersList", url: "https://trackerslist.com/#/zh", description: "两款 BT 客户端配套的公共 Tracker。", category: "software", keywords: ["TrackersList", "trackerslist", "BT Tracker", "Tracker列表", "公共Tracker", "qBittorrent", "BitComet", "BT下载"], addedAt: "2026-07-14" }
   ]
 });
