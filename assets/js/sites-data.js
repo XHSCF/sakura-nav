@@ -56,6 +56,9 @@ window.SAKURA_DATA = Object.freeze({
 
     { id: "qbittorrent", name: "qBittorrent", url: "https://www.qbittorrent.org/", description: "开源、无广告的跨平台 BitTorrent 客户端。", category: "software", keywords: ["qBittorrent", "qbittorrent", "BitTorrent", "BT下载", "磁力链接", "下载工具"], addedAt: "2026-07-14" },
     { id: "bitcomet", name: "BitComet", url: "https://www.bitcomet.com/en", description: "支持 BitTorrent、HTTP 与 FTP 的下载客户端。", category: "software", keywords: ["BitComet", "bitcomet", "比特彗星", "BitTorrent", "BT下载", "磁力链接"], addedAt: "2026-07-14" },
-    { id: "trackerslist", name: "TrackersList", url: "https://trackerslist.com/#/zh", description: "两款 BT 客户端配套的公共 Tracker。", category: "software", keywords: ["TrackersList", "trackerslist", "BT Tracker", "Tracker列表", "公共Tracker", "qBittorrent", "BitComet", "BT下载"], addedAt: "2026-07-14" }
+    { id: "trackerslist", name: "TrackersList", url: "https://trackerslist.com/#/zh", description: "两款 BT 客户端配套的公共 Tracker。", category: "software", keywords: ["TrackersList", "trackerslist", "BT Tracker", "Tracker列表", "公共Tracker", "qBittorrent", "BitComet", "BT下载"], addedAt: "2026-07-14" },
+    { id: "potplayer", name: "PotPlayer", url: "https://potplayer.tv/?lang=zh_CN", description: "支持多格式、字幕和硬件加速的 Windows 播放器。", category: "software", keywords: ["PotPlayer", "potplayer", "视频播放器", "影音播放", "字幕", "硬件加速"], addedAt: "2026-07-14" },
+    { id: "mpc-be", name: "MPC-BE", url: "https://sourceforge.net/projects/mpcbe/", description: "轻量开源的 Windows 音视频播放器。", category: "software", keywords: ["MPC-BE", "mpcbe", "Media Player Classic", "视频播放器", "音频播放器", "开源播放器"], addedAt: "2026-07-14" },
+    { id: "7-zip", name: "7-Zip", url: "https://www.7-zip.org/", description: "免费开源的高压缩率文件压缩与解压工具。", category: "software", keywords: ["7-Zip", "7zip", "压缩软件", "解压工具", "7z", "zip", "rar"], addedAt: "2026-07-14" }
   ]
 });
