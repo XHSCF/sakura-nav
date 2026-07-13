@@ -31,6 +31,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "yiove-resources", name: "综合资源区", url: "https://bbs.yiove.com/forum-4.htm", description: "影视网盘资源分享。", category: "downloads", keywords: ["yiove", "综合资源", "网盘", "影视"] },
     { id: "srtku", name: "字幕库", url: "https://srtku.com/", description: "字幕分享与下载。", category: "downloads", keywords: ["字幕库", "srtku", "srt", "字幕下载"] },
     { id: "assrt", name: "伪射手网", url: "https://assrt.net/", description: "影视字幕下载。", category: "downloads", keywords: ["伪射手", "assrt", "字幕", "srt"] },
+    { id: "anime-subtitles", name: "Anime字幕论坛", url: "https://bbs.acgrip.com/", description: "日漫字幕分享与交流论坛。", category: "downloads", keywords: ["Anime字幕论坛", "ACG.RIP", "acgrip", "日漫字幕", "动漫字幕", "外挂字幕"], addedAt: "2026-07-13" },
     { id: "zlibrary", name: "书籍下载", url: "https://z-library.sk/", description: "书籍与小说资源。", category: "downloads", keywords: ["z-library", "zlibrary", "电子书", "小说"] },
     { id: "wallhaven", name: "壁纸下载", url: "https://wallhaven.cc/", description: "高质量壁纸浏览与下载。", category: "downloads", keywords: ["wallhaven", "壁纸", "wallpaper", "桌面"] },
     { id: "haowallpaper", name: "哲风壁纸", url: "https://haowallpaper.com/", description: "高清电脑与手机壁纸浏览下载。", category: "downloads", keywords: ["哲风壁纸", "Hao Wallpaper", "haowallpaper", "高清壁纸", "壁纸下载"], addedAt: "2026-07-13" },
