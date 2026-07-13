@@ -43,6 +43,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "gitapp-tools", name: "在线工具助手", url: "https://tool.gitapp.cn", description: "常见开发与文本处理工具。", category: "tools", keywords: ["gitapp", "开发工具", "在线工具", "文本处理"], featured: true, popular: true },
     { id: "ifixit", name: "iFixit", url: "https://zh.ifixit.com/", description: "免费的设备维修指南。", category: "tools", keywords: ["ifixit", "维修", "拆机", "指南"], addedAt: "2026-07-12" },
     { id: "resizeon", name: "Resizeon", url: "https://resizeon.com/zh-cn/", description: "在线调整图片尺寸。", category: "tools", keywords: ["resizeon", "图片尺寸", "resize", "缩放"], addedAt: "2026-07-12" },
+    { id: "boce", name: "拨测", url: "https://www.boce.com/", description: "网站测速与网络检测平台。", category: "tools", keywords: ["拨测", "BOCE", "boce", "网站测速", "网络检测"], addedAt: "2026-07-13" },
 
     { id: "appstore-price", name: "App Store 价格查询", url: "https://app.vbr.me/", description: "查询 App Store 全球应用定价。", category: "ios", keywords: ["app store", "价格查询", "应用定价", "ios"], addedAt: "2026-07-12" },
     { id: "ios-update-blocker", name: "iOS 屏蔽系统更新", url: "https://f.itsnebula.net/noota-26.mobileconfig", description: "用于屏蔽 iOS 系统更新的描述文件。", category: "ios", keywords: ["ios", "屏蔽更新", "描述文件", "mobileconfig"], addedAt: "2026-07-12" },
