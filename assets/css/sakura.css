@@ -577,9 +577,10 @@ select {
 
 .category-bar .filter-chip.is-active,
 .category-bar .filter-chip[aria-pressed="true"] {
-  color: var(--text);
-  background: var(--surface-soft);
-  box-shadow: 0 4px 14px rgba(45, 38, 77, 0.08);
+  color: var(--surface-solid);
+  background: linear-gradient(135deg, var(--primary-strong), var(--primary));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 30%, transparent);
+  font-weight: 780;
   transform: none;
 }
 
@@ -1345,9 +1346,10 @@ select {
 
   .category-bar .filter-chip.is-active,
   .category-bar .filter-chip[aria-pressed="true"] {
-    color: var(--text);
-    background: var(--surface-soft);
-    box-shadow: 0 4px 14px rgba(45, 38, 77, 0.08);
+    color: var(--surface-solid);
+    background: linear-gradient(135deg, var(--primary-strong), var(--primary));
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 30%, transparent);
+    font-weight: 780;
     transform: none;
   }
 
