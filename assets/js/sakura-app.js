@@ -156,6 +156,7 @@
     const contentSection = gridRoot.closest(".content-section");
     const shortcut = document.querySelector(".search-shortcut");
     const siteHeader = document.querySelector(".site-header");
+    const accessNotice = document.querySelector("[data-access-notice]");
     const siteIconPath = "assets/images/icons/sakura-mark.svg";
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
@@ -449,6 +450,7 @@
     }
 
     function activeResultTarget() {
+      if (accessNotice) return accessNotice;
       if (empty?.classList.contains("is-visible")) return empty;
       const headings = Array.from(gridRoot.querySelectorAll("[data-result-scroll-target]"));
       if (state.category !== "all") {
