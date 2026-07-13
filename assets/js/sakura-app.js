@@ -158,6 +158,7 @@
     const siteHeader = document.querySelector(".site-header");
     const siteIconPath = "assets/images/icons/sakura-mark.svg";
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
+    const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
     const validViews = new Set(Array.from(viewSwitcher?.querySelectorAll("[data-view]") || [], (button) => button.dataset.view));
@@ -173,7 +174,8 @@
     function restoreUrlState() {
       const params = new URLSearchParams(window.location.search);
       const query = params.get("q") || "";
-      const category = params.get("category") || "all";
+      const requestedCategory = params.get("category") || "all";
+      const category = categoryAliases.get(requestedCategory) || requestedCategory;
       const view = params.get("view") || "all";
       if (search) search.value = query;
       state.terms = queryTerms(query);

@@ -6,7 +6,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "tools", name: "在线工具", icon: "fa-tools" },
     { id: "ios", name: "iOS 相关", icon: "fa-mobile-alt" },
     { id: "games", name: "游戏相关", icon: "fa-gamepad" },
-    { id: "ppt", name: "软件专区", icon: "fa-laptop-code" }
+    { id: "software", name: "软件专区", icon: "fa-laptop-code" }
   ],
   sites: [
     { id: "aiyingyu", name: "爱美剧网", url: "https://m.aiyingyu.net/", description: "美剧在线观看。", category: "movies", keywords: ["美剧", "英剧", "aiyingyu"], featured: true, popular: true },
@@ -54,7 +54,7 @@ window.SAKURA_DATA = Object.freeze({
 
     { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], addedAt: "2026-07-12" },
 
-    { id: "qbittorrent", name: "qBittorrent", url: "https://www.qbittorrent.org/", description: "开源、无广告的跨平台 BitTorrent 客户端。", category: "ppt", keywords: ["qBittorrent", "qbittorrent", "BitTorrent", "BT下载", "磁力链接", "下载工具"], addedAt: "2026-07-14" },
-    { id: "bitcomet", name: "BitComet", url: "https://www.bitcomet.com/en", description: "支持 BitTorrent、HTTP 与 FTP 的下载客户端。", category: "ppt", keywords: ["BitComet", "bitcomet", "比特彗星", "BitTorrent", "BT下载", "磁力链接"], addedAt: "2026-07-14" }
+    { id: "qbittorrent", name: "qBittorrent", url: "https://www.qbittorrent.org/", description: "开源、无广告的跨平台 BitTorrent 客户端。", category: "software", keywords: ["qBittorrent", "qbittorrent", "BitTorrent", "BT下载", "磁力链接", "下载工具"], addedAt: "2026-07-14" },
+    { id: "bitcomet", name: "BitComet", url: "https://www.bitcomet.com/en", description: "支持 BitTorrent、HTTP 与 FTP 的下载客户端。", category: "software", keywords: ["BitComet", "bitcomet", "比特彗星", "BitTorrent", "BT下载", "磁力链接"], addedAt: "2026-07-14" }
   ]
 });
