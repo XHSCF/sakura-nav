@@ -100,7 +100,7 @@
       });
 
       window.addEventListener("resize", () => {
-        if (window.innerWidth > 760) closeMenu();
+        if (window.innerWidth > 768) closeMenu();
       });
     }
 
@@ -153,15 +153,47 @@
     const categoryScrollRight = document.querySelector("[data-category-scroll=\"right\"]");
     const viewSwitcher = document.querySelector("[data-view-switcher]");
     const clearRecent = document.querySelector("[data-clear-recent]");
+    const contentSection = gridRoot.closest(".content-section");
+    const shortcut = document.querySelector(".search-shortcut");
     const siteHeader = document.querySelector(".site-header");
     const siteIconPath = "assets/images/icons/sakura-mark.svg";
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
+    const validViews = new Set(Array.from(viewSwitcher?.querySelectorAll("[data-view]") || [], (button) => button.dataset.view));
     const state = { terms: [], category: "all", view: "all" };
     let scrollRequestToken = 0;
     let categoryControlFrame = 0;
+    let selectedCardIndex = -1;
     empty?.setAttribute("data-result-scroll-target", "empty");
+
+    const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
+    if (shortcut) shortcut.textContent = /Mac|iPhone|iPad|iPod/i.test(platform) ? "⌘ K" : "Ctrl K";
+
+    function restoreUrlState() {
+      const params = new URLSearchParams(window.location.search);
+      const query = params.get("q") || "";
+      const category = params.get("category") || "all";
+      const view = params.get("view") || "all";
+      if (search) search.value = query;
+      state.terms = queryTerms(query);
+      state.category = category === "all" || categoryMap.has(category) ? category : "all";
+      state.view = validViews.has(view) ? view : "all";
+    }
+
+    function updateUrlState() {
+      const url = new URL(window.location.href);
+      const query = search?.value.trim() || "";
+      if (query) url.searchParams.set("q", query);
+      else url.searchParams.delete("q");
+      if (state.category !== "all") url.searchParams.set("category", state.category);
+      else url.searchParams.delete("category");
+      if (state.view !== "all") url.searchParams.set("view", state.view);
+      else url.searchParams.delete("view");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+
+    restoreUrlState();
 
     const storedFavorites = readJsonStorage(favoritesKey, []);
     const favorites = new Set(
@@ -306,6 +338,31 @@
       return article;
     }
 
+    function resetKeyboardSelection() {
+      selectedCardIndex = -1;
+      gridRoot.querySelectorAll(".site-card.is-keyboard-selected").forEach((card) => {
+        card.classList.remove("is-keyboard-selected");
+      });
+    }
+
+    function moveKeyboardSelection(direction) {
+      const cards = Array.from(gridRoot.querySelectorAll(".site-card"));
+      if (!cards.length) return;
+      cards.forEach((card) => card.classList.remove("is-keyboard-selected"));
+      selectedCardIndex = selectedCardIndex < 0
+        ? (direction > 0 ? 0 : cards.length - 1)
+        : (selectedCardIndex + direction + cards.length) % cards.length;
+      const card = cards[selectedCardIndex];
+      card.classList.add("is-keyboard-selected");
+      card.scrollIntoView({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
+    }
+
+    function openKeyboardSelection() {
+      const cards = Array.from(gridRoot.querySelectorAll(".site-card"));
+      const card = cards[selectedCardIndex];
+      card?.querySelector(".site-card-link")?.click();
+    }
+
     function createGroup(category, sites) {
       const section = document.createElement("section");
       section.className = "site-group";
@@ -347,9 +404,11 @@
 
     function render() {
       scrollRequestToken += 1;
+      resetKeyboardSelection();
       const sites = filteredSites();
       const fragment = document.createDocumentFragment();
       gridRoot.replaceChildren();
+      gridRoot.classList.toggle("hide-card-categories", state.view === "all" && !state.terms.length);
 
       if (state.view === "history" && sites.length) {
         fragment.appendChild(createGroup({ id: "history", name: "最近访问", icon: "fa-history" }, sites));
@@ -362,7 +421,9 @@
 
       gridRoot.appendChild(fragment);
       updateEmptyState(sites.length);
-      if (clearRecent) clearRecent.hidden = !(state.view === "history" && recentVisits.length > 0);
+      const showClearRecent = state.view === "history" && recentVisits.length > 0;
+      if (clearRecent) clearRecent.hidden = !showClearRecent;
+      contentSection?.classList.toggle("has-history-action", showClearRecent);
       if (result) {
         result.textContent = state.terms.length || state.category !== "all" || state.view !== "all"
           ? `找到 ${sites.length} / ${data.sites.length} 个站点`
@@ -471,6 +532,7 @@
         if (!button) return;
         state.category = button.dataset.category;
         updatePressed(categoryBar, "category", state.category);
+        updateUrlState();
         render();
         centerCategoryButton(button);
         scheduleResultScroll();
@@ -488,6 +550,7 @@
       if (!button) return;
       state.view = button.dataset.view;
       updatePressed(viewSwitcher, "view", state.view);
+      updateUrlState();
       render();
       centerViewButton(button);
       scheduleResultScroll();
@@ -503,17 +566,27 @@
       search.addEventListener("input", () => {
         state.terms = queryTerms(search.value);
         clear?.classList.toggle("is-visible", Boolean(state.terms.length));
-        const shortcut = document.querySelector(".search-shortcut");
         if (shortcut) shortcut.hidden = Boolean(state.terms.length);
+        updateUrlState();
         render();
+      });
+
+      search.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          moveKeyboardSelection(event.key === "ArrowDown" ? 1 : -1);
+        } else if (event.key === "Enter" && selectedCardIndex >= 0) {
+          event.preventDefault();
+          openKeyboardSelection();
+        }
       });
 
       clear?.addEventListener("click", () => {
         search.value = "";
         state.terms = [];
         clear.classList.remove("is-visible");
-        const shortcut = document.querySelector(".search-shortcut");
         if (shortcut) shortcut.hidden = false;
+        updateUrlState();
         render();
         search.focus();
       });
@@ -528,14 +601,19 @@
           search.value = "";
           state.terms = [];
           clear?.classList.remove("is-visible");
-          const shortcut = document.querySelector(".search-shortcut");
           if (shortcut) shortcut.hidden = false;
+          updateUrlState();
           render();
           search.blur();
         }
       });
     }
 
+    updatePressed(categoryBar, "category", state.category);
+    updatePressed(viewSwitcher, "view", state.view);
+    clear?.classList.toggle("is-visible", Boolean(state.terms.length));
+    if (shortcut) shortcut.hidden = Boolean(state.terms.length);
+    updateUrlState();
     render();
   }
 
