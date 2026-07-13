@@ -3,10 +3,10 @@ window.SAKURA_DATA = Object.freeze({
     { id: "movies", name: "影视在线观看", icon: "fa-film" },
     { id: "anime", name: "动漫番剧", icon: "fa-play-circle" },
     { id: "downloads", name: "资源下载", icon: "fa-cloud-download-alt" },
-    { id: "tools", name: "工具相关", icon: "fa-tools" },
+    { id: "tools", name: "在线工具", icon: "fa-tools" },
     { id: "ios", name: "iOS 相关", icon: "fa-mobile-alt" },
     { id: "games", name: "游戏相关", icon: "fa-gamepad" },
-    { id: "ppt", name: "PPT 资源", icon: "fa-file-powerpoint" }
+    { id: "ppt", name: "软件专区", icon: "fa-laptop-code" }
   ],
   sites: [
     { id: "aiyingyu", name: "爱美剧网", url: "https://m.aiyingyu.net/", description: "美剧在线观看。", category: "movies", keywords: ["美剧", "英剧", "aiyingyu"], featured: true, popular: true },
@@ -52,7 +52,6 @@ window.SAKURA_DATA = Object.freeze({
     { id: "applewalls", name: "iPhone 壁纸", url: "https://applewalls.com/", description: "iPhone 原图壁纸。", category: "ios", keywords: ["iphone", "applewalls", "壁纸", "wallpaper"], addedAt: "2026-07-12" },
     { id: "ios-icons", name: "图标下载", url: "https://jiejingku.net/icon/", description: "iOS 应用图标下载。", category: "ios", keywords: ["ios", "应用图标", "icon", "捷径库"], addedAt: "2026-07-12" },
 
-    { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], addedAt: "2026-07-12" },
-    { id: "500d", name: "500丁", url: "http://ppt.500d.me/", description: "PPT 模板共享平台。", category: "ppt", keywords: ["500丁", "500d", "ppt", "模板"], addedAt: "2026-07-12" }
+    { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], addedAt: "2026-07-12" }
   ]
 });
