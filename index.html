@@ -32,16 +32,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./assets/fontawesome-5.15.4/css/all.min.css">
   <link rel="stylesheet" href="./assets/css/sakura.css">
-  <script>
-    (function () {
-      var saved = null;
-      try { saved = localStorage.getItem("sakura-theme"); } catch (_) {}
-      var theme = saved === "light" || saved === "dark"
-        ? saved
-        : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      document.documentElement.dataset.theme = theme;
-    })();
-  </script>
+  <script src="./assets/js/theme-init.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">跳到主要内容</a>
@@ -53,7 +44,7 @@
         <span>SAKURA手记</span>
       </a>
 
-      <nav class="site-nav" data-site-nav aria-label="主要导航">
+      <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="主要导航">
         <a class="nav-link" href="./" aria-current="page"><i class="fas fa-home" aria-hidden="true"></i>首页</a>
         <a class="nav-link" href="./about/"><i class="fas fa-book-open" aria-hidden="true"></i>关于</a>
       </nav>
@@ -62,7 +53,7 @@
         <button class="icon-button" type="button" data-theme-toggle aria-label="切换深色模式" title="深色模式">
           <i class="fas fa-moon" aria-hidden="true"></i>
         </button>
-        <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="打开导航菜单" aria-expanded="false">
+        <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="打开导航菜单" aria-controls="primary-navigation" aria-expanded="false">
           <i class="fas fa-bars" aria-hidden="true"></i>
         </button>
       </div>
@@ -79,7 +70,7 @@
         </div>
 
         <div class="search-wrap">
-          <form class="search-box" role="search" onsubmit="return false">
+          <form class="search-box" role="search" data-search-form>
             <i class="fas fa-search search-icon" aria-hidden="true"></i>
             <label class="sr-only" for="site-search">搜索网站</label>
             <input class="search-input" id="site-search" type="search" data-site-search placeholder="搜索网站、描述或分类…" autocomplete="off" spellcheck="false">
@@ -94,7 +85,7 @@
           </div>
         </div>
 
-        <div class="view-switcher" data-view-switcher aria-label="推荐视图">
+        <div class="view-switcher" data-view-switcher role="group" aria-label="推荐视图">
           <button class="filter-chip is-active" type="button" data-view="all" aria-pressed="true">全部站点</button>
           <button class="filter-chip" type="button" data-view="featured" aria-pressed="false"><i class="fas fa-seedling" aria-hidden="true"></i> 站长推荐</button>
           <button class="filter-chip" type="button" data-view="recent" aria-pressed="false"><i class="fas fa-clock" aria-hidden="true"></i> 最近收录</button>
@@ -125,7 +116,7 @@
             <button class="category-scroll-button" type="button" data-category-scroll="left" aria-label="向左滚动网站分类" hidden>
               <i class="fas fa-chevron-left" aria-hidden="true"></i>
             </button>
-            <div class="category-bar" data-category-bar aria-label="网站分类"></div>
+            <div class="category-bar" data-category-bar role="group" aria-label="网站分类"></div>
             <button class="category-scroll-button" type="button" data-category-scroll="right" aria-label="向右滚动网站分类" hidden>
               <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </button>
@@ -137,6 +128,17 @@
         <div class="access-notice" role="note" data-access-notice>
           <i class="fas fa-info-circle" aria-hidden="true"></i>
           <span>部分站点可能因网络环境、地区限制、临时维护或域名失效而无法访问，可尝试切换网络环境或使用合规代理访问。请注意识别第三方网站安全风险。</span>
+        </div>
+        <div class="content-utilities" role="group" aria-label="页面工具">
+          <button class="utility-button" type="button" data-copy-view>
+            <i class="fas fa-link" aria-hidden="true"></i>
+            <span data-copy-view-label>复制当前视图链接</span>
+          </button>
+          <a class="utility-button" href="https://github.com/XHSCF/sakura-nav/issues/new?title=%E5%A4%B1%E6%95%88%E9%93%BE%E6%8E%A5%E5%8F%8D%E9%A6%88&amp;body=%E8%AF%B7%E5%A1%AB%E5%86%99%E7%BD%91%E7%AB%99%E5%90%8D%E7%A7%B0%E3%80%81%E9%93%BE%E6%8E%A5%E5%92%8C%E9%97%AE%E9%A2%98%E8%AF%B4%E6%98%8E%E3%80%82" target="_blank" rel="noopener noreferrer">
+            <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+            反馈失效链接
+          </a>
+          <span class="sr-only" role="status" aria-live="polite" data-copy-status></span>
         </div>
         <div data-site-groups></div>
         <div class="empty-state" data-empty-state role="status">

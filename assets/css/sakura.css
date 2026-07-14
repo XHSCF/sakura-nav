@@ -9,6 +9,8 @@
   --line: rgba(62, 54, 92, 0.11);
   --primary: #7565d9;
   --primary-strong: #5c4fc1;
+  --accent-foreground: #ffffff;
+  --favorite-foreground: #252338;
   --pink: #e985a7;
   --blue: #6f9ee8;
   --danger: #c9566f;
@@ -39,6 +41,8 @@
   --line: rgba(229, 224, 255, 0.1);
   --primary: #a99cf3;
   --primary-strong: #c4bbff;
+  --accent-foreground: #171a24;
+  --favorite-foreground: #171a24;
   --pink: #f29ab6;
   --blue: #86afea;
   --danger: #f18ca1;
@@ -124,7 +128,7 @@ select {
   left: 8px;
   padding: 9px 14px;
   border-radius: 10px;
-  color: #fff;
+  color: var(--accent-foreground);
   background: var(--primary-strong);
   transform: translateY(-150%);
 }
@@ -376,7 +380,7 @@ select {
 }
 
 .search-clear:hover {
-  color: #fff;
+  color: var(--accent-foreground);
   background: var(--primary);
 }
 
@@ -444,8 +448,8 @@ select {
 .filter-chip.is-active,
 .filter-chip[aria-pressed="true"] {
   border-color: transparent;
-  color: #fff;
-  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, var(--pink)));
+  color: var(--accent-foreground);
+  background: linear-gradient(135deg, var(--primary-strong), var(--primary));
   box-shadow: 0 8px 22px color-mix(in srgb, var(--primary) 23%, transparent);
 }
 
@@ -465,8 +469,8 @@ select {
 
 .view-switcher .filter-chip.is-active,
 .view-switcher .filter-chip[aria-pressed="true"] {
-  color: #fff;
-  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 76%, var(--pink)));
+  color: var(--accent-foreground);
+  background: linear-gradient(135deg, var(--primary-strong), var(--primary));
   box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 18%, transparent);
   transform: none;
 }
@@ -581,7 +585,7 @@ select {
 
 .category-bar .filter-chip.is-active,
 .category-bar .filter-chip[aria-pressed="true"] {
-  color: var(--surface-solid);
+  color: var(--accent-foreground);
   background: linear-gradient(135deg, var(--primary-strong), var(--primary));
   box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 30%, transparent);
   font-weight: 780;
@@ -626,7 +630,7 @@ select {
   align-items: flex-start;
   justify-content: center;
   gap: 8px;
-  margin: 0 auto 28px;
+  margin: 0 auto 12px;
   padding: 10px 16px;
   border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line));
   border-radius: var(--radius-sm);
@@ -642,6 +646,47 @@ select {
   flex: 0 0 auto;
   margin-top: 0.35em;
   color: var(--primary);
+}
+
+.content-utilities {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 auto 28px;
+}
+
+.utility-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 4px 14px rgba(45, 38, 77, 0.05);
+  font-size: 11px;
+  font-weight: 700;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.utility-button:hover {
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--line));
+  color: var(--primary-strong);
+  background: var(--surface-solid);
+  transform: translateY(-1px);
+}
+
+.copy-fallback-input {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .site-group {
@@ -742,7 +787,7 @@ select {
 .favorite-button.is-active,
 .favorite-button[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--pink) 42%, var(--line));
-  color: #fff;
+  color: var(--favorite-foreground);
   background: linear-gradient(135deg, var(--pink), var(--primary));
 }
 
@@ -920,7 +965,7 @@ select {
 }
 
 .button-primary {
-  color: #fff;
+  color: var(--accent-foreground);
   background: var(--primary-strong);
 }
 
@@ -1267,8 +1312,8 @@ select {
 
   .view-switcher .filter-chip.is-active,
   .view-switcher .filter-chip[aria-pressed="true"] {
-    color: #fff;
-    background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 76%, var(--pink)));
+    color: var(--accent-foreground);
+    background: linear-gradient(135deg, var(--primary-strong), var(--primary));
     box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 18%, transparent);
     transform: none;
   }
@@ -1356,7 +1401,7 @@ select {
 
   .category-bar .filter-chip.is-active,
   .category-bar .filter-chip[aria-pressed="true"] {
-    color: var(--surface-solid);
+    color: var(--accent-foreground);
     background: linear-gradient(135deg, var(--primary-strong), var(--primary));
     box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 30%, transparent);
     font-weight: 780;

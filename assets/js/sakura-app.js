@@ -76,6 +76,7 @@
       if (!menuButton || !nav) return;
       nav.classList.remove("is-open");
       menuButton.setAttribute("aria-expanded", "false");
+      menuButton.setAttribute("aria-label", "打开导航菜单");
       document.body.classList.remove("menu-open");
     }
 
@@ -84,6 +85,7 @@
         const open = !nav.classList.contains("is-open");
         nav.classList.toggle("is-open", open);
         menuButton.setAttribute("aria-expanded", String(open));
+        menuButton.setAttribute("aria-label", open ? "关闭导航菜单" : "打开导航菜单");
         document.body.classList.toggle("menu-open", open);
       });
 
@@ -142,6 +144,7 @@
     if (!data || !gridRoot) return;
 
     const search = document.querySelector("[data-site-search]");
+    const searchForm = document.querySelector("[data-search-form]");
     const clear = document.querySelector("[data-search-clear]");
     const result = document.querySelector("[data-search-result]");
     const empty = document.querySelector("[data-empty-state]");
@@ -157,6 +160,9 @@
     const shortcut = document.querySelector(".search-shortcut");
     const siteHeader = document.querySelector(".site-header");
     const accessNotice = document.querySelector("[data-access-notice]");
+    const copyView = document.querySelector("[data-copy-view]");
+    const copyViewLabel = document.querySelector("[data-copy-view-label]");
+    const copyStatus = document.querySelector("[data-copy-status]");
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
@@ -166,6 +172,7 @@
     let scrollRequestToken = 0;
     let categoryControlFrame = 0;
     let selectedCardIndex = -1;
+    let copyResetTimer = 0;
     empty?.setAttribute("data-result-scroll-target", "empty");
 
     const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
@@ -306,7 +313,7 @@
       link.href = site.url;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.setAttribute("aria-label", `打开 ${site.name}`);
+      link.setAttribute("aria-label", `在新标签页打开 ${site.name}`);
       link.addEventListener("click", () => trackVisit(site.id));
 
       const siteCategory = categoryMap.get(site.category);
@@ -532,6 +539,45 @@
       });
     }
 
+    function fallbackCopyText(value) {
+      const textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.className = "copy-fallback-input";
+      textarea.setAttribute("readonly", "");
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        return document.execCommand("copy");
+      } finally {
+        textarea.remove();
+      }
+    }
+
+    async function copyCurrentView() {
+      let copied = false;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(window.location.href);
+          copied = true;
+        } else {
+          copied = fallbackCopyText(window.location.href);
+        }
+      } catch (_) {
+        try {
+          copied = fallbackCopyText(window.location.href);
+        } catch (_) {}
+      }
+
+      const message = copied ? "当前视图链接已复制" : "复制失败，请手动复制地址栏链接";
+      if (copyViewLabel) copyViewLabel.textContent = copied ? "已复制当前视图" : "复制失败";
+      if (copyStatus) copyStatus.textContent = message;
+      window.clearTimeout(copyResetTimer);
+      copyResetTimer = window.setTimeout(() => {
+        if (copyViewLabel) copyViewLabel.textContent = "复制当前视图链接";
+        if (copyStatus) copyStatus.textContent = "";
+      }, 1800);
+    }
+
     if (categoryBar) {
       categoryBar.appendChild(createButton("全部", "all", "category"));
       data.categories.forEach((category) => categoryBar.appendChild(createButton(category.name, category.id, "category")));
@@ -569,6 +615,9 @@
       writeJsonStorage(recentVisitsKey, recentVisits);
       render();
     });
+
+    searchForm?.addEventListener("submit", (event) => event.preventDefault());
+    copyView?.addEventListener("click", copyCurrentView);
 
     if (search) {
       search.addEventListener("input", () => {
