@@ -15,8 +15,8 @@ SAKURA Notes is a lightweight personal start page for frequently used websites, 
 - Centralized categories and websites in `assets/js/sites-data.js`
 - Search by name, description, URL, category, keywords, abbreviations, and multiple terms
 - Combined category and curated-view filters
-- Browser-only favorites and recent visits with defensive localStorage parsing
-- System-aware light/dark theme and responsive mobile, tablet, and desktop layouts
+- Browser-only favorites and recent visits, with versioned JSON favorite backup and restore
+- Three theme modes: system, light, and dark, plus responsive mobile, tablet, and desktop layouts
 - Local-date runtime counter starting on July 12, 2026
 - Lightweight install metadata without a Service Worker or aggressive page cache
 - No ads, third-party analytics scripts, online fonts, or required third-party CDN
@@ -34,8 +34,10 @@ _headers                           Cloudflare static security headers
 wrangler.jsonc                     Cloudflare Workers static-assets configuration
 assets/css/sakura.css              Shared design system
 assets/js/sites-data.js            Categories and websites
+assets/js/theme-init.js            Initial theme selection before first paint
 assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and global UI logic
 assets/images/                      SAKURA brand mark, favicons, social image, and PWA icons
+.github/workflows/                 Automated validation and manual link checks
 tools/validate_site.py              Dependency-free repository validator
 ```
 
@@ -71,9 +73,11 @@ The SVG favicon plus the header and footer brand marks reference this file direc
 
 ## Browser-only data
 
-- `sakura-theme`: saved theme
+- `sakura-theme`: an explicit light or dark choice; an absent key means system mode
 - `sakura-favorites`: favorite site IDs
 - `sakura-recent-visits`: up to 12 unique site IDs and timestamps
+
+Favorite exports contain a versioned list of stable site IDs. Imports accept only SAKURA export JSON files up to 256 KB, discard unknown IDs, and merge valid entries with existing favorites. Both operations stay entirely in the browser and upload nothing.
 
 Malformed, stale, or unavailable localStorage data is ignored safely. Search and filter state is written only to the current address bar, not to localStorage, and ordinary filter changes make no additional network request. When a parameterized URL is refreshed or opened, its query string is sent to the hosting service as part of the normal page request.
 
@@ -87,6 +91,10 @@ python -m http.server 8000
 ```
 
 Open `http://localhost:8000`. The validator checks pages, local references, IDs, categories, icons, placeholders, obsolete deployment wording, mixed content, and sitemap targets without third-party packages.
+
+## Automated site validation
+
+`.github/workflows/site-validation.yml` runs Python syntax checks and `tools/validate_site.py` on pushes to `main`, Pull Requests targeting `main`, and manual dispatches. It has read-only repository permissions and does not replace the manual link-health workflow below.
 
 ## Link health checks
 
@@ -118,6 +126,8 @@ python tools/check_links.py --output link-health-report.md
 
 The report never deletes sites, replaces URLs, commits changes, or opens a Pull Request. Results involving 403 responses, TLS errors, Cloudflare challenges, or timeouts require manual review.
 
+The home-page broken-link button opens the structured Issue form in `.github/ISSUE_TEMPLATE/invalid-link.yml`, requesting the site name, URL, category, problem type, and manual verification details without asking for credentials or other sensitive data.
+
 ## Cloudflare deployment
 
 This repository is connected through Cloudflare Workers & Pages Git integration. `wrangler.jsonc` configures the repository root as the static-assets directory; there are no Pages Functions, application Worker source files, or build dependencies.
@@ -139,7 +149,7 @@ git push origin main
 
 Custom domains, DNS records, and host bindings live in Cloudflare, not in the repository. Routine releases must not change DNS.
 
-The root `_headers` file is supported by both Cloudflare Pages and Workers Static Assets. It adds MIME sniffing protection, a strict referrer policy, a browser permissions policy, and frame protection. A strict CSP is intentionally not enabled yet.
+The root `_headers` file is supported by both Cloudflare Pages and Workers Static Assets. It adds MIME sniffing protection, a strict referrer policy, a browser permissions policy, and frame protection. CSP currently runs in report-only mode, so potential violations can be observed before enforcement is considered.
 
 ## PWA and SEO
 

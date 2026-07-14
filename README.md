@@ -15,8 +15,8 @@
 - 分类与网站集中保存在 `assets/js/sites-data.js`
 - 搜索支持名称、描述、URL、分类、keywords、英文缩写和多关键词
 - 分类与站长推荐、最近收录、热门网站、我的常用、最近访问可以组合筛选
-- 我的常用和最近访问只保存在当前浏览器的 `localStorage`
-- 默认跟随系统主题，手动选择后会记住设置
+- 我的常用和最近访问只保存在当前浏览器；收藏支持版本化 JSON 导入与导出
+- 主题支持跟随系统、浅色和深色三档，手动选择后会记住设置
 - 手机、平板和桌面响应式布局
 - 页脚按本地日期显示从 2026-07-12 开始的网站运行天数
 - 轻量 PWA 主屏信息，不注册 Service Worker，不做激进页面缓存
@@ -38,9 +38,11 @@ sakura-nav/
 ├── assets/
 │   ├── css/sakura.css               # 全站样式
 │   ├── js/sites-data.js             # 分类与网站数据
+│   ├── js/theme-init.js              # 首屏主题初始化
 │   ├── js/sakura-app.js              # 搜索、筛选、收藏、主题和全局界面逻辑
 │   ├── images/                       # 樱花品牌图标、favicon、分享图和 PWA 图标
 │   └── fontawesome-5.15.4/           # 本地图标字体及许可证
+├── .github/workflows/                # 自动验证与手动链接检查
 └── tools/validate_site.py            # 无第三方依赖的站点检查工具
 ```
 
@@ -89,9 +91,11 @@ assets/images/icons/sakura-mark.svg
 
 网站不会上传收藏或访问记录：
 
-- `sakura-theme`：浅色/深色主题
+- `sakura-theme`：手动选择的浅色或深色主题；不存在时代表跟随系统
 - `sakura-favorites`：用户收藏的网站 ID 数组
 - `sakura-recent-visits`：最多 12 条不同网站的 ID 与访问时间
+
+“导出收藏”会下载带格式版本号的网站 ID JSON；“导入收藏”只接受本站格式、小于 256 KB 的 JSON，过滤不存在的网站 ID，并与当前收藏安全合并。导入和导出都在浏览器本地完成，不上传文件。
 
 损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。搜索和筛选条件只写入当前地址栏，不写入 localStorage，正常筛选操作不会发起额外网络请求；刷新或打开带参数的网址时，查询参数会随正常页面请求发送给托管服务。
 
@@ -105,6 +109,10 @@ python -m http.server 8000
 ```
 
 然后访问 `http://localhost:8000`。验证脚本不需要安装第三方 Python 包，会检查主要页面、静态资源、网站 ID、分类、图标、占位内容、旧部署说明、Mixed Content 和 sitemap。
+
+## 自动站点验证
+
+`.github/workflows/site-validation.yml` 会在 `main` 推送、面向 `main` 的 Pull Request 以及手动触发时运行 Python 语法检查和 `tools/validate_site.py`。该工作流只读取仓库，不修改网站数据，也不替代下面的人工链接健康检查。
 
 ## 链接健康检查
 
@@ -136,6 +144,8 @@ python tools/check_links.py --output link-health-report.md
 
 报告不会自动删除网站、替换网址、提交修改或创建 Pull Request。403、TLS、Cloudflare 验证、超时等结果都需要人工确认。
 
+首页“反馈失效链接”会打开 `.github/ISSUE_TEMPLATE/invalid-link.yml` 定义的结构化 Issue 表单，用于收集网站名称、网址、板块、问题类型和人工复核说明；请勿在反馈中填写账号、Token、Cookie 等敏感信息。
+
 ## Cloudflare 自动部署
 
 当前仓库通过 Cloudflare Workers & Pages 的 Git 集成发布静态内容。`wrangler.jsonc` 将仓库根目录配置为静态资源目录；项目没有 Pages Functions、Worker 业务源码或构建依赖。
@@ -165,7 +175,7 @@ git push origin main
 
 自定义域名、DNS 记录、`skrto.top` 与 `www.skrto.top` 的绑定均在 Cloudflare 控制台管理，不在本仓库中管理。不要为了普通代码发布修改 Cloudflare DNS。
 
-`_headers` 同时适用于 Cloudflare Pages 和 Workers Static Assets，为静态响应添加 `nosniff`、严格来源策略、权限策略和防嵌入响应头。项目没有启用严格 CSP，以避免误拦截现有站点图标和脚本。
+`_headers` 同时适用于 Cloudflare Pages 和 Workers Static Assets，为静态响应添加 `nosniff`、严格来源策略、权限策略和防嵌入响应头。CSP 当前使用报告模式，只记录潜在违规而不拦截资源；确认线上没有违规后再评估正式启用。
 
 ## PWA、SEO 与缓存
 

@@ -19,6 +19,7 @@ REQUIRED_FILES = (
     "assets/css/sakura.css",
     "assets/js/sites-data.js",
     "assets/js/sakura-app.js",
+    "assets/js/theme-init.js",
     "assets/images/icons/sakura-mark.svg",
     "assets/images/favicon.png",
     "assets/images/og-sakura.png",
@@ -30,6 +31,8 @@ REQUIRED_FILES = (
     "sitemap.xml",
     "_headers",
     "wrangler.jsonc",
+    ".github/workflows/site-validation.yml",
+    ".github/ISSUE_TEMPLATE/invalid-link.yml",
 )
 LOCAL_REF_RE = re.compile(r"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
 SITE_RE = re.compile(r"\{(?=[^{}]*\bid:\s*\")[^{}]*\burl:\s*\"[^{}]+?\bcategory:\s*\"[^{}]+?\}")
@@ -95,6 +98,48 @@ def validate() -> tuple[list[str], list[str]]:
         for tag in re.findall(r"<(?:script|img|link)\b[^>]+>", html, re.I):
             if re.search(r'(?:src|href)=["\']http://', tag, re.I):
                 errors.append(f"{relative} 存在可能导致 Mixed Content 的资源：{tag[:100]}")
+
+    index_path = ROOT / "index.html"
+    if index_path.is_file():
+        index_html = index_path.read_text(encoding="utf-8")
+        homepage_features = {
+            "三档主题按钮": "data-theme-toggle",
+            "收藏导出按钮": "data-export-favorites",
+            "收藏导入按钮": "data-import-favorites",
+            "收藏导入文件框": "data-import-favorites-input",
+            "失效链接反馈表单": "issues/new?template=invalid-link.yml",
+        }
+        for label, token in homepage_features.items():
+            if token not in index_html:
+                errors.append(f"index.html 缺少{label}")
+
+    app_path = ROOT / "assets/js/sakura-app.js"
+    if app_path.is_file():
+        app_text = app_path.read_text(encoding="utf-8")
+        app_features = {
+            "三档主题逻辑": "preferredThemeMode",
+            "收藏备份格式": 'format: "sakura-nav-favorites"',
+            "收藏导出逻辑": "exportFavoriteData",
+            "收藏导入逻辑": "importFavoriteData",
+            "收藏导入大小限制": "256 * 1024",
+        }
+        for label, token in app_features.items():
+            if token not in app_text:
+                errors.append(f"sakura-app.js 缺少{label}")
+
+    validation_workflow = ROOT / ".github/workflows/site-validation.yml"
+    if validation_workflow.is_file():
+        workflow_text = validation_workflow.read_text(encoding="utf-8")
+        for token in ("push:", "pull_request:", "workflow_dispatch:", "python tools/validate_site.py"):
+            if token not in workflow_text:
+                errors.append(f"site-validation.yml 缺少配置：{token}")
+
+    issue_template = ROOT / ".github/ISSUE_TEMPLATE/invalid-link.yml"
+    if issue_template.is_file():
+        template_text = issue_template.read_text(encoding="utf-8")
+        for token in ("id: site-name", "id: site-url", "id: problem", "id: details", "id: confirmation"):
+            if token not in template_text:
+                errors.append(f"invalid-link.yml 缺少字段：{token}")
 
     data_path = ROOT / "assets/js/sites-data.js"
     if data_path.is_file():

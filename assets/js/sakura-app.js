@@ -6,6 +6,7 @@
   const favoritesKey = "sakura-favorites";
   const recentVisitsKey = "sakura-recent-visits";
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
 
   function readTextStorage(key) {
     try {
@@ -18,6 +19,15 @@
   function writeTextStorage(key, value) {
     try {
       window.localStorage.setItem(key, value);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function removeTextStorage(key) {
+    try {
+      window.localStorage.removeItem(key);
       return true;
     } catch (_) {
       return false;
@@ -38,22 +48,33 @@
     return writeTextStorage(key, JSON.stringify(value));
   }
 
-  function preferredTheme() {
+  function preferredThemeMode() {
     const saved = readTextStorage(themeKey);
     if (saved === "light" || saved === "dark") return saved;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return "auto";
   }
 
-  function applyTheme(theme, persist) {
+  function applyTheme(mode, persist) {
+    const validMode = mode === "light" || mode === "dark" ? mode : "auto";
+    const theme = validMode === "auto" ? (systemDarkMode.matches ? "dark" : "light") : validMode;
     root.dataset.theme = theme;
-    if (persist) writeTextStorage(themeKey, theme);
+    root.dataset.themeMode = validMode;
+    if (persist) {
+      if (validMode === "auto") removeTextStorage(themeKey);
+      else writeTextStorage(themeKey, validMode);
+    }
 
     document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-      const isDark = theme === "dark";
-      button.setAttribute("aria-label", isDark ? "切换到浅色模式" : "切换到深色模式");
-      button.setAttribute("title", isDark ? "浅色模式" : "深色模式");
+      const modes = {
+        auto: { current: "跟随系统", next: "浅色模式", icon: "fas fa-adjust" },
+        light: { current: "浅色模式", next: "深色模式", icon: "fas fa-sun" },
+        dark: { current: "深色模式", next: "跟随系统", icon: "fas fa-moon" }
+      };
+      const state = modes[validMode];
+      button.setAttribute("aria-label", `当前主题：${state.current}；点击切换到${state.next}`);
+      button.setAttribute("title", `主题：${state.current}`);
       const icon = button.querySelector("i");
-      if (icon) icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+      if (icon) icon.className = state.icon;
     });
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -61,13 +82,22 @@
   }
 
   function setupGlobalUI() {
-    applyTheme(preferredTheme(), false);
+    applyTheme(preferredThemeMode(), false);
 
     document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
       button.addEventListener("click", () => {
-        applyTheme(root.dataset.theme === "dark" ? "light" : "dark", true);
+        const nextMode = root.dataset.themeMode === "auto"
+          ? "light"
+          : (root.dataset.themeMode === "light" ? "dark" : "auto");
+        applyTheme(nextMode, true);
       });
     });
+
+    const syncSystemTheme = () => {
+      if (root.dataset.themeMode === "auto") applyTheme("auto", false);
+    };
+    if (systemDarkMode.addEventListener) systemDarkMode.addEventListener("change", syncSystemTheme);
+    else systemDarkMode.addListener?.(syncSystemTheme);
 
     const menuButton = document.querySelector("[data-menu-toggle]");
     const nav = document.querySelector("[data-site-nav]");
@@ -162,7 +192,10 @@
     const accessNotice = document.querySelector("[data-access-notice]");
     const copyView = document.querySelector("[data-copy-view]");
     const copyViewLabel = document.querySelector("[data-copy-view-label]");
-    const copyStatus = document.querySelector("[data-copy-status]");
+    const exportFavorites = document.querySelector("[data-export-favorites]");
+    const importFavorites = document.querySelector("[data-import-favorites]");
+    const importFavoritesInput = document.querySelector("[data-import-favorites-input]");
+    const utilityStatus = document.querySelector("[data-utility-status]");
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
@@ -172,7 +205,7 @@
     let scrollRequestToken = 0;
     let categoryControlFrame = 0;
     let selectedCardIndex = -1;
-    let copyResetTimer = 0;
+    let utilityResetTimer = 0;
     empty?.setAttribute("data-result-scroll-target", "empty");
 
     const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
@@ -570,12 +603,73 @@
 
       const message = copied ? "当前视图链接已复制" : "复制失败，请手动复制地址栏链接";
       if (copyViewLabel) copyViewLabel.textContent = copied ? "已复制当前视图" : "复制失败";
-      if (copyStatus) copyStatus.textContent = message;
-      window.clearTimeout(copyResetTimer);
-      copyResetTimer = window.setTimeout(() => {
+      announceUtility(message);
+      window.setTimeout(() => {
         if (copyViewLabel) copyViewLabel.textContent = "复制当前视图链接";
-        if (copyStatus) copyStatus.textContent = "";
       }, 1800);
+    }
+
+    function announceUtility(message) {
+      if (!utilityStatus) return;
+      utilityStatus.textContent = message;
+      window.clearTimeout(utilityResetTimer);
+      utilityResetTimer = window.setTimeout(() => {
+        utilityStatus.textContent = "";
+      }, 3200);
+    }
+
+    function exportFavoriteData() {
+      const favoriteIds = data.sites.filter((site) => favorites.has(site.id)).map((site) => site.id);
+      if (!favoriteIds.length) {
+        announceUtility("当前没有收藏可导出");
+        return;
+      }
+
+      const payload = {
+        format: "sakura-nav-favorites",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        favorites: favoriteIds
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `sakura-favorites-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      announceUtility(`已导出 ${favoriteIds.length} 个收藏`);
+    }
+
+    async function importFavoriteData(file) {
+      if (!file) return;
+      if (file.size > 256 * 1024) {
+        announceUtility("导入失败：文件不能超过 256 KB");
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(await file.text());
+        if (payload?.format !== "sakura-nav-favorites" || payload.version !== 1 || !Array.isArray(payload.favorites)) {
+          throw new Error("invalid-format");
+        }
+
+        const importedIds = Array.from(new Set(payload.favorites.filter((id) => typeof id === "string" && validIds.has(id))));
+        if (!importedIds.length) {
+          announceUtility("没有找到可导入的有效收藏");
+          return;
+        }
+
+        const previousSize = favorites.size;
+        importedIds.forEach((id) => favorites.add(id));
+        writeJsonStorage(favoritesKey, Array.from(favorites));
+        render();
+        announceUtility(`已读取 ${importedIds.length} 个收藏，新增 ${favorites.size - previousSize} 个`);
+      } catch (_) {
+        announceUtility("导入失败：请选择由本站导出的 JSON 文件");
+      }
     }
 
     if (categoryBar) {
@@ -618,6 +712,13 @@
 
     searchForm?.addEventListener("submit", (event) => event.preventDefault());
     copyView?.addEventListener("click", copyCurrentView);
+    exportFavorites?.addEventListener("click", exportFavoriteData);
+    importFavorites?.addEventListener("click", () => importFavoritesInput?.click());
+    importFavoritesInput?.addEventListener("change", async () => {
+      const [file] = Array.from(importFavoritesInput.files || []);
+      await importFavoriteData(file);
+      importFavoritesInput.value = "";
+    });
 
     if (search) {
       search.addEventListener("input", () => {

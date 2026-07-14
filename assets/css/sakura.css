@@ -681,6 +681,17 @@ select {
   transform: translateY(-1px);
 }
 
+.utility-status {
+  flex: 0 0 100%;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.utility-status:empty {
+  display: none;
+}
+
 .copy-fallback-input {
   position: fixed;
   width: 1px;

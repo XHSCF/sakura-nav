@@ -6,7 +6,9 @@
     saved = window.localStorage.getItem("sakura-theme");
   } catch (_) {}
 
-  document.documentElement.dataset.theme = saved === "light" || saved === "dark"
-    ? saved
-    : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const mode = saved === "light" || saved === "dark" ? saved : "auto";
+  document.documentElement.dataset.themeMode = mode;
+  document.documentElement.dataset.theme = mode === "auto"
+    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : mode;
 })();
