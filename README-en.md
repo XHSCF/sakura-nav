@@ -13,9 +13,11 @@ SAKURA Notes is a lightweight personal start page for frequently used websites, 
 - Fully static HTML, CSS, and vanilla JavaScript
 - No backend, database, account system, build step, or package dependency
 - Centralized categories and websites in `assets/js/sites-data.js`
-- Search by name, description, URL, category, keywords, abbreviations, and multiple terms
+- Search by name, description, URL, category, keywords, abbreviations, and multiple terms, with safe match highlighting and a matched-category count
 - Combined category and curated-view filters
-- Browser-only favorites and recent visits
+- Category buttons show site totals; the recent view shows collection dates, and sites added in the last 14 days receive a `NEW` badge
+- Browser-only favorites and recent visits, with manual ordering in the favorites view
+- One-click recovery from empty results plus explicit feedback when JavaScript is disabled or application scripts fail to load
 - Three theme modes: system, light, and dark, plus responsive mobile, tablet, and desktop layouts
 - Local-date runtime counter starting on July 12, 2026
 - Lightweight install metadata without a Service Worker or aggressive page cache
@@ -35,6 +37,7 @@ wrangler.jsonc                     Cloudflare Workers static-assets configuratio
 assets/css/sakura.css              Shared design system
 assets/js/sites-data.js            Categories and websites
 assets/js/theme-init.js            Initial theme selection before first paint
+assets/js/app-guard.js              Dependency-free script-load failure feedback
 assets/js/sakura-core.js            Testable search, theme, and local-data helpers
 assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and global UI logic
 assets/images/                      SAKURA brand mark, favicons, social image, and PWA icons
@@ -76,10 +79,10 @@ The SVG favicon plus the header and footer brand marks reference this file direc
 ## Browser-only data
 
 - `sakura-theme`: an explicit light or dark choice; an absent key means system mode
-- `sakura-favorites`: favorite site IDs
+- `sakura-favorites`: favorite site IDs in their manually selected display order
 - `sakura-recent-visits`: up to 12 unique site IDs and timestamps
 
-Malformed, stale, or unavailable localStorage data is ignored safely. Search and filter state is written only to the current address bar, not to localStorage, and ordinary filter changes make no additional network request. When a parameterized URL is refreshed or opened, its query string is sent to the hosting service as part of the normal page request.
+Reordering favorites reuses the existing ID array and creates no additional storage key. Malformed, stale, or unavailable localStorage data is ignored safely. Search and filter state is written only to the current address bar, not to localStorage, and ordinary filter changes make no additional network request. When a parameterized URL is refreshed or opened, its query string is sent to the hosting service as part of the normal page request.
 
 ## Local preview and validation
 
@@ -91,7 +94,7 @@ node --test tools/test_frontend.js
 python -m http.server 8000
 ```
 
-Open `http://localhost:8000`. The validator checks pages, local references, IDs, categories, icons, dates, fields, normalized URL duplicates, CSP compatibility, mixed content, and sitemap targets without third-party packages. The native Node.js suite covers theme cycling, search matching, favorites cleanup, and recent-visit cleanup.
+Open `http://localhost:8000`. The validator checks pages, local references, IDs, categories, icons, dates, fields, normalized URL duplicates, CSP compatibility, mixed content, cache rules, and sitemap targets without third-party packages. The native Node.js suite covers theme cycling, search matching, safe highlighting, `NEW` badge boundaries, favorites cleanup and ordering, and recent-visit cleanup.
 
 ## Automated site validation
 
@@ -150,9 +153,11 @@ Custom domains, DNS records, and host bindings live in Cloudflare, not in the re
 
 The root `_headers` file is supported by both Cloudflare Pages and Workers Static Assets. It adds MIME sniffing protection, a strict referrer policy, a browser permissions policy, frame protection, and an enforced CSP. Scripts, styles, fonts, and images default to local resources; narrowly scoped `style-src-attr` support remains for the dynamically calculated scroll offset.
 
+Caching is layered by resource type: HTML, CSS, and JavaScript revalidate on every visit; the manifest caches for one hour; images cache for seven days; and local icon fonts cache for 30 days. Asset filenames are not content-hashed, so the project deliberately avoids `immutable` or one-year caching that could keep outdated scripts or styles after a deployment.
+
 ## PWA and SEO
 
-The manifest and local icons improve iPhone, iPad, and Android home-screen use. No Service Worker is registered, preventing stale application-shell caching. The repository also includes a 1200×630 Open Graph image, `robots.txt`, and `sitemap.xml` using the primary canonical host.
+The manifest and local icons improve iPhone, iPad, and Android home-screen use. No Service Worker is registered, preventing stale application-shell caching. The repository also includes a 1200×630 Open Graph image, `robots.txt`, and `sitemap.xml` using the primary canonical host. Desktop fine-pointer devices receive a light card-entry animation, while `prefers-reduced-motion: reduce` disables it.
 
 ## Privacy and content notice
 

@@ -19,6 +19,7 @@ REQUIRED_FILES = (
     *MAIN_PAGES,
     "assets/css/sakura.css",
     "assets/js/sites-data.js",
+    "assets/js/app-guard.js",
     "assets/js/sakura-core.js",
     "assets/js/sakura-app.js",
     "assets/js/theme-init.js",
@@ -134,6 +135,9 @@ def validate() -> tuple[list[str], list[str]]:
         homepage_features = {
             "三档主题按钮": "data-theme-toggle",
             "当前板块链接复制按钮": "复制当前板块链接",
+            "无结果重置按钮": "data-reset-filters",
+            "脚本异常提示": "data-app-fallback",
+            "无脚本提示": "<noscript>",
         }
         for label, token in homepage_features.items():
             if token not in index_html:
@@ -146,6 +150,10 @@ def validate() -> tuple[list[str], list[str]]:
             "三档主题逻辑": "preferredThemeMode",
             "共享纯逻辑模块": "window.SAKURA_CORE",
             "当前板块复制反馈": "当前板块链接已复制",
+            "收藏排序逻辑": "moveFavorite",
+            "搜索高亮逻辑": "appendHighlightedText",
+            "匹配板块统计": "matchedCategories",
+            "应用就绪状态": 'dataset.appReady = "true"',
         }
         for label, token in app_features.items():
             if token not in app_text:
@@ -186,6 +194,19 @@ def validate() -> tuple[list[str], list[str]]:
         for token in required_csp:
             if token not in headers_text:
                 errors.append(f"_headers 缺少正式 CSP 配置：{token}")
+        cache_rules = (
+            "/index.html",
+            "/assets/js/*",
+            "/assets/css/*",
+            "/assets/images/*",
+            "/assets/fontawesome-5.15.4/*",
+            "max-age=0, must-revalidate",
+            "max-age=604800",
+            "max-age=2592000",
+        )
+        for token in cache_rules:
+            if token not in headers_text:
+                errors.append(f"_headers 缺少分层缓存配置：{token}")
 
     data_path = ROOT / "assets/js/sites-data.js"
     if data_path.is_file():

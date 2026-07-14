@@ -59,6 +59,62 @@
     return terms.every((term) => searchable.includes(term));
   }
 
+  function highlightSegments(value, terms) {
+    const text = String(value || "");
+    const needles = Array.from(new Set(
+      (Array.isArray(terms) ? terms : [])
+        .map((term) => normalize(term))
+        .filter(Boolean)
+    )).sort((left, right) => right.length - left.length);
+    if (!text || !needles.length) return [{ text, match: false }];
+
+    const searchable = text.toLocaleLowerCase("zh-CN");
+    const segments = [];
+    let cursor = 0;
+    while (cursor < text.length) {
+      let matchIndex = -1;
+      let matchTerm = "";
+      needles.forEach((term) => {
+        const index = searchable.indexOf(term, cursor);
+        if (index >= 0 && (matchIndex < 0 || index < matchIndex || (index === matchIndex && term.length > matchTerm.length))) {
+          matchIndex = index;
+          matchTerm = term;
+        }
+      });
+      if (matchIndex < 0) {
+        segments.push({ text: text.slice(cursor), match: false });
+        break;
+      }
+      if (matchIndex > cursor) segments.push({ text: text.slice(cursor, matchIndex), match: false });
+      segments.push({ text: text.slice(matchIndex, matchIndex + matchTerm.length), match: true });
+      cursor = matchIndex + matchTerm.length;
+    }
+    return segments;
+  }
+
+  function isNewSite(addedAt, today, days) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(addedAt || ""))) return false;
+    const timestamp = Date.parse(`${addedAt}T00:00:00Z`);
+    const current = today instanceof Date ? today.getTime() : Number(today);
+    const windowDays = Number.isInteger(days) && days >= 0 ? days : 14;
+    if (!Number.isFinite(timestamp) || !Number.isFinite(current)) return false;
+    const age = Math.floor((current - timestamp) / 86400000);
+    return age >= 0 && age <= windowDays;
+  }
+
+  function moveVisibleItem(values, visibleValues, item, direction) {
+    const items = Array.isArray(values) ? values.slice() : [];
+    const visibleItems = Array.isArray(visibleValues) ? visibleValues : items;
+    const index = visibleItems.indexOf(item);
+    const offset = direction < 0 ? -1 : 1;
+    const targetItem = visibleItems[index + offset];
+    const itemIndex = items.indexOf(item);
+    const targetIndex = items.indexOf(targetItem);
+    if (index < 0 || itemIndex < 0 || targetIndex < 0) return items;
+    [items[itemIndex], items[targetIndex]] = [items[targetIndex], items[itemIndex]];
+    return items;
+  }
+
   return {
     normalize,
     queryTerms,
@@ -67,6 +123,9 @@
     nextThemeMode,
     sanitizeIdList,
     cleanRecentVisits,
-    siteMatchesTerms
+    siteMatchesTerms,
+    highlightSegments,
+    isNewSite,
+    moveVisibleItem
   };
 });

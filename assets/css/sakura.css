@@ -453,6 +453,26 @@ select {
   box-shadow: 0 8px 22px color-mix(in srgb, var(--primary) 23%, transparent);
 }
 
+.filter-chip-count {
+  display: inline-grid;
+  min-width: 19px;
+  height: 19px;
+  margin-left: 5px;
+  padding-inline: 5px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.filter-chip.is-active .filter-chip-count,
+.filter-chip[aria-pressed="true"] .filter-chip-count {
+  color: var(--accent-foreground);
+  background: color-mix(in srgb, var(--surface-solid) 22%, transparent);
+}
+
 .view-switcher .filter-chip {
   min-height: 36px;
   padding: 6px 13px;
@@ -700,6 +720,18 @@ select {
   pointer-events: none;
 }
 
+.app-fallback {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--pink) 40%, var(--line));
+  border-radius: var(--radius-md);
+  color: var(--text);
+  background: color-mix(in srgb, var(--pink) 8%, var(--surface));
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  text-align: center;
+}
+
 .site-group {
   margin-bottom: 42px;
   scroll-margin-top: calc(var(--header-height) + 70px);
@@ -845,6 +877,15 @@ select {
   white-space: nowrap;
 }
 
+.search-mark {
+  padding: 0 2px;
+  border-radius: 4px;
+  color: inherit;
+  background: color-mix(in srgb, var(--pink) 24%, transparent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 .site-card-description {
   display: -webkit-box;
   min-height: 2.9em;
@@ -857,15 +898,82 @@ select {
   -webkit-line-clamp: 2;
 }
 
+.site-card-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 7px;
+  margin-top: 7px;
+}
+
 .site-card-category {
   display: inline-block;
-  margin-top: 7px;
   color: var(--primary);
   font-size: 10px;
   font-weight: 750;
 }
 
+.site-card-new {
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--pink) 38%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--pink) 82%, var(--text));
+  background: color-mix(in srgb, var(--pink) 10%, var(--surface));
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.site-card-date {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 650;
+}
+
 .hide-card-categories .site-card-category {
+  display: none;
+}
+
+.favorite-order-controls {
+  position: absolute;
+  z-index: 2;
+  right: 11px;
+  bottom: 11px;
+  display: flex;
+  gap: 4px;
+}
+
+.favorite-order-button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--primary-strong);
+  background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+  box-shadow: 0 3px 10px rgba(45, 38, 77, 0.07);
+  font-size: 9px;
+}
+
+.favorite-order-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--line));
+  background: var(--surface-soft);
+}
+
+.favorite-order-button:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.site-card.has-order-controls .site-card-link {
+  padding-right: 78px;
+}
+
+.site-card.has-order-controls .site-card-link::after {
   display: none;
 }
 
@@ -893,6 +1001,55 @@ select {
   margin-bottom: 10px;
   color: var(--primary);
   font-size: 28px;
+}
+
+.empty-reset-button {
+  margin-top: 18px;
+  padding: 9px 16px;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--line));
+  border-radius: 999px;
+  color: var(--primary-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.empty-reset-button:hover {
+  color: var(--accent-foreground);
+  background: var(--primary);
+}
+
+@keyframes site-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 769px) and (hover: hover) and (pointer: fine) {
+  .site-card {
+    animation: site-card-enter 0.32s ease both;
+  }
+
+  .site-card:nth-child(2),
+  .site-card:nth-child(6) {
+    animation-delay: 0.025s;
+  }
+
+  .site-card:nth-child(3),
+  .site-card:nth-child(7) {
+    animation-delay: 0.05s;
+  }
+
+  .site-card:nth-child(4),
+  .site-card:nth-child(8) {
+    animation-delay: 0.075s;
+  }
 }
 
 .page-main {
@@ -1523,5 +1680,9 @@ select {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
     transition-duration: 0.01ms;
+  }
+
+  .site-card {
+    animation: none;
   }
 }

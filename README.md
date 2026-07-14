@@ -13,9 +13,11 @@
 - 纯静态 HTML、CSS 和原生 JavaScript，无框架、无构建步骤
 - 无后端、数据库、账号系统或服务端接口
 - 分类与网站集中保存在 `assets/js/sites-data.js`
-- 搜索支持名称、描述、URL、分类、keywords、英文缩写和多关键词
+- 搜索支持名称、描述、URL、分类、keywords、英文缩写和多关键词，并在结果中安全高亮命中词、显示涉及板块数
 - 分类与站长推荐、最近收录、热门网站、我的常用、最近访问可以组合筛选
-- 我的常用和最近访问只保存在当前浏览器
+- 分类按钮显示站点数量；最近收录显示收录日期，收录 14 天内的网站带有 `NEW` 标记
+- 我的常用和最近访问只保存在当前浏览器；“我的常用”支持手动调整收藏顺序
+- 无结果时可一键恢复全部站点；脚本加载失败或禁用 JavaScript 时会显示明确提示
 - 主题支持跟随系统、浅色和深色三档，手动选择后会记住设置
 - 手机、平板和桌面响应式布局
 - 页脚按本地日期显示从 2026-07-12 开始的网站运行天数
@@ -39,6 +41,7 @@ sakura-nav/
 │   ├── css/sakura.css               # 全站样式
 │   ├── js/sites-data.js             # 分类与网站数据
 │   ├── js/theme-init.js              # 首屏主题初始化
+│   ├── js/app-guard.js                # 脚本加载失败时的无依赖反馈
 │   ├── js/sakura-core.js              # 可测试的搜索、主题和本地数据纯逻辑
 │   ├── js/sakura-app.js              # 搜索、筛选、收藏、主题和全局界面逻辑
 │   ├── images/                       # 樱花品牌图标、favicon、分享图和 PWA 图标
@@ -97,7 +100,7 @@ assets/images/icons/sakura-mark.svg
 - `sakura-favorites`：用户收藏的网站 ID 数组
 - `sakura-recent-visits`：最多 12 条不同网站的 ID 与访问时间
 
-损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。搜索和筛选条件只写入当前地址栏，不写入 localStorage，正常筛选操作不会发起额外网络请求；刷新或打开带参数的网址时，查询参数会随正常页面请求发送给托管服务。
+`sakura-favorites` 中 ID 的顺序也是“我的常用”的手动排序顺序，不增加新的存储项。损坏或过期的数据会被安全忽略；网站从数据文件删除后，对应的无效记录也会被自动过滤。搜索和筛选条件只写入当前地址栏，不写入 localStorage，正常筛选操作不会发起额外网络请求；刷新或打开带参数的网址时，查询参数会随正常页面请求发送给托管服务。
 
 ## 本地预览与验证
 
@@ -109,7 +112,7 @@ node --test tools/test_frontend.js
 python -m http.server 8000
 ```
 
-然后访问 `http://localhost:8000`。验证脚本不需要第三方 Python 包，会检查主要页面、静态资源、网站 ID、分类、图标、日期、字段、URL 规范化重复、CSP 兼容性、Mixed Content 和 sitemap；Node.js 原生测试覆盖主题切换、搜索匹配、收藏清理和最近访问清理。
+然后访问 `http://localhost:8000`。验证脚本不需要第三方 Python 包，会检查主要页面、静态资源、网站 ID、分类、图标、日期、字段、URL 规范化重复、CSP 兼容性、Mixed Content、缓存规则和 sitemap；Node.js 原生测试覆盖主题切换、搜索匹配、安全高亮、`NEW` 标记边界、收藏清理与排序、最近访问清理。
 
 ## 自动站点验证
 
@@ -176,6 +179,8 @@ git push origin main
 
 `_headers` 同时适用于 Cloudflare Pages 和 Workers Static Assets，为静态响应添加 `nosniff`、严格来源策略、权限策略、防嵌入响应头和正式生效的 CSP。脚本、样式、字体和图片默认只允许本站本地资源；仅为脚本动态计算滚动偏移保留受限的 `style-src-attr` 支持。
 
+缓存采用分层策略：HTML、CSS 和 JavaScript 每次重新验证，manifest 缓存 1 小时，图片缓存 7 天，本地图标字体缓存 30 天。当前资源文件名没有内容哈希，因此不使用 `immutable` 或一年强缓存，避免部署后长期命中旧版脚本和样式。
+
 ## PWA、SEO 与缓存
 
 - `manifest.webmanifest` 提供 iPhone、iPad 和 Android 主屏信息。
@@ -183,6 +188,7 @@ git push origin main
 - `assets/images/og-sakura.png` 是 1200×630 分享图。
 - `robots.txt` 与 `sitemap.xml` 使用主域名 `https://skrto.top/`。
 - 项目故意不注册 Service Worker，避免代码更新后长期显示旧页面。
+- 桌面端精确指针设备使用轻量卡片入场动画，`prefers-reduced-motion: reduce` 下自动关闭。
 
 ## 内容与隐私说明
 

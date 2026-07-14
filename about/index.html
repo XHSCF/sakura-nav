@@ -53,6 +53,9 @@
     </div>
   </header>
 
+  <div class="container app-fallback" data-app-fallback role="alert" hidden>页面功能加载失败，请刷新后重试。</div>
+  <noscript><div class="container app-fallback">请启用 JavaScript 以使用主题与导航功能。</div></noscript>
+
   <main class="page-main" id="main-content">
     <div class="container">
       <header class="page-heading">
@@ -103,6 +106,7 @@
 
   <button class="icon-button back-to-top" type="button" data-back-to-top aria-label="返回顶部"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
   <script src="../assets/js/sakura-core.js" defer></script>
+  <script src="../assets/js/app-guard.js" defer></script>
   <script src="../assets/js/sakura-app.js" defer></script>
 </body>
 </html>

@@ -169,6 +169,7 @@ git diff --check
 
 ```bash
 node --check assets/js/theme-init.js
+node --check assets/js/app-guard.js
 node --check assets/js/sakura-core.js
 node --check assets/js/sakura-app.js
 node --test tools/test_frontend.js

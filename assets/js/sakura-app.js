@@ -159,9 +159,10 @@
   }
 
   function setupHome() {
-    const data = window.SAKURA_DATA;
     const gridRoot = document.querySelector("[data-site-groups]");
-    if (!data || !gridRoot) return;
+    if (!gridRoot) return true;
+    const data = window.SAKURA_DATA;
+    if (!data) return false;
 
     const search = document.querySelector("[data-site-search]");
     const searchForm = document.querySelector("[data-search-form]");
@@ -170,6 +171,7 @@
     const empty = document.querySelector("[data-empty-state]");
     const emptyTitle = document.querySelector("[data-empty-title]");
     const emptyMessage = document.querySelector("[data-empty-message]");
+    const resetFilters = document.querySelector("[data-reset-filters]");
     const categoryBar = document.querySelector("[data-category-bar]");
     const categoryShell = categoryBar?.closest(".category-shell");
     const categoryScrollLeft = document.querySelector("[data-category-scroll=\"left\"]");
@@ -193,6 +195,9 @@
     let categoryControlFrame = 0;
     let selectedCardIndex = -1;
     let utilityResetTimer = 0;
+    let visibleFavoriteIds = [];
+    const now = new Date();
+    const currentDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
     empty?.setAttribute("data-result-scroll-target", "empty");
 
     const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
@@ -229,11 +234,20 @@
     writeJsonStorage(favoritesKey, Array.from(favorites));
     writeJsonStorage(recentVisitsKey, recentVisits);
 
-    function createButton(label, value, type) {
+    function createButton(label, value, type, count) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "filter-chip";
-      button.textContent = label;
+      const buttonLabel = document.createElement("span");
+      buttonLabel.textContent = label;
+      button.appendChild(buttonLabel);
+      if (Number.isInteger(count)) {
+        const countLabel = document.createElement("span");
+        countLabel.className = "filter-chip-count";
+        countLabel.textContent = String(count);
+        button.appendChild(countLabel);
+        button.setAttribute("aria-label", `${label}，${count} 个网站`);
+      }
       button.dataset[type] = value;
       button.setAttribute("aria-pressed", String(value === "all"));
       return button;
@@ -271,6 +285,15 @@
       else updateFavoriteButton(button, site);
     }
 
+    function moveFavorite(siteId, direction) {
+      const nextOrder = core.moveVisibleItem(Array.from(favorites), visibleFavoriteIds, siteId, direction);
+      favorites.clear();
+      nextOrder.forEach((id) => favorites.add(id));
+      writeJsonStorage(favoritesKey, nextOrder);
+      render();
+      announceUtility("收藏顺序已更新");
+    }
+
     function matchesView(site) {
       if (state.view === "featured") return Boolean(site.featured);
       if (state.view === "recent") return Boolean(site.addedAt);
@@ -294,8 +317,29 @@
       } else if (state.view === "recent") {
         sites.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
         return sites.slice(0, 12);
+      } else if (state.view === "favorites") {
+        const order = new Map(Array.from(favorites, (id, index) => [id, index]));
+        sites.sort((a, b) => order.get(a.id) - order.get(b.id));
       }
       return sites;
+    }
+
+    function appendHighlightedText(node, value) {
+      core.highlightSegments(value, state.terms).forEach((segment) => {
+        if (!segment.match) {
+          node.appendChild(document.createTextNode(segment.text));
+          return;
+        }
+        const mark = document.createElement("mark");
+        mark.className = "search-mark";
+        mark.textContent = segment.text;
+        node.appendChild(mark);
+      });
+    }
+
+    function formatAddedDate(value) {
+      const [, month, day] = String(value).split("-");
+      return `${Number(month)}月${Number(day)}日`;
     }
 
     function createSiteCard(site) {
@@ -323,13 +367,30 @@
       copy.className = "site-card-copy";
       const title = document.createElement("strong");
       title.className = "site-card-title";
-      title.textContent = site.name;
+      appendHighlightedText(title, site.name);
       const description = document.createElement("p");
       description.className = "site-card-description";
-      description.textContent = site.description;
+      appendHighlightedText(description, site.description);
+      const meta = document.createElement("span");
+      meta.className = "site-card-meta";
       const category = document.createElement("span");
       category.className = "site-card-category";
       category.textContent = siteCategory?.name || site.category;
+      meta.appendChild(category);
+      if (core.isNewSite(site.addedAt, currentDay, 14)) {
+        const newBadge = document.createElement("span");
+        newBadge.className = "site-card-new";
+        newBadge.textContent = "NEW";
+        newBadge.setAttribute("aria-label", "最近收录");
+        meta.appendChild(newBadge);
+      }
+      if (state.view === "recent" && site.addedAt) {
+        const addedDate = document.createElement("time");
+        addedDate.className = "site-card-date";
+        addedDate.dateTime = site.addedAt;
+        addedDate.textContent = `收录于 ${formatAddedDate(site.addedAt)}`;
+        meta.appendChild(addedDate);
+      }
 
       const favoriteButton = document.createElement("button");
       favoriteButton.type = "button";
@@ -338,9 +399,30 @@
       updateFavoriteButton(favoriteButton, site);
       favoriteButton.addEventListener("click", () => toggleFavorite(site, favoriteButton));
 
-      copy.append(title, description, category);
+      copy.append(title, description, meta);
       link.append(iconBox, copy);
       article.append(link, favoriteButton);
+      if (state.view === "favorites") {
+        const favoriteIndex = visibleFavoriteIds.indexOf(site.id);
+        const controls = document.createElement("span");
+        controls.className = "favorite-order-controls";
+        article.classList.add("has-order-controls");
+        [
+          { direction: -1, icon: "fa-chevron-left", label: `将 ${site.name} 前移`, disabled: favoriteIndex <= 0 },
+          { direction: 1, icon: "fa-chevron-right", label: `将 ${site.name} 后移`, disabled: favoriteIndex >= visibleFavoriteIds.length - 1 }
+        ].forEach((control) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "favorite-order-button";
+          button.disabled = control.disabled;
+          button.setAttribute("aria-label", control.label);
+          button.setAttribute("title", control.label);
+          button.innerHTML = `<i class="fas ${control.icon}" aria-hidden="true"></i>`;
+          button.addEventListener("click", () => moveFavorite(site.id, control.direction));
+          controls.appendChild(button);
+        });
+        article.appendChild(controls);
+      }
       return article;
     }
 
@@ -412,14 +494,18 @@
       scrollRequestToken += 1;
       resetKeyboardSelection();
       const sites = filteredSites();
+      visibleFavoriteIds = state.view === "favorites" ? sites.map((site) => site.id) : [];
       const fragment = document.createDocumentFragment();
       gridRoot.replaceChildren();
       gridRoot.classList.toggle("hide-card-categories", state.view === "all" && !state.terms.length);
 
-      if ((state.view === "history" || state.view === "recent") && sites.length) {
-        const group = state.view === "history"
-          ? { id: "history", name: "最近访问", icon: "fa-history" }
-          : { id: "recent", name: "最近收录", icon: "fa-clock" };
+      if ((state.view === "history" || state.view === "recent" || state.view === "favorites") && sites.length) {
+        const groups = {
+          history: { id: "history", name: "最近访问", icon: "fa-history" },
+          recent: { id: "recent", name: "最近收录", icon: "fa-clock" },
+          favorites: { id: "favorites", name: "我的常用", icon: "fa-star" }
+        };
+        const group = groups[state.view];
         fragment.appendChild(createGroup(group, sites));
       } else {
         data.categories.forEach((category) => {
@@ -434,8 +520,9 @@
       if (clearRecent) clearRecent.hidden = !showClearRecent;
       contentSection?.classList.toggle("has-history-action", showClearRecent);
       if (result) {
+        const matchedCategories = new Set(sites.map((site) => site.category)).size;
         result.textContent = state.terms.length || state.category !== "all" || state.view !== "all"
-          ? `找到 ${sites.length} / ${data.sites.length} 个站点`
+          ? `找到 ${sites.length} / ${data.sites.length} 个站点 · 涉及 ${matchedCategories} 个板块`
           : `${data.sites.length} 个站点 · ${data.categories.length} 个分类`;
       }
       scheduleCategoryScrollControls();
@@ -581,8 +668,11 @@
     }
 
     if (categoryBar) {
-      categoryBar.appendChild(createButton("全部", "all", "category"));
-      data.categories.forEach((category) => categoryBar.appendChild(createButton(category.name, category.id, "category")));
+      categoryBar.appendChild(createButton("全部", "all", "category", data.sites.length));
+      data.categories.forEach((category) => {
+        const count = data.sites.filter((site) => site.category === category.id).length;
+        categoryBar.appendChild(createButton(category.name, category.id, "category", count));
+      });
       categoryBar.addEventListener("click", (event) => {
         const button = event.target.closest("[data-category]");
         if (!button) return;
@@ -620,6 +710,20 @@
 
     searchForm?.addEventListener("submit", (event) => event.preventDefault());
     copyView?.addEventListener("click", copyCurrentView);
+    resetFilters?.addEventListener("click", () => {
+      if (search) search.value = "";
+      state.terms = [];
+      state.category = "all";
+      state.view = "all";
+      clear?.classList.remove("is-visible");
+      if (shortcut) shortcut.hidden = false;
+      updatePressed(categoryBar, "category", state.category);
+      updatePressed(viewSwitcher, "view", state.view);
+      updateUrlState();
+      render();
+      scheduleResultScroll();
+      search?.focus();
+    });
 
     if (search) {
       search.addEventListener("input", () => {
@@ -674,10 +778,14 @@
     if (shortcut) shortcut.hidden = Boolean(state.terms.length);
     updateUrlState();
     render();
+    return true;
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     setupGlobalUI();
-    setupHome();
+    if (setupHome()) {
+      root.dataset.appReady = "true";
+      document.querySelectorAll("[data-app-fallback]").forEach((node) => { node.hidden = true; });
+    }
   });
 })();

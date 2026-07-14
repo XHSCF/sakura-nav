@@ -38,6 +38,9 @@
     </div>
   </header>
 
+  <div class="container app-fallback" data-app-fallback role="alert" hidden>页面功能加载失败，请刷新后重试。</div>
+  <noscript><div class="container app-fallback">请启用 JavaScript 以使用主题功能。</div></noscript>
+
   <main class="error-page">
     <div>
       <p class="error-code" aria-hidden="true">404</p>
@@ -48,6 +51,7 @@
   </main>
 
   <script src="/assets/js/sakura-core.js" defer></script>
+  <script src="/assets/js/app-guard.js" defer></script>
   <script src="/assets/js/sakura-app.js" defer></script>
 </body>
 </html>

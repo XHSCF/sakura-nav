@@ -37,6 +37,30 @@ test("theme initialization applies saved and system preferences before paint", (
   assert.deepEqual(initialize("dark", false), { themeMode: "dark", theme: "dark" });
 });
 
+test("application guard reveals fallback only when initialization is incomplete", () => {
+  const source = fs.readFileSync(path.join(repositoryRoot, "assets/js/app-guard.js"), "utf8");
+  function fallbackHidden(appReady) {
+    const fallback = { hidden: true };
+    let onLoad;
+    const documentElement = { dataset: appReady ? { appReady: "true" } : {} };
+    vm.runInNewContext(source, {
+      document: {
+        documentElement,
+        querySelectorAll: () => [fallback]
+      },
+      window: {
+        addEventListener: (_event, callback) => { onLoad = callback; },
+        requestAnimationFrame: (callback) => callback()
+      }
+    });
+    onLoad();
+    return fallback.hidden;
+  }
+
+  assert.equal(fallbackHidden(true), true);
+  assert.equal(fallbackHidden(false), false);
+});
+
 test("multi-keyword search normalizes whitespace and matches all terms", () => {
   const site = {
     name: "qBittorrent",
@@ -48,6 +72,20 @@ test("multi-keyword search normalizes whitespace and matches all terms", () => {
   assert.deepEqual(terms, ["开源", "bt下载"]);
   assert.equal(core.siteMatchesTerms(site, "软件专区", terms), true);
   assert.equal(core.siteMatchesTerms(site, "软件专区", ["开源", "字幕"]), false);
+});
+
+test("search highlighting returns safe text segments for matching terms", () => {
+  assert.deepEqual(core.highlightSegments("M3U8 在线播放器", ["m3u8", "播放"]), [
+    { text: "M3U8", match: true },
+    { text: " 在线", match: false },
+    { text: "播放", match: true },
+    { text: "器", match: false }
+  ]);
+  assert.deepEqual(core.highlightSegments("<script>", ["script"]), [
+    { text: "<", match: false },
+    { text: "script", match: true },
+    { text: ">", match: false }
+  ]);
 });
 
 test("browser data and core scripts expose the expected globals", () => {
@@ -80,4 +118,12 @@ test("recent visits discard stale and duplicate entries and enforce the limit", 
     { id: "one", visitedAt: 20 },
     { id: "two", visitedAt: 0 }
   ]);
+});
+
+test("new-site dates and favorite ordering respect their boundaries", () => {
+  const today = Date.parse("2026-07-14T12:00:00Z");
+  assert.equal(core.isNewSite("2026-07-14", today, 14), true);
+  assert.equal(core.isNewSite("2026-06-29", today, 14), false);
+  assert.deepEqual(core.moveVisibleItem(["one", "hidden", "two"], ["one", "two"], "two", -1), ["two", "hidden", "one"]);
+  assert.deepEqual(core.moveVisibleItem(["one", "two", "three"], ["one", "two", "three"], "three", 1), ["one", "two", "three"]);
 });
