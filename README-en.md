@@ -35,7 +35,7 @@ wrangler.jsonc                     Cloudflare Workers static-assets configuratio
 assets/css/sakura.css              Shared design system
 assets/js/sites-data.js            Categories and websites
 assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and global UI logic
-assets/images/                      Unified SAKURA mark, favicons, social image, and PWA icons
+assets/images/                      SAKURA brand mark, favicons, social image, and PWA icons
 tools/validate_site.py              Dependency-free repository validator
 ```
 
@@ -59,13 +59,15 @@ Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and 
 
 Optional fields include the Boolean flags `featured` and `popular`, plus `addedAt` as a valid `YYYY-MM-DD` collection date. The recent view sorts dated entries from newest to oldest and shows at most 12. Curated labels do not represent measured traffic statistics.
 
-Do not add an `icon` field and do not use Google favicon, destination-site favicons, or any remote icon service. Every website card automatically uses the single local vector source:
+Do not add an `icon` field to website data. Each card automatically inherits the local Font Awesome icon of its category, so cards in the same category share one icon. The site does not request Google favicon, destination-site favicons, or any other remote icon service.
+
+The SAKURA brand continues to use the single local vector source:
 
 ```text
 assets/images/icons/sakura-mark.svg
 ```
 
-The SVG favicon and brand marks reference this file directly. `favicon.png`, `apple-touch-icon.png`, `pwa-192.png`, and `pwa-512.png` are locally derived from it. To change the brand icon, replace the SVG and re-export those PNG resources; do not restore per-site icons.
+The SVG favicon plus the header and footer brand marks reference this file directly. `favicon.png`, `apple-touch-icon.png`, `pwa-192.png`, `pwa-512.png`, and social assets remain part of the SAKURA brand system. To change the brand icon, replace the SVG and re-export those resources; do not restore per-site icons.
 
 ## Browser-only data
 

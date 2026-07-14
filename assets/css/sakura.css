@@ -17,6 +17,10 @@
   --sakura-icon-bg: color-mix(in srgb, var(--pink) 10%, var(--surface-solid));
   --sakura-icon-border: color-mix(in srgb, var(--pink) 35%, var(--line));
   --sakura-icon-shadow: var(--shadow-sm);
+  --category-icon-color: var(--primary);
+  --category-icon-bg: color-mix(in srgb, var(--primary) 9%, var(--surface-solid));
+  --category-icon-border: color-mix(in srgb, var(--primary) 28%, var(--line));
+  --category-icon-shadow: var(--shadow-sm);
   --radius-sm: 12px;
   --radius-md: 18px;
   --radius-lg: 26px;
@@ -753,15 +757,21 @@ select {
 }
 
 .site-icon {
+  display: grid;
   flex: 0 0 48px;
   width: 48px;
   height: 48px;
-  padding: 0;
-  object-fit: contain;
-  border: 1px solid var(--sakura-icon-border);
+  place-items: center;
+  border: 1px solid var(--category-icon-border);
   border-radius: 14px;
-  background: var(--sakura-icon-bg);
-  box-shadow: var(--sakura-icon-shadow);
+  color: var(--category-icon-color);
+  background: var(--category-icon-bg);
+  box-shadow: var(--category-icon-shadow);
+}
+
+.site-icon i {
+  font-size: 21px;
+  line-height: 1;
 }
 
 .site-card-copy {

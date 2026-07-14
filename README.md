@@ -39,7 +39,7 @@ sakura-nav/
 │   ├── css/sakura.css               # 全站样式
 │   ├── js/sites-data.js             # 分类与网站数据
 │   ├── js/sakura-app.js              # 搜索、筛选、收藏、主题和全局界面逻辑
-│   ├── images/                       # 统一樱花图标、favicon、分享图和 PWA 图标
+│   ├── images/                       # 樱花品牌图标、favicon、分享图和 PWA 图标
 │   └── fontawesome-5.15.4/           # 本地图标字体及许可证
 └── tools/validate_site.py            # 无第三方依赖的站点检查工具
 ```
@@ -75,7 +75,7 @@ assets/js/sites-data.js
 - `addedAt`：收录日期，使用合法的 `YYYY-MM-DD`；“最近收录”按日期倒序显示最多 12 条
 - `popular`：人工整理的热门视图，不代表真实流量排名
 
-新增网站不需要、也不允许填写 `icon` 字段。所有网站卡片自动使用统一的本地樱花图标，不会请求 Google favicon、目标网站 favicon 或其他远程图标服务。
+新增网站不需要、也不允许填写 `icon` 字段。每个网站卡片自动继承所属分类的本地 Font Awesome 图标，同一分类下的卡片使用相同图标；网站不会请求 Google favicon、目标网站 favicon 或其他远程图标服务。
 
 唯一品牌矢量源文件：
 
@@ -83,7 +83,7 @@ assets/js/sites-data.js
 assets/images/icons/sakura-mark.svg
 ```
 
-浏览器 SVG favicon 和页面品牌标志直接引用该文件；`favicon.png`、`apple-touch-icon.png`、`pwa-192.png` 与 `pwa-512.png` 均从它本地导出。修改品牌图标时，只需替换这个 SVG，并重新导出上述兼容资源，不要在网站数据中恢复独立图标字段。
+浏览器 SVG favicon、顶部与页脚品牌标志直接引用该文件；`favicon.png`、`apple-touch-icon.png`、`pwa-192.png`、`pwa-512.png` 与分享资源均保持 SAKURA 樱花品牌。修改品牌图标时，只需替换这个 SVG，并重新导出上述兼容资源，不要在网站数据中恢复独立图标字段。
 
 ## 浏览器本地数据
 

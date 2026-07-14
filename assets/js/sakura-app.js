@@ -157,7 +157,6 @@
     const shortcut = document.querySelector(".search-shortcut");
     const siteHeader = document.querySelector(".site-header");
     const accessNotice = document.querySelector("[data-access-notice]");
-    const siteIconPath = "assets/images/icons/sakura-mark.svg";
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
@@ -310,14 +309,13 @@
       link.setAttribute("aria-label", `打开 ${site.name}`);
       link.addEventListener("click", () => trackVisit(site.id));
 
-      const image = document.createElement("img");
-      image.className = "site-icon";
-      image.src = siteIconPath;
-      image.alt = "";
-      image.width = 48;
-      image.height = 48;
-      image.loading = "lazy";
-      image.decoding = "async";
+      const siteCategory = categoryMap.get(site.category);
+      const iconBox = document.createElement("span");
+      iconBox.className = "site-icon";
+      iconBox.setAttribute("aria-hidden", "true");
+      const icon = document.createElement("i");
+      icon.className = `fas ${siteCategory?.icon || "fa-link"}`;
+      iconBox.appendChild(icon);
 
       const copy = document.createElement("div");
       copy.className = "site-card-copy";
@@ -329,7 +327,7 @@
       description.textContent = site.description;
       const category = document.createElement("span");
       category.className = "site-card-category";
-      category.textContent = categoryMap.get(site.category)?.name || site.category;
+      category.textContent = siteCategory?.name || site.category;
 
       const favoriteButton = document.createElement("button");
       favoriteButton.type = "button";
@@ -339,7 +337,7 @@
       favoriteButton.addEventListener("click", () => toggleFavorite(site, favoriteButton));
 
       copy.append(title, description, category);
-      link.append(image, copy);
+      link.append(iconBox, copy);
       article.append(link, favoriteButton);
       return article;
     }

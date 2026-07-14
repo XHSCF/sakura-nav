@@ -33,6 +33,9 @@ REQUIRED_FILES = (
 )
 LOCAL_REF_RE = re.compile(r"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
 SITE_RE = re.compile(r"\{(?=[^{}]*\bid:\s*\")[^{}]*\burl:\s*\"[^{}]+?\bcategory:\s*\"[^{}]+?\}")
+CATEGORY_RE = re.compile(
+    r"\{(?=[^{}]*\bid:\s*\"[a-z0-9-]+\")(?=[^{}]*\bname:\s*\"[^\"]+\")[^{}]*\}"
+)
 REMOTE_FAVICON_RE = re.compile(
     r"google\.com/s2/favicons|gstatic\.com|https?://[^\s\"']*favicon", re.I
 )
@@ -99,7 +102,18 @@ def validate() -> tuple[list[str], list[str]]:
         category_section = data_text.split("sites: [", 1)[0]
         if re.search(r"\bfriends\s*:", data_text):
             errors.append("sites-data.js 仍包含友情链接数据")
-        category_ids = set(re.findall(r'\bid:\s*"([a-z0-9-]+)"', category_section))
+        categories = CATEGORY_RE.findall(category_section)
+        category_ids: set[str] = set()
+        for block in categories:
+            category_id = field(block, "id")
+            category_icon = field(block, "icon")
+            category_ids.add(category_id)
+            if not category_icon:
+                errors.append(f"分类 {category_id or '未知'} 缺少 icon 字段")
+            elif not re.fullmatch(r"fa-[a-z0-9-]+", category_icon):
+                errors.append(f"分类 {category_id} 的 icon 不是合法 Font Awesome 类名：{category_icon}")
+            if category_id == "ios" and category_icon != "fa-mobile-alt":
+                errors.append("iOS 相关分类必须使用通用手机图标 fa-mobile-alt")
         sites = SITE_RE.findall(data_text)
         ids: list[str] = []
         urls: list[str] = []
@@ -160,8 +174,24 @@ def validate() -> tuple[list[str], list[str]]:
         app_text = app_path.read_text(encoding="utf-8")
         if "site.icon" in app_text:
             errors.append("sakura-app.js 仍依赖 site.icon")
-        if 'assets/images/icons/sakura-mark.svg' not in app_text:
-            errors.append("sakura-app.js 未引用统一樱花图标")
+        card_match = re.search(
+            r"function\s+createSiteCard\b[\s\S]*?(?=\n\s*function\s+resetKeyboardSelection\b)",
+            app_text,
+        )
+        if not card_match:
+            errors.append("sakura-app.js 缺少网站卡片渲染函数")
+        else:
+            card_text = card_match.group(0)
+            if not re.search(r"categoryMap\.get\(\s*site\.category\s*\)", card_text):
+                errors.append("网站卡片未从所属分类读取图标")
+            if not re.search(r"\?\.icon\s*\|\|\s*[\"']fa-link[\"']", card_text):
+                errors.append("网站卡片缺少本地 fa-link 回退图标")
+            if not re.search(r"createElement\(\s*[\"']span[\"']\s*\)", card_text):
+                errors.append("网站卡片图标未使用本地容器渲染")
+            if re.search(r"createElement\(\s*[\"']img[\"']\s*\)", card_text):
+                errors.append("网站卡片仍固定创建图片图标")
+        if re.search(r"\bsiteIconPath\b", app_text):
+            errors.append("sakura-app.js 仍固定依赖樱花卡片图标")
         if re.search(r"data-friends|data\.friends|setupSubmissionForm|data-submission", app_text):
             errors.append("sakura-app.js 仍包含已删除的提交或友情链接逻辑")
         if "Date.UTC(2026, 6, 12)" not in app_text:
