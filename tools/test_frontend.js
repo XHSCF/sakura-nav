@@ -123,7 +123,9 @@ test("recent visits discard stale and duplicate entries and enforce the limit", 
 test("new-site dates and favorite ordering respect their boundaries", () => {
   const today = Date.parse("2026-07-14T12:00:00Z");
   assert.equal(core.isNewSite("2026-07-14", today, 14), true);
-  assert.equal(core.isNewSite("2026-06-29", today, 14), false);
+  assert.equal(core.isNewSite("2026-07-01", today, 14), true);
+  assert.equal(core.isNewSite("2026-06-30", today, 14), false);
+  assert.equal(core.isNewSite("2026-07-15", today, 14), false);
   assert.deepEqual(core.moveVisibleItem(["one", "hidden", "two"], ["one", "two"], "two", -1), ["two", "hidden", "one"]);
   assert.deepEqual(core.moveVisibleItem(["one", "two", "three"], ["one", "two", "three"], "three", 1), ["one", "two", "three"]);
 });

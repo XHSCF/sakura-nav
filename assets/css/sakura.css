@@ -1636,8 +1636,11 @@ select {
     font-size: 11px;
   }
 
-  .site-runtime {
+  .site-status {
     margin-top: 12px;
+  }
+
+  .site-runtime {
     font-size: 11px;
   }
 

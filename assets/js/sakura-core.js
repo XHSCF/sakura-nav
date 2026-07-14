@@ -99,7 +99,7 @@
     const windowDays = Number.isInteger(days) && days >= 0 ? days : 14;
     if (!Number.isFinite(timestamp) || !Number.isFinite(current)) return false;
     const age = Math.floor((current - timestamp) / 86400000);
-    return age >= 0 && age <= windowDays;
+    return age >= 0 && age < windowDays;
   }
 
   function latestAddedDate(sites) {
