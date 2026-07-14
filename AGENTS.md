@@ -165,7 +165,17 @@ python tools/validate_site.py
 git diff --check
 ```
 
+修改主题、搜索、筛选、收藏、最近访问或其他前端 JavaScript 逻辑时，还必须运行：
+
+```bash
+node --check assets/js/theme-init.js
+node --check assets/js/sakura-core.js
+node --check assets/js/sakura-app.js
+node --test tools/test_frontend.js
+```
+
 - `validate_site.py` 必须为 0 个错误；已有 HTTP 提示不等于错误，不顺便修改无关 HTTP 网站。
+- `tools/test_frontend.js` 必须全部通过；新增可复用的纯逻辑时应同步补充回归测试。
 - `git diff --check` 必须无输出。
 - 最终 diff 只能包含当前任务所需修改，不得含报告、缓存、临时文件或其他无关内容。
 

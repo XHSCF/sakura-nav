@@ -132,21 +132,8 @@
         <div class="content-utilities" role="group" aria-label="页面工具">
           <button class="utility-button" type="button" data-copy-view>
             <i class="fas fa-link" aria-hidden="true"></i>
-            <span data-copy-view-label>复制当前视图链接</span>
+            <span data-copy-view-label>复制当前板块链接</span>
           </button>
-          <button class="utility-button" type="button" data-export-favorites>
-            <i class="fas fa-file-export" aria-hidden="true"></i>
-            导出收藏
-          </button>
-          <button class="utility-button" type="button" data-import-favorites>
-            <i class="fas fa-file-import" aria-hidden="true"></i>
-            导入收藏
-          </button>
-          <input type="file" accept=".json,application/json" data-import-favorites-input hidden>
-          <a class="utility-button" href="https://github.com/XHSCF/sakura-nav/issues/new?template=invalid-link.yml" target="_blank" rel="noopener noreferrer">
-            <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-            反馈失效链接
-          </a>
           <span class="utility-status" role="status" aria-live="polite" data-utility-status></span>
         </div>
         <div data-site-groups></div>
@@ -184,6 +171,7 @@
   </button>
 
   <script src="./assets/js/sites-data.js" defer></script>
+  <script src="./assets/js/sakura-core.js" defer></script>
   <script src="./assets/js/sakura-app.js" defer></script>
 </body>
 </html>

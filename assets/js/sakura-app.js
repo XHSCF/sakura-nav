@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  const core = window.SAKURA_CORE;
+  if (!core) return;
+
   const root = document.documentElement;
   const themeKey = "sakura-theme";
   const favoritesKey = "sakura-favorites";
@@ -49,14 +52,12 @@
   }
 
   function preferredThemeMode() {
-    const saved = readTextStorage(themeKey);
-    if (saved === "light" || saved === "dark") return saved;
-    return "auto";
+    return core.normalizeThemeMode(readTextStorage(themeKey));
   }
 
   function applyTheme(mode, persist) {
-    const validMode = mode === "light" || mode === "dark" ? mode : "auto";
-    const theme = validMode === "auto" ? (systemDarkMode.matches ? "dark" : "light") : validMode;
+    const validMode = core.normalizeThemeMode(mode);
+    const theme = core.resolveTheme(validMode, systemDarkMode.matches);
     root.dataset.theme = theme;
     root.dataset.themeMode = validMode;
     if (persist) {
@@ -86,10 +87,7 @@
 
     document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
       button.addEventListener("click", () => {
-        const nextMode = root.dataset.themeMode === "auto"
-          ? "light"
-          : (root.dataset.themeMode === "light" ? "dark" : "auto");
-        applyTheme(nextMode, true);
+        applyTheme(core.nextThemeMode(root.dataset.themeMode), true);
       });
     });
 
@@ -160,14 +158,6 @@
     });
   }
 
-  function normalize(value) {
-    return String(value || "").toLocaleLowerCase("zh-CN").trim().replace(/\s+/g, " ");
-  }
-
-  function queryTerms(value) {
-    return normalize(value).split(" ").filter(Boolean);
-  }
-
   function setupHome() {
     const data = window.SAKURA_DATA;
     const gridRoot = document.querySelector("[data-site-groups]");
@@ -192,9 +182,6 @@
     const accessNotice = document.querySelector("[data-access-notice]");
     const copyView = document.querySelector("[data-copy-view]");
     const copyViewLabel = document.querySelector("[data-copy-view-label]");
-    const exportFavorites = document.querySelector("[data-export-favorites]");
-    const importFavorites = document.querySelector("[data-import-favorites]");
-    const importFavoritesInput = document.querySelector("[data-import-favorites-input]");
     const utilityStatus = document.querySelector("[data-utility-status]");
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
@@ -218,7 +205,7 @@
       const category = categoryAliases.get(requestedCategory) || requestedCategory;
       const view = params.get("view") || "all";
       if (search) search.value = query;
-      state.terms = queryTerms(query);
+      state.terms = core.queryTerms(query);
       state.category = category === "all" || categoryMap.has(category) ? category : "all";
       state.view = validViews.has(view) ? view : "all";
     }
@@ -237,26 +224,8 @@
 
     restoreUrlState();
 
-    const storedFavorites = readJsonStorage(favoritesKey, []);
-    const favorites = new Set(
-      (Array.isArray(storedFavorites) ? storedFavorites : [])
-        .filter((id) => typeof id === "string" && validIds.has(id))
-    );
-
-    function cleanRecentVisits(value) {
-      if (!Array.isArray(value)) return [];
-      const seen = new Set();
-      const cleaned = [];
-      value.forEach((entry) => {
-        if (!entry || typeof entry.id !== "string" || !validIds.has(entry.id) || seen.has(entry.id)) return;
-        const visitedAt = Number(entry.visitedAt);
-        cleaned.push({ id: entry.id, visitedAt: Number.isFinite(visitedAt) ? visitedAt : 0 });
-        seen.add(entry.id);
-      });
-      return cleaned.slice(0, 12);
-    }
-
-    let recentVisits = cleanRecentVisits(readJsonStorage(recentVisitsKey, []));
+    const favorites = new Set(core.sanitizeIdList(readJsonStorage(favoritesKey, []), validIds));
+    let recentVisits = core.cleanRecentVisits(readJsonStorage(recentVisitsKey, []), validIds, 12);
     writeJsonStorage(favoritesKey, Array.from(favorites));
     writeJsonStorage(recentVisitsKey, recentVisits);
 
@@ -314,14 +283,7 @@
     function filteredSites() {
       const sites = data.sites.filter((site) => {
         const category = categoryMap.get(site.category);
-        const searchable = normalize([
-          site.name,
-          site.description,
-          site.url,
-          category ? category.name : "",
-          ...(Array.isArray(site.keywords) ? site.keywords : [])
-        ].join(" "));
-        const matchesQuery = state.terms.every((term) => searchable.includes(term));
+        const matchesQuery = core.siteMatchesTerms(site, category ? category.name : "", state.terms);
         const matchesCategory = state.category === "all" || site.category === state.category;
         return matchesQuery && matchesCategory && matchesView(site);
       });
@@ -601,11 +563,11 @@
         } catch (_) {}
       }
 
-      const message = copied ? "当前视图链接已复制" : "复制失败，请手动复制地址栏链接";
-      if (copyViewLabel) copyViewLabel.textContent = copied ? "已复制当前视图" : "复制失败";
+      const message = copied ? "当前板块链接已复制" : "复制失败，请手动复制地址栏链接";
+      if (copyViewLabel) copyViewLabel.textContent = copied ? "已复制当前板块" : "复制失败";
       announceUtility(message);
       window.setTimeout(() => {
-        if (copyViewLabel) copyViewLabel.textContent = "复制当前视图链接";
+        if (copyViewLabel) copyViewLabel.textContent = "复制当前板块链接";
       }, 1800);
     }
 
@@ -616,60 +578,6 @@
       utilityResetTimer = window.setTimeout(() => {
         utilityStatus.textContent = "";
       }, 3200);
-    }
-
-    function exportFavoriteData() {
-      const favoriteIds = data.sites.filter((site) => favorites.has(site.id)).map((site) => site.id);
-      if (!favoriteIds.length) {
-        announceUtility("当前没有收藏可导出");
-        return;
-      }
-
-      const payload = {
-        format: "sakura-nav-favorites",
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        favorites: favoriteIds
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `sakura-favorites-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-      announceUtility(`已导出 ${favoriteIds.length} 个收藏`);
-    }
-
-    async function importFavoriteData(file) {
-      if (!file) return;
-      if (file.size > 256 * 1024) {
-        announceUtility("导入失败：文件不能超过 256 KB");
-        return;
-      }
-
-      try {
-        const payload = JSON.parse(await file.text());
-        if (payload?.format !== "sakura-nav-favorites" || payload.version !== 1 || !Array.isArray(payload.favorites)) {
-          throw new Error("invalid-format");
-        }
-
-        const importedIds = Array.from(new Set(payload.favorites.filter((id) => typeof id === "string" && validIds.has(id))));
-        if (!importedIds.length) {
-          announceUtility("没有找到可导入的有效收藏");
-          return;
-        }
-
-        const previousSize = favorites.size;
-        importedIds.forEach((id) => favorites.add(id));
-        writeJsonStorage(favoritesKey, Array.from(favorites));
-        render();
-        announceUtility(`已读取 ${importedIds.length} 个收藏，新增 ${favorites.size - previousSize} 个`);
-      } catch (_) {
-        announceUtility("导入失败：请选择由本站导出的 JSON 文件");
-      }
     }
 
     if (categoryBar) {
@@ -712,17 +620,10 @@
 
     searchForm?.addEventListener("submit", (event) => event.preventDefault());
     copyView?.addEventListener("click", copyCurrentView);
-    exportFavorites?.addEventListener("click", exportFavoriteData);
-    importFavorites?.addEventListener("click", () => importFavoritesInput?.click());
-    importFavoritesInput?.addEventListener("change", async () => {
-      const [file] = Array.from(importFavoritesInput.files || []);
-      await importFavoriteData(file);
-      importFavoritesInput.value = "";
-    });
 
     if (search) {
       search.addEventListener("input", () => {
-        state.terms = queryTerms(search.value);
+        state.terms = core.queryTerms(search.value);
         clear?.classList.toggle("is-visible", Boolean(state.terms.length));
         if (shortcut) shortcut.hidden = Boolean(state.terms.length);
         updateUrlState();

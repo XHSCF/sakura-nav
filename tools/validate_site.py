@@ -6,18 +6,20 @@ from __future__ import annotations
 import json
 import re
 import sys
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse, urlsplit
 from xml.etree import ElementTree
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TODAY_IN_CHINA = (datetime.now(timezone.utc) + timedelta(hours=8)).date()
 MAIN_PAGES = ("index.html", "about/index.html", "404.html")
 REQUIRED_FILES = (
     *MAIN_PAGES,
     "assets/css/sakura.css",
     "assets/js/sites-data.js",
+    "assets/js/sakura-core.js",
     "assets/js/sakura-app.js",
     "assets/js/theme-init.js",
     "assets/images/icons/sakura-mark.svg",
@@ -32,7 +34,7 @@ REQUIRED_FILES = (
     "_headers",
     "wrangler.jsonc",
     ".github/workflows/site-validation.yml",
-    ".github/ISSUE_TEMPLATE/invalid-link.yml",
+    "tools/test_frontend.js",
 )
 LOCAL_REF_RE = re.compile(r"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
 SITE_RE = re.compile(r"\{(?=[^{}]*\bid:\s*\")[^{}]*\burl:\s*\"[^{}]+?\bcategory:\s*\"[^{}]+?\}")
@@ -47,6 +49,26 @@ REMOTE_FAVICON_RE = re.compile(
 def field(block: str, name: str) -> str:
     match = re.search(rf"\b{re.escape(name)}:\s*\"([^\"]*)\"", block)
     return match.group(1).strip() if match else ""
+
+
+def normalized_url_key(value: str) -> str:
+    parsed = urlsplit(value)
+    host = (parsed.hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    port = parsed.port
+    if port and not ((parsed.scheme == "http" and port == 80) or (parsed.scheme == "https" and port == 443)):
+        host = f"{host}:{port}"
+    path = re.sub(r"/{2,}", "/", parsed.path or "/")
+    if path != "/":
+        path = path.rstrip("/")
+    tracking = {"fbclid", "gclid", "mc_cid", "mc_eid"}
+    query = tuple(sorted(
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if not key.lower().startswith("utm_") and key.lower() not in tracking
+    ))
+    return repr((host, path, query))
 
 
 def validate() -> tuple[list[str], list[str]]:
@@ -84,6 +106,12 @@ def validate() -> tuple[list[str], list[str]]:
             errors.append(f"{relative} 仍包含已删除功能的链接")
         if relative in {"index.html", "about/index.html"} and "data-runtime-days" not in html:
             errors.append(f"{relative} 缺少网站运行天数")
+        if re.search(r"<script\b(?![^>]*\bsrc=)[^>]*>[\s\S]*?</script>", html, re.I):
+            errors.append(f"{relative} 包含会被 CSP 拦截的内联脚本")
+        if re.search(r"\son[a-z]+\s*=", html, re.I):
+            errors.append(f"{relative} 包含会被 CSP 拦截的内联事件处理器")
+        if re.search(r"\sstyle\s*=", html, re.I):
+            errors.append(f"{relative} 包含未审核的内联 style 属性")
         for reference in LOCAL_REF_RE.findall(html):
             if reference.startswith(("http://", "https://", "#", "mailto:", "tel:", "javascript:", "data:")):
                 continue
@@ -100,14 +128,12 @@ def validate() -> tuple[list[str], list[str]]:
                 errors.append(f"{relative} 存在可能导致 Mixed Content 的资源：{tag[:100]}")
 
     index_path = ROOT / "index.html"
+    index_html = ""
     if index_path.is_file():
         index_html = index_path.read_text(encoding="utf-8")
         homepage_features = {
             "三档主题按钮": "data-theme-toggle",
-            "收藏导出按钮": "data-export-favorites",
-            "收藏导入按钮": "data-import-favorites",
-            "收藏导入文件框": "data-import-favorites-input",
-            "失效链接反馈表单": "issues/new?template=invalid-link.yml",
+            "当前板块链接复制按钮": "复制当前板块链接",
         }
         for label, token in homepage_features.items():
             if token not in index_html:
@@ -118,28 +144,48 @@ def validate() -> tuple[list[str], list[str]]:
         app_text = app_path.read_text(encoding="utf-8")
         app_features = {
             "三档主题逻辑": "preferredThemeMode",
-            "收藏备份格式": 'format: "sakura-nav-favorites"',
-            "收藏导出逻辑": "exportFavoriteData",
-            "收藏导入逻辑": "importFavoriteData",
-            "收藏导入大小限制": "256 * 1024",
+            "共享纯逻辑模块": "window.SAKURA_CORE",
+            "当前板块复制反馈": "当前板块链接已复制",
         }
         for label, token in app_features.items():
             if token not in app_text:
                 errors.append(f"sakura-app.js 缺少{label}")
+        removed_tools = (
+            "data-export-favorites",
+            "data-import-favorites",
+            "exportFavoriteData",
+            "importFavoriteData",
+            "issues/new?template=invalid-link.yml",
+        )
+        for token in removed_tools:
+            if token in index_html or token in app_text:
+                errors.append(f"仍包含已移除的页面工具：{token}")
 
     validation_workflow = ROOT / ".github/workflows/site-validation.yml"
     if validation_workflow.is_file():
         workflow_text = validation_workflow.read_text(encoding="utf-8")
-        for token in ("push:", "pull_request:", "workflow_dispatch:", "python tools/validate_site.py"):
+        for token in ("push:", "pull_request:", "workflow_dispatch:", "node --test tools/test_frontend.js", "python tools/validate_site.py"):
             if token not in workflow_text:
                 errors.append(f"site-validation.yml 缺少配置：{token}")
 
-    issue_template = ROOT / ".github/ISSUE_TEMPLATE/invalid-link.yml"
-    if issue_template.is_file():
-        template_text = issue_template.read_text(encoding="utf-8")
-        for token in ("id: site-name", "id: site-url", "id: problem", "id: details", "id: confirmation"):
-            if token not in template_text:
-                errors.append(f"invalid-link.yml 缺少字段：{token}")
+    headers_path = ROOT / "_headers"
+    if headers_path.is_file():
+        headers_text = headers_path.read_text(encoding="utf-8")
+        if "Content-Security-Policy-Report-Only:" in headers_text:
+            errors.append("CSP 仍处于 Report-Only 模式")
+        required_csp = (
+            "Content-Security-Policy:",
+            "default-src 'self'",
+            "script-src 'self'",
+            "script-src-attr 'none'",
+            "style-src-elem 'self'",
+            "style-src-attr 'unsafe-inline'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+        )
+        for token in required_csp:
+            if token not in headers_text:
+                errors.append(f"_headers 缺少正式 CSP 配置：{token}")
 
     data_path = ROOT / "assets/js/sites-data.js"
     if data_path.is_file():
@@ -149,19 +195,31 @@ def validate() -> tuple[list[str], list[str]]:
             errors.append("sites-data.js 仍包含友情链接数据")
         categories = CATEGORY_RE.findall(category_section)
         category_ids: set[str] = set()
+        category_names: list[str] = []
         for block in categories:
             category_id = field(block, "id")
+            category_name = field(block, "name")
             category_icon = field(block, "icon")
             category_ids.add(category_id)
+            category_names.append(category_name.casefold())
+            if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", category_id):
+                errors.append(f"分类 id 格式无效：{category_id or '空值'}")
             if not category_icon:
                 errors.append(f"分类 {category_id or '未知'} 缺少 icon 字段")
             elif not re.fullmatch(r"fa-[a-z0-9-]+", category_icon):
                 errors.append(f"分类 {category_id} 的 icon 不是合法 Font Awesome 类名：{category_icon}")
             if category_id == "ios" and category_icon != "fa-mobile-alt":
                 errors.append("iOS 相关分类必须使用通用手机图标 fa-mobile-alt")
+        if len(category_ids) != len(categories):
+            errors.append("分类 id 存在重复")
+        duplicate_category_names = sorted({name for name in category_names if category_names.count(name) > 1})
+        if duplicate_category_names:
+            errors.append(f"分类名称重复：{', '.join(duplicate_category_names)}")
         sites = SITE_RE.findall(data_text)
         ids: list[str] = []
         urls: list[str] = []
+        normalized_urls: list[str] = []
+        names: list[str] = []
         for block in sites:
             values = {name: field(block, name) for name in ("id", "name", "url", "description", "category")}
             for name, value in values.items():
@@ -171,6 +229,18 @@ def validate() -> tuple[list[str], list[str]]:
             site_id = values["id"]
             ids.append(site_id)
             urls.append(values["url"])
+            names.append(values["name"].casefold())
+            if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", site_id):
+                errors.append(f"网站 id 格式无效：{site_id or '空值'}")
+            try:
+                parsed_url = urlsplit(values["url"])
+                if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+                    errors.append(f"网站 {site_id} 的 URL 必须是完整 HTTP(S) 地址：{values['url']}")
+                elif parsed_url.username or parsed_url.password:
+                    errors.append(f"网站 {site_id} 的 URL 不得包含认证信息")
+                normalized_urls.append(normalized_url_key(values["url"]))
+            except ValueError:
+                errors.append(f"网站 {site_id} 的 URL 无法解析：{values['url']}")
             if re.search(r"\bicon\s*:", block):
                 errors.append(f"网站 {site_id} 不应包含 icon 字段")
             if re.search(r"\brecent\s*:", block):
@@ -184,6 +254,8 @@ def validate() -> tuple[list[str], list[str]]:
                     parsed_date = date.fromisoformat(value)
                     if parsed_date.isoformat() != value:
                         raise ValueError
+                    if parsed_date > TODAY_IN_CHINA:
+                        errors.append(f"网站 {site_id} 的 addedAt 不能晚于今天：{value}")
                 except ValueError:
                     errors.append(f"网站 {site_id} 的 addedAt 不是合法 YYYY-MM-DD 日期：{value}")
             for flag in ("featured", "popular"):
@@ -196,8 +268,11 @@ def validate() -> tuple[list[str], list[str]]:
             else:
                 try:
                     keywords = json.loads(keywords_match.group(1))
-                    if not isinstance(keywords, list) or not all(isinstance(keyword, str) for keyword in keywords):
+                    if not isinstance(keywords, list) or not keywords or not all(isinstance(keyword, str) and keyword.strip() for keyword in keywords):
                         raise ValueError
+                    normalized_keywords = [keyword.strip() for keyword in keywords]
+                    if len(normalized_keywords) != len(set(normalized_keywords)):
+                        errors.append(f"网站 {site_id} 的 keywords 存在重复")
                 except (json.JSONDecodeError, ValueError):
                     errors.append(f"网站 {site_id} 的 keywords 必须为字符串数组")
             if values["category"] not in category_ids:
@@ -211,6 +286,12 @@ def validate() -> tuple[list[str], list[str]]:
         duplicate_urls = sorted({url for url in urls if urls.count(url) > 1})
         if duplicate_urls:
             errors.append(f"网站 URL 重复：{', '.join(duplicate_urls)}")
+        duplicate_normalized_urls = sorted({url for url in normalized_urls if normalized_urls.count(url) > 1})
+        if duplicate_normalized_urls:
+            errors.append("网站 URL 规范化后仍存在重复地址")
+        duplicate_names = sorted({name for name in names if names.count(name) > 1})
+        if duplicate_names:
+            errors.append(f"网站名称重复：{', '.join(duplicate_names)}")
         if re.search(r"待添加|TODO|placeholder", data_text, re.I):
             errors.append("网站数据中仍有占位内容")
 
