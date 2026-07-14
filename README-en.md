@@ -20,6 +20,7 @@ SAKURA Notes is a lightweight personal start page for frequently used websites, 
 - One-click recovery from empty results plus explicit feedback when JavaScript is disabled or application scripts fail to load
 - Three theme modes: system, light, and dark, plus responsive mobile, tablet, and desktop layouts
 - Local-date runtime counter starting on July 12, 2026
+- The footer derives its navigation-data update date from the newest valid site `addedAt` value
 - Lightweight install metadata without a Service Worker or aggressive page cache
 - No ads, third-party analytics scripts, online fonts, or required third-party CDN
 

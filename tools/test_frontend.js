@@ -127,3 +127,14 @@ test("new-site dates and favorite ordering respect their boundaries", () => {
   assert.deepEqual(core.moveVisibleItem(["one", "hidden", "two"], ["one", "two"], "two", -1), ["two", "hidden", "one"]);
   assert.deepEqual(core.moveVisibleItem(["one", "two", "three"], ["one", "two", "three"], "three", 1), ["one", "two", "three"]);
 });
+
+test("latest collection date ignores missing and invalid values", () => {
+  assert.equal(core.latestAddedDate([
+    { addedAt: "2026-07-12" },
+    { addedAt: "2026-07-14" },
+    { addedAt: "2026-02-30" },
+    {},
+    { addedAt: "not-a-date" }
+  ]), "2026-07-14");
+  assert.equal(core.latestAddedDate(null), "");
+});

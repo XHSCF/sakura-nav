@@ -105,8 +105,11 @@ def validate() -> tuple[list[str], list[str]]:
                 errors.append(f"{relative} 缺少统一图标引用：{reference}")
         if "commit.html" in html or "#friends" in html:
             errors.append(f"{relative} 仍包含已删除功能的链接")
-        if relative in {"index.html", "about/index.html"} and "data-runtime-days" not in html:
-            errors.append(f"{relative} 缺少网站运行天数")
+        if relative in {"index.html", "about/index.html"}:
+            if "data-runtime-days" not in html:
+                errors.append(f"{relative} 缺少网站运行天数")
+            if "data-data-updated" not in html:
+                errors.append(f"{relative} 缺少导航数据更新日期")
         if re.search(r"<script\b(?![^>]*\bsrc=)[^>]*>[\s\S]*?</script>", html, re.I):
             errors.append(f"{relative} 包含会被 CSP 拦截的内联脚本")
         if re.search(r"\son[a-z]+\s*=", html, re.I):
@@ -154,6 +157,7 @@ def validate() -> tuple[list[str], list[str]]:
             "搜索高亮逻辑": "appendHighlightedText",
             "匹配板块统计": "matchedCategories",
             "应用就绪状态": 'dataset.appReady = "true"',
+            "导航数据更新日期": "latestAddedDate",
         }
         for label, token in app_features.items():
             if token not in app_text:

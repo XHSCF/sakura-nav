@@ -72,7 +72,7 @@
 - `description`：一句简短、客观的中文说明，风格与现有条目一致。
 - `category`：严格使用用户指定板块对应的分类 ID。
 - `keywords`：包含名称、常用缩写、域名核心词和主要用途，不堆砌无关词。
-- `addedAt`：使用实际收录日期，必须是合法的 `YYYY-MM-DD`。
+- `addedAt`：使用实际收录日期，必须是合法的 `YYYY-MM-DD`；页脚“导航数据更新于”会自动读取全部条目中最新的合法日期。
 - 禁止添加 `recent: true` 或独立 `icon` 字段；网站卡片根据 `category` 自动继承所属分类的本地 Font Awesome Solid 图标，分类图标缺失时使用 `fa-link` 回退。
 - 只有用户明确要求“站长推荐：是”时添加 `featured: true`。
 - 只有用户明确要求“热门网站：是”时添加 `popular: true`。

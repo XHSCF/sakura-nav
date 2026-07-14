@@ -102,6 +102,16 @@
     return age >= 0 && age <= windowDays;
   }
 
+  function latestAddedDate(sites) {
+    return (Array.isArray(sites) ? sites : []).reduce((latest, site) => {
+      const value = String(site?.addedAt || "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return latest;
+      const timestamp = Date.parse(`${value}T00:00:00Z`);
+      if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== value) return latest;
+      return !latest || value > latest ? value : latest;
+    }, "");
+  }
+
   function moveVisibleItem(values, visibleValues, item, direction) {
     const items = Array.isArray(values) ? values.slice() : [];
     const visibleItems = Array.isArray(visibleValues) ? visibleValues : items;
@@ -126,6 +136,7 @@
     siteMatchesTerms,
     highlightSegments,
     isNewSite,
+    latestAddedDate,
     moveVisibleItem
   };
 });

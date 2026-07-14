@@ -156,6 +156,18 @@
     document.querySelectorAll("[data-runtime-days]").forEach((node) => {
       node.textContent = `本站已运行 ${runtimeDays} 天`;
     });
+
+    const latestDate = core.latestAddedDate(window.SAKURA_DATA?.sites);
+    document.querySelectorAll("[data-data-updated]").forEach((item) => {
+      if (!latestDate) {
+        item.hidden = true;
+        return;
+      }
+      const [, year, month, day] = latestDate.match(/^(\d{4})-(\d{2})-(\d{2})$/) || [];
+      const value = item.querySelector("[data-data-updated-value]");
+      if (value) value.textContent = `导航数据更新于 ${year}年${Number(month)}月${Number(day)}日`;
+      item.hidden = false;
+    });
   }
 
   function setupHome() {
