@@ -674,7 +674,7 @@ select {
 }
 
 .is-hidden-world .hero {
-  padding-bottom: 12px;
+  display: none;
 }
 
 .is-hidden-world .hero-copy,
@@ -682,10 +682,6 @@ select {
 .is-hidden-world .view-switcher,
 .is-hidden-world .content-section {
   display: none;
-}
-
-.is-hidden-world .search-wrap {
-  margin-top: 0;
 }
 
 .hidden-world-header,
