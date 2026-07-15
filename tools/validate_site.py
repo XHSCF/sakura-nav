@@ -39,6 +39,9 @@ REQUIRED_FILES = (
 )
 LOCAL_REF_RE = re.compile(r"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
 SITE_RE = re.compile(r"\{(?=[^{}]*\bid:\s*\")[^{}]*\burl:\s*\"[^{}]+?\bcategory:\s*\"[^{}]+?\}")
+HIDDEN_SITE_RE = re.compile(
+    r"\{(?=[^{}]*\bid:\s*\")(?=[^{}]*\burl:\s*\")(?=[^{}]*\bdescription:\s*\")(?=[^{}]*\bkeywords:\s*\[)[^{}]*\}"
+)
 CATEGORY_RE = re.compile(
     r"\{(?=[^{}]*\bid:\s*\"[a-z0-9-]+\")(?=[^{}]*\bname:\s*\"[^\"]+\")[^{}]*\}"
 )
@@ -141,6 +144,9 @@ def validate() -> tuple[list[str], list[str]]:
             "无结果重置按钮": "data-reset-filters",
             "脚本异常提示": "data-app-fallback",
             "无脚本提示": "<noscript>",
+            "新世界隐藏板块": "data-hidden-section",
+            "新世界退出按钮": "data-hidden-section-exit",
+            "新世界欢迎词": "欢迎踏入新世界的大门",
         }
         for label, token in homepage_features.items():
             if token not in index_html:
@@ -158,6 +164,8 @@ def validate() -> tuple[list[str], list[str]]:
             "匹配板块统计": "matchedCategories",
             "应用就绪状态": 'dataset.appReady = "true"',
             "导航数据更新日期": "latestAddedDate",
+            "隐藏板块入口逻辑": "enterHiddenSection",
+            "隐藏板块退出逻辑": "exitHiddenSection",
         }
         for label, token in app_features.items():
             if token not in app_text:
@@ -304,6 +312,68 @@ def validate() -> tuple[list[str], list[str]]:
                 errors.append(f"网站 {site_id} 引用了不存在的分类：{values['category']}")
             if values["url"].startswith("http://"):
                 warnings.append(f"网站 {site_id} 仍使用未验证 HTTPS 的导航地址：{values['url']}")
+
+        hidden_match = re.search(r"\bhiddenSection\s*:\s*\{([\s\S]*)\}\s*\}\);\s*$", data_text)
+        if not hidden_match:
+            errors.append("sites-data.js 缺少新世界隐藏板块配置")
+        else:
+            hidden_text = hidden_match.group(1)
+            hidden_meta, separator, hidden_site_tail = hidden_text.partition("sites: [")
+            expected_hidden = {
+                "id": "new-world",
+                "name": "新世界",
+                "icon": "fa-door-open",
+                "passphrase": "开门",
+                "welcome": "欢迎踏入新世界的大门",
+            }
+            for name, expected in expected_hidden.items():
+                actual = field(hidden_meta, name)
+                if actual != expected:
+                    errors.append(f"隐藏板块 {name} 配置应为：{expected}")
+            if not separator or "]" not in hidden_site_tail:
+                errors.append("隐藏板块 sites 必须为数组")
+            else:
+                hidden_sites_text = hidden_site_tail.rsplit("]", 1)[0]
+                hidden_blocks = HIDDEN_SITE_RE.findall(hidden_sites_text)
+                hidden_objects = re.findall(r"\{[^{}]*\}", hidden_sites_text)
+                if len(hidden_blocks) != len(hidden_objects):
+                    errors.append("隐藏板块网站对象缺少必要字段")
+                for block in hidden_blocks:
+                    values = {name: field(block, name) for name in ("id", "name", "url", "description")}
+                    for name, value in values.items():
+                        if not value:
+                            identity = values.get("id") or values.get("name") or "未知"
+                            errors.append(f"隐藏网站数据必填字段为空：{identity} / {name}")
+                    site_id = values["id"]
+                    ids.append(site_id)
+                    urls.append(values["url"])
+                    names.append(values["name"].casefold())
+                    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", site_id):
+                        errors.append(f"隐藏网站 id 格式无效：{site_id or '空值'}")
+                    try:
+                        parsed_url = urlsplit(values["url"])
+                        if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+                            errors.append(f"隐藏网站 {site_id} 的 URL 必须是完整 HTTP(S) 地址：{values['url']}")
+                        elif parsed_url.username or parsed_url.password:
+                            errors.append(f"隐藏网站 {site_id} 的 URL 不得包含认证信息")
+                        normalized_urls.append(normalized_url_key(values["url"]))
+                    except ValueError:
+                        errors.append(f"隐藏网站 {site_id} 的 URL 无法解析：{values['url']}")
+                    for forbidden in ("category", "icon", "addedAt", "featured", "popular", "recent"):
+                        if re.search(rf"\b{forbidden}\s*:", block):
+                            errors.append(f"隐藏网站 {site_id} 不应包含 {forbidden} 字段")
+                    keywords_match = re.search(r"\bkeywords\s*:\s*(\[[^\]]*\])", block)
+                    if not keywords_match:
+                        errors.append(f"隐藏网站 {site_id} 的 keywords 必须为字符串数组")
+                    else:
+                        try:
+                            keywords = json.loads(keywords_match.group(1))
+                            if not isinstance(keywords, list) or not keywords or not all(isinstance(keyword, str) and keyword.strip() for keyword in keywords):
+                                raise ValueError
+                        except (json.JSONDecodeError, ValueError):
+                            errors.append(f"隐藏网站 {site_id} 的 keywords 必须为字符串数组")
+                    if values["url"].startswith("http://"):
+                        warnings.append(f"隐藏网站 {site_id} 仍使用未验证 HTTPS 的导航地址：{values['url']}")
 
         duplicates = sorted({site_id for site_id in ids if ids.count(site_id) > 1})
         if duplicates:

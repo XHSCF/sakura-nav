@@ -61,5 +61,13 @@ window.SAKURA_DATA = Object.freeze({
     { id: "potplayer", name: "PotPlayer", url: "https://potplayer.tv/?lang=zh_CN", description: "支持多格式、字幕和硬件加速的 Windows 播放器。", category: "software", keywords: ["PotPlayer", "potplayer", "视频播放器", "影音播放", "字幕", "硬件加速"], addedAt: "2026-07-14" },
     { id: "mpc-be", name: "MPC-BE", url: "https://sourceforge.net/projects/mpcbe/", description: "轻量开源的 Windows 音视频播放器。", category: "software", keywords: ["MPC-BE", "mpcbe", "Media Player Classic", "视频播放器", "音频播放器", "开源播放器"], addedAt: "2026-07-14" },
     { id: "7-zip", name: "7-Zip", url: "https://www.7-zip.org/", description: "免费开源的高压缩率文件压缩与解压工具。", category: "software", keywords: ["7-Zip", "7zip", "压缩软件", "解压工具", "7z", "zip", "rar"], addedAt: "2026-07-14" }
-  ]
+  ],
+  hiddenSection: {
+    id: "new-world",
+    name: "新世界",
+    icon: "fa-door-open",
+    passphrase: "开门",
+    welcome: "欢迎踏入新世界的大门",
+    sites: []
+  }
 });

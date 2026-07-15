@@ -197,19 +197,30 @@
     const copyView = document.querySelector("[data-copy-view]");
     const copyViewLabel = document.querySelector("[data-copy-view-label]");
     const utilityStatus = document.querySelector("[data-utility-status]");
+    const hiddenConfig = data.hiddenSection;
+    const hiddenPanel = document.querySelector("[data-hidden-section]");
+    const hiddenSitesRoot = document.querySelector("[data-hidden-section-sites]");
+    const hiddenEmpty = document.querySelector("[data-hidden-section-empty]");
+    const hiddenExit = document.querySelector("[data-hidden-section-exit]");
+    const hiddenName = document.querySelector("[data-hidden-section-name]");
+    const hiddenWelcome = document.querySelector("[data-hidden-section-welcome]");
+    const hiddenCount = document.querySelector("[data-hidden-section-count]");
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
     const validViews = new Set(Array.from(viewSwitcher?.querySelectorAll("[data-view]") || [], (button) => button.dataset.view));
-    const state = { terms: [], category: "all", view: "all" };
+    const state = { terms: [], category: "all", view: "all", hidden: false };
     let scrollRequestToken = 0;
+    let hiddenTransitionToken = 0;
+    let normalScrollY = 0;
     let categoryControlFrame = 0;
     let selectedCardIndex = -1;
     let utilityResetTimer = 0;
     let visibleFavoriteIds = [];
     const now = new Date();
     const currentDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const normalSearchPlaceholder = search?.getAttribute("placeholder") || "";
     empty?.setAttribute("data-result-scroll-target", "empty");
 
     const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
@@ -217,7 +228,8 @@
 
     function restoreUrlState() {
       const params = new URLSearchParams(window.location.search);
-      const query = params.get("q") || "";
+      const requestedQuery = params.get("q") || "";
+      const query = core.matchesPassphrase(requestedQuery, hiddenConfig?.passphrase) ? "" : requestedQuery;
       const requestedCategory = params.get("category") || "all";
       const category = categoryAliases.get(requestedCategory) || requestedCategory;
       const view = params.get("view") || "all";
@@ -229,7 +241,7 @@
 
     function updateUrlState() {
       const url = new URL(window.location.href);
-      const query = search?.value.trim() || "";
+      const query = state.hidden ? "" : (search?.value.trim() || "");
       if (query) url.searchParams.set("q", query);
       else url.searchParams.delete("q");
       if (state.category !== "all") url.searchParams.set("category", state.category);
@@ -354,7 +366,8 @@
       return `${Number(month)}月${Number(day)}日`;
     }
 
-    function createSiteCard(site) {
+    function createSiteCard(site, options = {}) {
+      const hiddenCard = options.hidden === true;
       const article = document.createElement("article");
       article.className = "site-card";
       article.dataset.siteId = site.id;
@@ -365,9 +378,9 @@
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.setAttribute("aria-label", `在新标签页打开 ${site.name}`);
-      link.addEventListener("click", () => trackVisit(site.id));
+      if (!hiddenCard) link.addEventListener("click", () => trackVisit(site.id));
 
-      const siteCategory = categoryMap.get(site.category);
+      const siteCategory = options.category || categoryMap.get(site.category);
       const iconBox = document.createElement("span");
       iconBox.className = "site-icon";
       iconBox.setAttribute("aria-hidden", "true");
@@ -389,14 +402,14 @@
       category.className = "site-card-category";
       category.textContent = siteCategory?.name || site.category;
       meta.appendChild(category);
-      if (core.isNewSite(site.addedAt, currentDay, 14)) {
+      if (!hiddenCard && core.isNewSite(site.addedAt, currentDay, 14)) {
         const newBadge = document.createElement("span");
         newBadge.className = "site-card-new";
         newBadge.textContent = "NEW";
         newBadge.setAttribute("aria-label", "最近收录");
         meta.appendChild(newBadge);
       }
-      if (state.view === "recent" && site.addedAt) {
+      if (!hiddenCard && state.view === "recent" && site.addedAt) {
         const addedDate = document.createElement("time");
         addedDate.className = "site-card-date";
         addedDate.dateTime = site.addedAt;
@@ -404,17 +417,19 @@
         meta.appendChild(addedDate);
       }
 
-      const favoriteButton = document.createElement("button");
-      favoriteButton.type = "button";
-      favoriteButton.className = "favorite-button";
-      favoriteButton.innerHTML = '<i class="fas fa-star" aria-hidden="true"></i>';
-      updateFavoriteButton(favoriteButton, site);
-      favoriteButton.addEventListener("click", () => toggleFavorite(site, favoriteButton));
-
       copy.append(title, description, meta);
       link.append(iconBox, copy);
-      article.append(link, favoriteButton);
-      if (state.view === "favorites") {
+      article.appendChild(link);
+      if (!hiddenCard) {
+        const favoriteButton = document.createElement("button");
+        favoriteButton.type = "button";
+        favoriteButton.className = "favorite-button";
+        favoriteButton.innerHTML = '<i class="fas fa-star" aria-hidden="true"></i>';
+        updateFavoriteButton(favoriteButton, site);
+        favoriteButton.addEventListener("click", () => toggleFavorite(site, favoriteButton));
+        article.appendChild(favoriteButton);
+      }
+      if (!hiddenCard && state.view === "favorites") {
         const favoriteIndex = visibleFavoriteIds.indexOf(site.id);
         const controls = document.createElement("span");
         controls.className = "favorite-order-controls";
@@ -440,13 +455,17 @@
 
     function resetKeyboardSelection() {
       selectedCardIndex = -1;
-      gridRoot.querySelectorAll(".site-card.is-keyboard-selected").forEach((card) => {
+      document.querySelectorAll(".site-card.is-keyboard-selected").forEach((card) => {
         card.classList.remove("is-keyboard-selected");
       });
     }
 
+    function activeCardRoot() {
+      return state.hidden ? hiddenSitesRoot : gridRoot;
+    }
+
     function moveKeyboardSelection(direction) {
-      const cards = Array.from(gridRoot.querySelectorAll(".site-card"));
+      const cards = Array.from(activeCardRoot()?.querySelectorAll(".site-card") || []);
       if (!cards.length) return;
       cards.forEach((card) => card.classList.remove("is-keyboard-selected"));
       selectedCardIndex = selectedCardIndex < 0
@@ -458,7 +477,7 @@
     }
 
     function openKeyboardSelection() {
-      const cards = Array.from(gridRoot.querySelectorAll(".site-card"));
+      const cards = Array.from(activeCardRoot()?.querySelectorAll(".site-card") || []);
       const card = cards[selectedCardIndex];
       card?.querySelector(".site-card-link")?.click();
     }
@@ -538,6 +557,82 @@
           : `${data.sites.length} 个站点 · ${data.categories.length} 个分类`;
       }
       scheduleCategoryScrollControls();
+    }
+
+    function renderHiddenSection() {
+      if (!hiddenConfig || !hiddenSitesRoot) return;
+      const sites = Array.isArray(hiddenConfig.sites) ? hiddenConfig.sites : [];
+      const fragment = document.createDocumentFragment();
+      sites.forEach((site) => {
+        fragment.appendChild(createSiteCard(site, { hidden: true, category: hiddenConfig }));
+      });
+      hiddenSitesRoot.replaceChildren(fragment);
+      if (hiddenEmpty) hiddenEmpty.hidden = sites.length > 0;
+      if (hiddenCount) hiddenCount.textContent = String(sites.length);
+      if (hiddenName) hiddenName.textContent = hiddenConfig.name;
+      if (hiddenWelcome) hiddenWelcome.textContent = hiddenConfig.welcome;
+      document.querySelectorAll("[data-hidden-section-icon]").forEach((icon) => {
+        icon.className = `fas ${hiddenConfig.icon || "fa-door-open"}`;
+      });
+    }
+
+    function enterHiddenSection() {
+      if (!hiddenConfig || !hiddenPanel || state.hidden) return;
+      normalScrollY = window.scrollY;
+      state.hidden = true;
+      state.terms = [];
+      hiddenTransitionToken += 1;
+      scrollRequestToken += 1;
+      resetKeyboardSelection();
+      if (search) {
+        search.value = "";
+        search.readOnly = true;
+        search.placeholder = `已进入${hiddenConfig.name}`;
+      }
+      clear?.classList.remove("is-visible");
+      if (shortcut) shortcut.hidden = true;
+      root.classList.add("is-hidden-world");
+      hiddenPanel.hidden = false;
+      renderHiddenSection();
+      updateUrlState();
+
+      const token = hiddenTransitionToken;
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (!state.hidden || token !== hiddenTransitionToken) return;
+          const offset = visibleStickyHeight(siteHeader) + 18;
+          const top = window.scrollY + hiddenPanel.getBoundingClientRect().top - offset;
+          window.scrollTo({ top: Math.max(0, top), behavior: reducedMotion ? "auto" : "smooth" });
+          hiddenExit?.focus({ preventScroll: true });
+        });
+      });
+    }
+
+    function exitHiddenSection() {
+      if (!state.hidden) return;
+      state.hidden = false;
+      state.terms = [];
+      hiddenTransitionToken += 1;
+      root.classList.remove("is-hidden-world");
+      hiddenPanel.hidden = true;
+      if (search) {
+        search.value = "";
+        search.readOnly = false;
+        search.placeholder = normalSearchPlaceholder;
+      }
+      clear?.classList.remove("is-visible");
+      if (shortcut) shortcut.hidden = false;
+      updateUrlState();
+      render();
+
+      const token = hiddenTransitionToken;
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (state.hidden || token !== hiddenTransitionToken) return;
+          window.scrollTo({ top: Math.max(0, normalScrollY), behavior: reducedMotion ? "auto" : "smooth" });
+          viewSwitcher?.querySelector(`[data-view="${state.view}"]`)?.focus({ preventScroll: true });
+        });
+      });
     }
 
     function visibleStickyHeight(element) {
@@ -721,6 +816,7 @@
     });
 
     searchForm?.addEventListener("submit", (event) => event.preventDefault());
+    hiddenExit?.addEventListener("click", exitHiddenSection);
     copyView?.addEventListener("click", copyCurrentView);
     resetFilters?.addEventListener("click", () => {
       if (search) search.value = "";
@@ -739,6 +835,11 @@
 
     if (search) {
       search.addEventListener("input", () => {
+        if (core.matchesPassphrase(search.value, hiddenConfig?.passphrase)) {
+          enterHiddenSection();
+          return;
+        }
+        if (state.hidden) return;
         state.terms = core.queryTerms(search.value);
         clear?.classList.toggle("is-visible", Boolean(state.terms.length));
         if (shortcut) shortcut.hidden = Boolean(state.terms.length);
@@ -757,6 +858,10 @@
       });
 
       clear?.addEventListener("click", () => {
+        if (state.hidden) {
+          exitHiddenSection();
+          return;
+        }
         search.value = "";
         state.terms = [];
         clear.classList.remove("is-visible");
@@ -769,10 +874,16 @@
       document.addEventListener("keydown", (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
           event.preventDefault();
-          search.focus();
-          search.select();
+          if (state.hidden) hiddenExit?.focus();
+          else {
+            search.focus();
+            search.select();
+          }
         }
-        if (event.key === "Escape" && (document.activeElement === search || search.value)) {
+        if (event.key === "Escape" && state.hidden) {
+          event.preventDefault();
+          exitHiddenSection();
+        } else if (event.key === "Escape" && (document.activeElement === search || search.value)) {
           search.value = "";
           state.terms = [];
           clear?.classList.remove("is-visible");
@@ -790,6 +901,7 @@
     if (shortcut) shortcut.hidden = Boolean(state.terms.length);
     updateUrlState();
     render();
+    renderHiddenSection();
     return true;
   }
 

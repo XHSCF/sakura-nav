@@ -74,6 +74,15 @@ test("multi-keyword search normalizes whitespace and matches all terms", () => {
   assert.equal(core.siteMatchesTerms(site, "软件专区", ["开源", "字幕"]), false);
 });
 
+test("hidden section passphrase requires an exact normalized match", () => {
+  assert.equal(core.matchesPassphrase("开门", "开门"), true);
+  assert.equal(core.matchesPassphrase("  开门  ", "开门"), true);
+  assert.equal(core.matchesPassphrase("开门啦", "开门"), false);
+  assert.equal(core.matchesPassphrase("门", "开门"), false);
+  assert.equal(core.matchesPassphrase("", "开门"), false);
+  assert.equal(core.matchesPassphrase("开门", ""), false);
+});
+
 test("search highlighting returns safe text segments for matching terms", () => {
   assert.deepEqual(core.highlightSegments("M3U8 在线播放器", ["m3u8", "播放"]), [
     { text: "M3U8", match: true },
@@ -94,6 +103,17 @@ test("browser data and core scripts expose the expected globals", () => {
   vm.runInNewContext(fs.readFileSync(path.join(repositoryRoot, "assets/js/sites-data.js"), "utf8"), context);
   assert.equal(typeof context.SAKURA_CORE.siteMatchesTerms, "function");
   assert.ok(context.window.SAKURA_DATA.sites.some((site) => site.id === "qbittorrent"));
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(context.window.SAKURA_DATA.hiddenSection)),
+    {
+      id: "new-world",
+      name: "新世界",
+      icon: "fa-door-open",
+      passphrase: "开门",
+      welcome: "欢迎踏入新世界的大门",
+      sites: []
+    }
+  );
 });
 
 test("stored favorites keep only unique IDs that still exist", () => {
