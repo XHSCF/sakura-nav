@@ -816,7 +816,6 @@
       updateUrlState();
       render();
       scheduleResultScroll();
-      search?.focus();
     });
 
     if (search) {

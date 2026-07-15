@@ -136,6 +136,18 @@ test("homepage keeps the four fixed views and retires curated flags", () => {
   assert.match(stylesheet, /@media \(max-width: 768px\)[\s\S]*?\.view-switcher\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
 });
 
+test("restoring all sites does not focus the search input", () => {
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  const handlerStart = application.indexOf('resetFilters?.addEventListener("click"');
+  const handlerEnd = application.indexOf("\n\n    if (search) {", handlerStart);
+  const resetHandler = application.slice(handlerStart, handlerEnd);
+
+  assert.notEqual(handlerStart, -1);
+  assert.notEqual(handlerEnd, -1);
+  assert.match(resetHandler, /render\(\);\s*scheduleResultScroll\(\);/);
+  assert.doesNotMatch(resetHandler, /search\?*\.focus\(/);
+});
+
 test("stored favorites keep only unique IDs that still exist", () => {
   const validIds = new Set(["anime1", "qbittorrent"]);
   assert.deepEqual(
