@@ -118,6 +118,13 @@ test("browser data and core scripts expose the expected globals", () => {
           url: "https://jable.tv/",
           description: "日本18+。",
           keywords: ["Jable", "jable", "日本", "18+"]
+        },
+        {
+          id: "51chigua",
+          name: "51吃瓜网",
+          url: "https://zuzpayj.cc/",
+          description: "全网更新最快最全的吃瓜网。",
+          keywords: ["51吃瓜网", "51吃瓜", "zuzpayj", "吃瓜网"]
         }
       ]
     }
