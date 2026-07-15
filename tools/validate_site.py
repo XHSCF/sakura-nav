@@ -23,7 +23,11 @@ REQUIRED_FILES = (
     "assets/js/sakura-core.js",
     "assets/js/sakura-app.js",
     "assets/js/theme-init.js",
-    "assets/images/icons/sakura-mark.svg",
+    "sakura-icon.png",
+    "assets/images/icons/sakura-icon.png",
+    "assets/images/icons/favicon-16.png",
+    "assets/images/icons/favicon-32.png",
+    "assets/images/icons/favicon-48.png",
     "assets/images/favicon.png",
     "assets/images/og-sakura.png",
     "assets/images/icons/apple-touch-icon.png",
@@ -98,7 +102,10 @@ def validate() -> tuple[list[str], list[str]]:
             errors.append(f"{relative} 缺少正确的 lang 属性")
         prefix = "/" if relative == "404.html" else ("../" if relative.startswith("about/") else "./")
         expected_refs = (
-            f'{prefix}assets/images/icons/sakura-mark.svg',
+            f'{prefix}assets/images/icons/sakura-icon.png',
+            f'{prefix}assets/images/icons/favicon-16.png',
+            f'{prefix}assets/images/icons/favicon-32.png',
+            f'{prefix}assets/images/icons/favicon-48.png',
             f'{prefix}assets/images/favicon.png',
             f'{prefix}assets/images/icons/apple-touch-icon.png',
             f'{prefix}manifest.webmanifest',

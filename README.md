@@ -33,6 +33,7 @@ sakura-nav/
 ├── about/index.html                 # 关于页面
 ├── 404.html                         # 自定义 404 页面
 ├── manifest.webmanifest             # PWA 主屏信息
+├── sakura-icon.png                  # 透明樱花品牌图标母版
 ├── robots.txt                       # 搜索引擎抓取规则
 ├── sitemap.xml                      # 主要页面地图
 ├── _headers                         # Cloudflare 静态安全响应头
@@ -84,13 +85,13 @@ assets/js/sites-data.js
 
 新增网站不需要、也不允许填写 `icon` 字段。每个网站卡片自动继承所属分类的本地 Font Awesome 图标，同一分类下的卡片使用相同图标；网站不会请求 Google favicon、目标网站 favicon 或其他远程图标服务。
 
-唯一品牌矢量源文件：
+唯一品牌图标母版：
 
 ```text
-assets/images/icons/sakura-mark.svg
+sakura-icon.png
 ```
 
-浏览器 SVG favicon、顶部与页脚品牌标志直接引用该文件；`favicon.png`、`apple-touch-icon.png`、`pwa-192.png`、`pwa-512.png` 与分享资源均保持 SAKURA 樱花品牌。修改品牌图标时，只需替换这个 SVG，并重新导出上述兼容资源，不要在网站数据中恢复独立图标字段。
+母版使用透明背景并保留安全留白；顶部与页脚使用 `assets/images/icons/sakura-icon.png`，浏览器使用 16/32/48/64 PNG favicon，Apple Touch Icon、PWA 192/512 图标与分享资源也从同一母版导出。修改品牌图标时，只替换母版并重新导出这些兼容资源，不要在网站数据中恢复独立图标字段。
 
 ## 浏览器本地数据
 
@@ -208,4 +209,4 @@ SAKURA手记只提供外部网站入口，不托管第三方内容。链接状�
 
 ### 如何修改全站品牌图标
 
-替换 `assets/images/icons/sakura-mark.svg`，再从该 SVG 重新导出 favicon 和 180/192/512 PNG，最后运行验证脚本。不要为单个网站下载或填写独立图标。
+替换根目录的 `sakura-icon.png`，再从该透明 PNG 母版重新导出页面品牌图、16/32/48/64 favicon、180/192/512 平台图标和分享图，最后运行验证脚本。不要为单个网站下载或填写独立图标。

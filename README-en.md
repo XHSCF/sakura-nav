@@ -31,6 +31,7 @@ index.html                         Home page
 about/index.html                   About page
 404.html                           Custom error page
 manifest.webmanifest               PWA install metadata
+sakura-icon.png                    Transparent master for the SAKURA brand icon
 robots.txt                         Crawler rules
 sitemap.xml                        Canonical public pages
 _headers                           Cloudflare static security headers
@@ -69,13 +70,13 @@ Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and 
 
 Do not add an `icon` field to website data. Each card automatically inherits the local Font Awesome icon of its category, so cards in the same category share one icon. The site does not request Google favicon, destination-site favicons, or any other remote icon service.
 
-The SAKURA brand continues to use the single local vector source:
+The SAKURA brand uses one local source image:
 
 ```text
-assets/images/icons/sakura-mark.svg
+sakura-icon.png
 ```
 
-The SVG favicon plus the header and footer brand marks reference this file directly. `favicon.png`, `apple-touch-icon.png`, `pwa-192.png`, `pwa-512.png`, and social assets remain part of the SAKURA brand system. To change the brand icon, replace the SVG and re-export those resources; do not restore per-site icons.
+The transparent master keeps the required safe area. The header and footer use `assets/images/icons/sakura-icon.png`; 16/32/48/64 PNG favicons, the Apple Touch Icon, PWA 192/512 icons, and social artwork are exported from the same source. To change the brand icon, replace the master and re-export these compatible resources; do not restore per-site icons.
 
 ## Browser-only data
 

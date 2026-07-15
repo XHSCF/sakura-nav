@@ -172,7 +172,7 @@
 - 卡片图标的颜色、背景和边框通过现有 CSS 主题变量自动适配浅色与深色模式；不在网站数据中保存两套主题图标，也不为不同主题配置远程图片。
 - iOS 相关分类继续使用通用手机图标 `fa-mobile-alt`，不使用 `fab fa-apple` 或 Apple Logo；未经用户明确要求，不将分类图标改为任何品牌 Logo。
 - 普通网站收录或删除不得修改分类图标。只有用户明确要求修改整个板块图标时才允许修改分类对象的 `icon`，修改后同板块全部卡片自动同步；不得为了单个网站而修改整个板块图标。
-- 不修改 SAKURA 樱花品牌系统，但网站卡片不再固定使用樱花。顶部和页脚品牌标志、浏览器 SVG/PNG favicon、Apple Touch Icon、PWA 192/512 图标及 Open Graph 分享资源中的品牌元素继续使用 `assets/images/icons/sakura-mark.svg` 及其本地导出资源。
+- 不修改 SAKURA 樱花品牌系统，但网站卡片不再固定使用樱花。根目录 `sakura-icon.png` 是唯一品牌图标母版；顶部和页脚品牌标志、浏览器 PNG favicon、Apple Touch Icon、PWA 192/512 图标及 Open Graph 分享资源都必须从该母版导出并保持同一造型。
 - 普通网站收录或删除不得修改页面布局、CSS、搜索、收藏、最近访问、筛选、README、GitHub Actions 或 Cloudflare 配置。
 - 不擅自修改 HTTP 网站地址；只有确认 HTTPS 长期稳定且当前任务明确要求更新时才可修改。
 - `ios-update-blocker` 的 `.mobileconfig` 直链是有意设计。除非用户明确要求，不修改其网址、名称、描述或打开方式，不增加确认页、中间页、下载代理或跳转处理。
