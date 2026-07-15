@@ -68,6 +68,8 @@ window.SAKURA_DATA = Object.freeze({
     icon: "fa-door-open",
     passphrase: "开门",
     welcome: "欢迎踏入新世界的大门",
-    sites: []
+    sites: [
+      { id: "jable", name: "Jable", url: "https://jable.tv/", description: "日本18+。", keywords: ["Jable", "jable", "日本", "18+"] }
+    ]
   }
 });
