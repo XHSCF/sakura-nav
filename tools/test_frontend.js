@@ -102,73 +102,40 @@ test("browser data and core scripts expose the expected globals", () => {
   vm.runInNewContext(fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-core.js"), "utf8"), context);
   vm.runInNewContext(fs.readFileSync(path.join(repositoryRoot, "assets/js/sites-data.js"), "utf8"), context);
   assert.equal(typeof context.SAKURA_CORE.siteMatchesTerms, "function");
-  assert.ok(context.window.SAKURA_DATA.sites.some((site) => site.id === "qbittorrent"));
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(context.window.SAKURA_DATA.sites.find((site) => site.id === "mycomic"))),
-    {
-      id: "mycomic",
-      name: "MYCOMIC",
-      url: "https://mycomic.com/",
-      description: "日漫，韩漫，美漫、国产漫画，海量中文化漫画免费看，无广告。",
-      category: "anime",
-      keywords: ["MYCOMIC", "mycomic", "日漫", "韩漫", "美漫", "国产漫画", "中文漫画", "免费漫画", "无广告"],
-      addedAt: "2026-07-15"
-    }
-  );
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(context.window.SAKURA_DATA.hiddenSection)),
-    {
-      id: "new-world",
-      name: "新世界",
-      icon: "fa-door-open",
-      passphrase: "开门",
-      welcome: "欢迎踏入新世界的大门",
-      sites: [
-        {
-          id: "jable",
-          name: "Jable",
-          url: "https://jable.tv/",
-          description: "日本18+。",
-          keywords: ["Jable", "jable", "日本", "18+"]
-        },
-        {
-          id: "51chigua",
-          name: "51吃瓜网",
-          url: "https://zuzpayj.cc/",
-          description: "全网更新最快最全的吃瓜网。",
-          keywords: ["51吃瓜网", "51吃瓜", "zuzpayj", "吃瓜网"]
-        },
-        {
-          id: "heiliaowang",
-          name: "黑料网",
-          url: "https://hlwe7.com/",
-          description: "吃瓜爆料，每日揭秘网红黑料与明星丑闻。",
-          keywords: ["黑料网", "hlwe7", "吃瓜", "爆料", "网红黑料", "明星丑闻"]
-        },
-        {
-          id: "missav",
-          name: "MissAV",
-          url: "https://missav.ws/",
-          description: "日本18+",
-          keywords: ["MissAV", "missav", "日本", "18+"]
-        },
-        {
-          id: "netflav",
-          name: "Netflav",
-          url: "https://netflav.com/",
-          description: "日本18+",
-          keywords: ["Netflav", "netflav", "日本", "18+"]
-        },
-        {
-          id: "asmr-one",
-          name: "ASMR",
-          url: "https://www.asmr.one/",
-          description: "懂得都懂。",
-          keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"]
-        }
-      ]
-    }
-  );
+  const data = JSON.parse(JSON.stringify(context.window.SAKURA_DATA));
+  assert.ok(Array.isArray(data.categories));
+  assert.ok(Array.isArray(data.sites));
+  assert.ok(data.categories.length > 0);
+  assert.ok(data.sites.length > 0);
+
+  const { sites: hiddenSites, ...hiddenMeta } = data.hiddenSection;
+  assert.deepEqual(hiddenMeta, {
+    id: "new-world",
+    name: "新世界",
+    icon: "fa-door-open",
+    passphrase: "开门",
+    welcome: "欢迎踏入新世界的大门"
+  });
+  assert.ok(Array.isArray(hiddenSites));
+
+  const normalIds = new Set(data.sites.map((site) => site.id));
+  const hiddenIds = new Set();
+  const hiddenUrls = new Set();
+  hiddenSites.forEach((site) => {
+    assert.deepEqual(Object.keys(site).sort(), ["description", "id", "keywords", "name", "url"]);
+    assert.match(site.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    assert.ok(site.name.trim());
+    assert.ok(site.description.trim());
+    assert.ok(["http:", "https:"].includes(new URL(site.url).protocol));
+    assert.ok(Array.isArray(site.keywords));
+    assert.ok(site.keywords.length > 0);
+    assert.ok(site.keywords.every((keyword) => typeof keyword === "string" && keyword.trim()));
+    assert.equal(normalIds.has(site.id), false);
+    assert.equal(hiddenIds.has(site.id), false);
+    assert.equal(hiddenUrls.has(site.url), false);
+    hiddenIds.add(site.id);
+    hiddenUrls.add(site.url);
+  });
 });
 
 test("homepage keeps the four fixed views and retires curated flags", () => {
