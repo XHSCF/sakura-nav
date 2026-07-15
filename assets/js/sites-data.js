@@ -20,6 +20,7 @@ window.SAKURA_DATA = Object.freeze({
 
     { id: "anime1", name: "Anime1", url: "https://anime1.me/", description: "页面简洁、更新较快的动画网站。", category: "anime", keywords: ["anime1", "动漫", "动画", "番剧"] },
     { id: "sorani", name: "青空次元", url: "https://www.sorani.net/", description: "动漫番剧内容网站。", category: "anime", keywords: ["青空次元", "sorani", "动漫", "番剧"] },
+    { id: "mycomic", name: "MYCOMIC", url: "https://mycomic.com/", description: "日漫，韩漫，美漫、国产漫画，海量中文化漫画免费看，无广告。", category: "anime", keywords: ["MYCOMIC", "mycomic", "日漫", "韩漫", "美漫", "国产漫画", "中文漫画", "免费漫画", "无广告"], addedAt: "2026-07-15" },
 
     { id: "skrbt", name: "磁力搜索", url: "https://skrdizhi.com/", description: "BT 磁力搜索。", category: "downloads", keywords: ["磁力搜索", "skrbt", "bt", "torrent"] },
     { id: "dmhy", name: "动漫花园", url: "https://share.dmhy.org/", description: "动漫资源与番剧下载。", category: "downloads", keywords: ["动漫花园", "dmhy", "bt", "番剧下载"] },
@@ -70,7 +71,11 @@ window.SAKURA_DATA = Object.freeze({
     welcome: "欢迎踏入新世界的大门",
     sites: [
       { id: "jable", name: "Jable", url: "https://jable.tv/", description: "日本18+。", keywords: ["Jable", "jable", "日本", "18+"] },
-      { id: "51chigua", name: "51吃瓜网", url: "https://zuzpayj.cc/", description: "全网更新最快最全的吃瓜网。", keywords: ["51吃瓜网", "51吃瓜", "zuzpayj", "吃瓜网"] }
+      { id: "51chigua", name: "51吃瓜网", url: "https://zuzpayj.cc/", description: "全网更新最快最全的吃瓜网。", keywords: ["51吃瓜网", "51吃瓜", "zuzpayj", "吃瓜网"] },
+      { id: "heiliaowang", name: "黑料网", url: "https://hlwe7.com/", description: "吃瓜爆料，每日揭秘网红黑料与明星丑闻。", keywords: ["黑料网", "hlwe7", "吃瓜", "爆料", "网红黑料", "明星丑闻"] },
+      { id: "missav", name: "MissAV", url: "https://missav.ws/", description: "日本18+", keywords: ["MissAV", "missav", "日本", "18+"] },
+      { id: "netflav", name: "Netflav", url: "https://netflav.com/", description: "日本18+", keywords: ["Netflav", "netflav", "日本", "18+"] },
+      { id: "asmr-one", name: "ASMR", url: "https://www.asmr.one/", description: "懂得都懂。", keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"] }
     ]
   }
 });

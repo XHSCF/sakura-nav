@@ -104,6 +104,18 @@ test("browser data and core scripts expose the expected globals", () => {
   assert.equal(typeof context.SAKURA_CORE.siteMatchesTerms, "function");
   assert.ok(context.window.SAKURA_DATA.sites.some((site) => site.id === "qbittorrent"));
   assert.deepEqual(
+    JSON.parse(JSON.stringify(context.window.SAKURA_DATA.sites.find((site) => site.id === "mycomic"))),
+    {
+      id: "mycomic",
+      name: "MYCOMIC",
+      url: "https://mycomic.com/",
+      description: "日漫，韩漫，美漫、国产漫画，海量中文化漫画免费看，无广告。",
+      category: "anime",
+      keywords: ["MYCOMIC", "mycomic", "日漫", "韩漫", "美漫", "国产漫画", "中文漫画", "免费漫画", "无广告"],
+      addedAt: "2026-07-15"
+    }
+  );
+  assert.deepEqual(
     JSON.parse(JSON.stringify(context.window.SAKURA_DATA.hiddenSection)),
     {
       id: "new-world",
@@ -125,6 +137,34 @@ test("browser data and core scripts expose the expected globals", () => {
           url: "https://zuzpayj.cc/",
           description: "全网更新最快最全的吃瓜网。",
           keywords: ["51吃瓜网", "51吃瓜", "zuzpayj", "吃瓜网"]
+        },
+        {
+          id: "heiliaowang",
+          name: "黑料网",
+          url: "https://hlwe7.com/",
+          description: "吃瓜爆料，每日揭秘网红黑料与明星丑闻。",
+          keywords: ["黑料网", "hlwe7", "吃瓜", "爆料", "网红黑料", "明星丑闻"]
+        },
+        {
+          id: "missav",
+          name: "MissAV",
+          url: "https://missav.ws/",
+          description: "日本18+",
+          keywords: ["MissAV", "missav", "日本", "18+"]
+        },
+        {
+          id: "netflav",
+          name: "Netflav",
+          url: "https://netflav.com/",
+          description: "日本18+",
+          keywords: ["Netflav", "netflav", "日本", "18+"]
+        },
+        {
+          id: "asmr-one",
+          name: "ASMR",
+          url: "https://www.asmr.one/",
+          description: "懂得都懂。",
+          keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"]
         }
       ]
     }
