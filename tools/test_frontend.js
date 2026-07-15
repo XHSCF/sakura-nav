@@ -124,6 +124,18 @@ test("browser data and core scripts expose the expected globals", () => {
   );
 });
 
+test("homepage keeps the four fixed views and retires curated flags", () => {
+  const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  const siteData = fs.readFileSync(path.join(repositoryRoot, "assets/js/sites-data.js"), "utf8");
+  const viewIds = Array.from(homepage.matchAll(/data-view="([^"]+)"/g), (match) => match[1]);
+
+  assert.deepEqual(viewIds, ["all", "recent", "favorites", "history"]);
+  assert.doesNotMatch(siteData, /\b(?:featured|popular)\s*:/);
+  assert.match(stylesheet, /\.view-switcher\s*\{[^}]*overflow:\s*hidden;/s);
+  assert.match(stylesheet, /@media \(max-width: 768px\)[\s\S]*?\.view-switcher\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
+});
+
 test("stored favorites keep only unique IDs that still exist", () => {
   const validIds = new Set(["anime1", "qbittorrent"]);
   assert.deepEqual(

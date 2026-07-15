@@ -291,10 +291,9 @@ def validate() -> tuple[list[str], list[str]]:
                         errors.append(f"网站 {site_id} 的 addedAt 不能晚于今天：{value}")
                 except ValueError:
                     errors.append(f"网站 {site_id} 的 addedAt 不是合法 YYYY-MM-DD 日期：{value}")
-            for flag in ("featured", "popular"):
-                flag_match = re.search(rf"\b{flag}\s*:\s*([^,}}\n]+)", block)
-                if flag_match and flag_match.group(1).strip() not in {"true", "false"}:
-                    errors.append(f"网站 {site_id} 的 {flag} 必须为布尔值")
+            for retired_flag in ("featured", "popular"):
+                if re.search(rf"\b{retired_flag}\s*:", block):
+                    errors.append(f"网站 {site_id} 仍使用已停用的 {retired_flag} 字段")
             keywords_match = re.search(r"\bkeywords\s*:\s*(\[[^\]]*\])", block)
             if not keywords_match:
                 errors.append(f"网站 {site_id} 的 keywords 必须为字符串数组")

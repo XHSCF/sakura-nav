@@ -319,9 +319,7 @@
     }
 
     function matchesView(site) {
-      if (state.view === "featured") return Boolean(site.featured);
       if (state.view === "recent") return Boolean(site.addedAt);
-      if (state.view === "popular") return Boolean(site.popular);
       if (state.view === "favorites") return favorites.has(site.id);
       if (state.view === "history") return recentVisits.some((entry) => entry.id === site.id);
       return true;
@@ -664,17 +662,6 @@
       });
     }
 
-    function centerViewButton(button) {
-      if (!viewSwitcher || !button || !window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)").matches) return;
-      const maxScrollLeft = Math.max(0, viewSwitcher.scrollWidth - viewSwitcher.clientWidth);
-      const targetLeft = button.offsetLeft - (viewSwitcher.clientWidth - button.offsetWidth) / 2;
-      const nextLeft = Math.min(maxScrollLeft, Math.max(0, targetLeft));
-      viewSwitcher.scrollTo({
-        left: nextLeft,
-        behavior: reducedMotion ? "auto" : "smooth"
-      });
-    }
-
     function updateCategoryScrollControls() {
       if (!categoryBar || !categoryScrollLeft || !categoryScrollRight) return;
       if (!window.matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)").matches) {
@@ -805,7 +792,6 @@
       updatePressed(viewSwitcher, "view", state.view);
       updateUrlState();
       render();
-      centerViewButton(button);
       scheduleResultScroll();
     });
 

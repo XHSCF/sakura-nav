@@ -14,7 +14,7 @@ SAKURA Notes is a lightweight personal start page for frequently used websites, 
 - No backend, database, account system, build step, or package dependency
 - Centralized categories and websites in `assets/js/sites-data.js`
 - Search by name, description, URL, category, keywords, abbreviations, and multiple terms, with safe match highlighting and a matched-category count
-- Combined category and curated-view filters
+- Combined category filters with recent entries, favorites, and recent visits
 - Category buttons show site totals; the recent view shows collection dates, and sites added in the last 14 days receive a `NEW` badge
 - Browser-only favorites and recent visits, with manual ordering in the favorites view
 - One-click recovery from empty results plus explicit feedback when JavaScript is disabled or application scripts fail to load
@@ -51,7 +51,7 @@ There is no root `CNAME` file. Custom domains and DNS bindings are managed in th
 
 ## Website data
 
-Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and recent visits use this ID, so do not replace it with an array index or change it casually. A new entry only needs `id`, `name`, `url`, `description`, `category`, `keywords`, and optional curated flags:
+Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and recent visits use this ID, so do not replace it with an array index or change it casually. A new entry only needs `id`, `name`, `url`, `description`, `category`, `keywords`, and an optional `addedAt` date:
 
 ```js
 {
@@ -65,7 +65,7 @@ Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and 
 }
 ```
 
-Optional fields include the Boolean flags `featured` and `popular`, plus `addedAt` as a valid `YYYY-MM-DD` collection date. The recent view sorts dated entries from newest to oldest and shows at most 12. Curated labels do not represent measured traffic statistics.
+`addedAt` is an optional valid `YYYY-MM-DD` collection date. The recent view sorts dated entries from newest to oldest and shows at most 12. The former `featured` and `popular` views are retired, so website data no longer uses those fields.
 
 Do not add an `icon` field to website data. Each card automatically inherits the local Font Awesome icon of its category, so cards in the same category share one icon. The site does not request Google favicon, destination-site favicons, or any other remote icon service.
 
