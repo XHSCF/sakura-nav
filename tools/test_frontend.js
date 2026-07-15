@@ -9,6 +9,22 @@ const core = require("../assets/js/sakura-core.js");
 
 const repositoryRoot = path.resolve(__dirname, "..");
 
+test("public pages use the current brand without exposing repository details", () => {
+  const publicPages = ["index.html", "about/index.html", "404.html"];
+
+  publicPages.forEach((relativePath) => {
+    const source = fs.readFileSync(path.join(repositoryRoot, relativePath), "utf8");
+    assert.match(source, /SAKURA导航/);
+    assert.doesNotMatch(source, /SAKURA手记/);
+    assert.doesNotMatch(source, /github\.com\/XHSCF\/sakura-nav|GitHub 仓库|Cloudflare 自动部署/);
+    assert.doesNotMatch(source, /assets\/images\/og-sakura\.png/);
+  });
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "manifest.webmanifest"), "utf8"));
+  assert.equal(manifest.name, "SAKURA导航");
+  assert.equal(manifest.short_name, "SAKURA导航");
+});
+
 test("theme mode follows the expected three-state cycle", () => {
   assert.equal(core.normalizeThemeMode(null), "auto");
   assert.equal(core.resolveTheme("auto", false), "light");

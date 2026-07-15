@@ -1,6 +1,6 @@
-# SAKURA Notes
+# SAKURA Navigation
 
-SAKURA Notes is a lightweight personal start page for frequently used websites, video and anime resources, downloads, utilities, iOS links, and other web content.
+SAKURA Navigation is a lightweight personal start page for frequently used websites, video and anime resources, downloads, utilities, iOS links, and other web content.
 
 - Primary domain: [https://skrto.top](https://skrto.top)
 - Alternate domain: [https://www.skrto.top](https://www.skrto.top)
