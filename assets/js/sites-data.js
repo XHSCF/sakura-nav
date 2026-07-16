@@ -10,7 +10,6 @@ window.SAKURA_DATA = Object.freeze({
   ],
   sites: [
     { id: "aiyingyu", name: "爱美剧网", url: "https://m.aiyingyu.net/", description: "美剧在线观看。", category: "movies", keywords: ["美剧", "英剧", "aiyingyu"] },
-    { id: "wandou", name: "豌豆Pro", url: "https://wandou.la/", description: "影视内容在线观看。", category: "movies", keywords: ["豌豆", "wandou", "影视"] },
     { id: "libvio", name: "LIBVIO", url: "https://www.libvio.app/", description: "在线视频网站。", category: "movies", keywords: ["libvio", "影视", "视频"] },
     { id: "gimy", name: "剧迷", url: "https://gimy.tv/", description: "简洁的影视观看网站。", category: "movies", keywords: ["剧迷", "gimy", "影视"] },
     { id: "czzy", name: "厂长影视", url: "https://www.czzy.site/", description: "高清影视内容。", category: "movies", keywords: ["厂长", "czzy", "cz4k", "1080p"] },
