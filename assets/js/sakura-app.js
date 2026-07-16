@@ -301,12 +301,37 @@
       button.setAttribute("title", active ? "取消收藏" : "添加到我的常用");
     }
 
+    function scheduleFavoriteFocus(siteId, preferOrderControl = false) {
+      window.requestAnimationFrame(() => {
+        if (state.view !== "favorites") return;
+        const card = Array.from(gridRoot.querySelectorAll(".site-card"))
+          .find((item) => item.dataset.siteId === siteId);
+        const orderControl = preferOrderControl
+          ? card?.querySelector(".favorite-order-button:not(:disabled)")
+          : null;
+        const target = orderControl
+          || card?.querySelector(".favorite-button")
+          || viewSwitcher?.querySelector('[data-view="favorites"]');
+        target?.focus({ preventScroll: true });
+      });
+    }
+
     function toggleFavorite(site, button) {
-      if (favorites.has(site.id)) favorites.delete(site.id);
+      const wasFavorite = favorites.has(site.id);
+      const favoriteIndex = visibleFavoriteIds.indexOf(site.id);
+      const nextFocusId = wasFavorite && state.view === "favorites"
+        ? (visibleFavoriteIds[favoriteIndex + 1] || visibleFavoriteIds[favoriteIndex - 1] || "")
+        : site.id;
+      if (wasFavorite) favorites.delete(site.id);
       else favorites.add(site.id);
       writeJsonStorage(favoritesKey, Array.from(favorites));
-      if (state.view === "favorites") render();
-      else updateFavoriteButton(button, site);
+      if (state.view === "favorites") {
+        render();
+        scheduleFavoriteFocus(nextFocusId);
+      } else {
+        updateFavoriteButton(button, site);
+      }
+      announceUtility(wasFavorite ? `${site.name} 已从我的常用移除` : `${site.name} 已添加到我的常用`);
     }
 
     function moveFavorite(siteId, direction) {
@@ -315,6 +340,7 @@
       nextOrder.forEach((id) => favorites.add(id));
       writeJsonStorage(favoritesKey, nextOrder);
       render();
+      scheduleFavoriteFocus(siteId, true);
       announceUtility("收藏顺序已更新");
     }
 
@@ -472,6 +498,8 @@
       const card = cards[selectedCardIndex];
       card.classList.add("is-keyboard-selected");
       card.scrollIntoView({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
+      const siteName = card.querySelector(".site-card-title")?.textContent?.trim();
+      if (siteName) announceUtility(`已选择 ${siteName}，按 Enter 打开`);
     }
 
     function openKeyboardSelection() {

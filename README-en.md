@@ -159,10 +159,10 @@ Caching is layered by resource type: HTML, CSS, and JavaScript revalidate on eve
 
 ## PWA and SEO
 
-The manifest and local icons improve iPhone, iPad, and Android home-screen use. No Service Worker is registered, preventing stale application-shell caching. The repository also includes a 1200×630 Open Graph image, `robots.txt`, and `sitemap.xml` using the primary canonical host. Desktop fine-pointer devices receive a light card-entry animation, while `prefers-reduced-motion: reduce` disables it.
+The manifest and local icons improve iPhone, iPad, and Android home-screen use. No Service Worker is registered, preventing stale application-shell caching. Open Graph and Twitter Card metadata use the current 512×512 brand icon with the square-friendly `summary` card, while `robots.txt` and `sitemap.xml` use the primary canonical host. Desktop fine-pointer devices receive a light card-entry animation, while `prefers-reduced-motion: reduce` disables it.
 
 ## Privacy and content notice
 
-SAKURA Notes only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or third-party analytics scripts, uses no cookies, and does not transmit favorites or visit history.
+SAKURA Navigation only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or third-party analytics scripts, uses no cookies, and does not transmit favorites or visit history.
 
 Third-party assets remain subject to their licenses, including the Font Awesome license stored in the repository.

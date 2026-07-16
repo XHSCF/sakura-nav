@@ -20,7 +20,7 @@
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
   <meta property="og:image:alt" content="SAKURA导航，个人网址导航与网络收藏">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="关于｜SAKURA导航">
   <meta name="twitter:description" content="了解这个个人维护、纯静态、无广告的网址导航站。">
   <meta name="twitter:image" content="https://skrto.top/assets/images/icons/pwa-512.png">
@@ -44,13 +44,13 @@
         <span class="brand-mark" aria-hidden="true"><img src="../assets/images/icons/sakura-icon.png" alt="" width="28" height="28"></span>
         <span>SAKURA导航</span>
       </a>
-      <nav class="site-nav" data-site-nav aria-label="主要导航">
+      <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="主要导航">
         <a class="nav-link" href="../"><i class="fas fa-home" aria-hidden="true"></i>首页</a>
         <a class="nav-link" href="./" aria-current="page"><i class="fas fa-book-open" aria-hidden="true"></i>关于</a>
       </nav>
       <div class="header-actions">
         <button class="icon-button" type="button" data-theme-toggle aria-label="当前主题：跟随系统；点击切换到浅色模式" title="主题：跟随系统"><i class="fas fa-adjust" aria-hidden="true"></i></button>
-        <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="打开导航菜单" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
+        <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="打开导航菜单" aria-controls="primary-navigation" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
   </header>

@@ -186,7 +186,7 @@ git push origin main
 
 - `manifest.webmanifest` 提供 iPhone、iPad 和 Android 主屏信息。
 - PWA 图标由仓库现有 SAKURA 樱花标志导出。
-- `assets/images/og-sakura.png` 是 1200×630 分享图。
+- Open Graph 与 Twitter Card 使用由品牌母版导出的 512×512 方形图标，并声明为适配方形资源的 `summary` 卡片。
 - `robots.txt` 与 `sitemap.xml` 使用主域名 `https://skrto.top/`。
 - 项目故意不注册 Service Worker，避免代码更新后长期显示旧页面。
 - 桌面端精确指针设备使用轻量卡片入场动画，`prefers-reduced-motion: reduce` 下自动关闭。

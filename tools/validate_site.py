@@ -29,7 +29,6 @@ REQUIRED_FILES = (
     "assets/images/icons/favicon-32.png",
     "assets/images/icons/favicon-48.png",
     "assets/images/favicon.png",
-    "assets/images/og-sakura.png",
     "assets/images/icons/apple-touch-icon.png",
     "assets/images/icons/pwa-192.png",
     "assets/images/icons/pwa-512.png",

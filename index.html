@@ -20,7 +20,7 @@
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
   <meta property="og:image:alt" content="SAKURA导航，个人网址导航与网络收藏">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="SAKURA导航">
   <meta name="twitter:description" content="简洁、轻量的个人网址导航与网络收藏站。">
   <meta name="twitter:image" content="https://skrto.top/assets/images/icons/pwa-512.png">
@@ -78,7 +78,8 @@
           <form class="search-box" role="search" data-search-form>
             <i class="fas fa-search search-icon" aria-hidden="true"></i>
             <label class="sr-only" for="site-search">搜索网站</label>
-            <input class="search-input" id="site-search" type="search" data-site-search placeholder="搜索网站、描述或分类…" autocomplete="off" spellcheck="false">
+            <input class="search-input" id="site-search" type="search" data-site-search placeholder="搜索网站、描述或分类…" autocomplete="off" spellcheck="false" aria-describedby="search-keyboard-help">
+            <span class="sr-only" id="search-keyboard-help">输入关键词后可使用上下方向键选择网站，按 Enter 打开。</span>
             <kbd class="search-shortcut" aria-hidden="true">Ctrl K</kbd>
             <button class="search-clear" type="button" data-search-clear aria-label="清空搜索">
               <i class="fas fa-times" aria-hidden="true"></i>

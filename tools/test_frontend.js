@@ -18,6 +18,8 @@ test("public pages use the current brand without exposing repository details", (
     assert.doesNotMatch(source, /SAKURA手记/);
     assert.doesNotMatch(source, /github\.com\/XHSCF\/sakura-nav|GitHub 仓库|Cloudflare 自动部署/);
     assert.doesNotMatch(source, /assets\/images\/og-sakura\.png/);
+    assert.match(source, /<meta name="twitter:card" content="summary">/);
+    assert.match(source, /<meta (?:property="og:image"|name="twitter:image") content="https:\/\/skrto\.top\/assets\/images\/icons\/pwa-512\.png">/);
   });
 
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "manifest.webmanifest"), "utf8"));
@@ -167,7 +169,7 @@ test("homepage keeps the four fixed views and retires curated flags", () => {
 });
 
 test("restoring all sites does not focus the search input", () => {
-  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8").replace(/\r\n?/g, "\n");
   const handlerStart = application.indexOf('resetFilters?.addEventListener("click"');
   const handlerEnd = application.indexOf("\n\n    if (search) {", handlerStart);
   const resetHandler = application.slice(handlerStart, handlerEnd);
@@ -176,6 +178,14 @@ test("restoring all sites does not focus the search input", () => {
   assert.notEqual(handlerEnd, -1);
   assert.match(resetHandler, /render\(\);\s*scheduleResultScroll\(\);/);
   assert.doesNotMatch(resetHandler, /search\?*\.focus\(/);
+});
+
+test("favorite rerenders preserve a logical focus target and keyboard selection is announced", () => {
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+
+  assert.match(application, /function scheduleFavoriteFocus\([\s\S]*?preventScroll:\s*true/);
+  assert.match(application, /render\(\);\s*scheduleFavoriteFocus\(siteId, true\);/);
+  assert.match(application, /announceUtility\(`已选择 \$\{siteName\}，按 Enter 打开`\)/);
 });
 
 test("stored favorites keep only unique IDs that still exist", () => {
