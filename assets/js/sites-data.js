@@ -35,6 +35,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "zlibrary", name: "书籍下载", url: "https://z-library.sk/", description: "书籍与小说资源。", category: "downloads", keywords: ["z-library", "zlibrary", "电子书", "小说"] },
     { id: "wallhaven", name: "壁纸下载", url: "https://wallhaven.cc/", description: "高质量壁纸浏览与下载。", category: "downloads", keywords: ["wallhaven", "壁纸", "wallpaper", "桌面"] },
     { id: "haowallpaper", name: "哲风壁纸", url: "https://haowallpaper.com/", description: "高清电脑与手机壁纸浏览下载。", category: "downloads", keywords: ["哲风壁纸", "Hao Wallpaper", "haowallpaper", "高清壁纸", "壁纸下载"], addedAt: "2026-07-13" },
+    { id: "hifiti", name: "HiFiTi 音乐磁场", url: "https://www.hifiti.com/", description: "无损音乐与高品质音频资源分享社区。", category: "downloads", keywords: ["HiFiTi", "音乐磁场", "hifiti", "无损音乐", "FLAC", "MP3", "高品质音乐"], addedAt: "2026-07-17" },
 
     { id: "baimiao", name: "白描网页", url: "https://web.baimiaoapp.com/", description: "图片转文字与 OCR 识别。", category: "tools", keywords: ["白描", "baimiao", "ocr", "图片转文字"] },
     { id: "waifu2x", name: "图片放大", url: "https://www.waifu2x.net/", description: "动漫图片降噪与放大工具。", category: "tools", keywords: ["waifu2x", "图片放大", "超分辨率", "降噪"] },
