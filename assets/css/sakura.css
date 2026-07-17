@@ -681,6 +681,20 @@ select {
   color: var(--primary);
 }
 
+.access-notice-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.access-notice-copy span {
+  display: block;
+}
+
 .hidden-world {
   min-height: calc(100vh - var(--header-height) - 190px);
   padding: 28px 0 76px;
