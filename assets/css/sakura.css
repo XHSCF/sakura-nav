@@ -685,14 +685,23 @@ select {
   display: flex;
   min-width: 0;
   flex: 1;
-  align-items: flex-start;
+  align-items: stretch;
   flex-direction: column;
   gap: 4px;
   text-align: left;
 }
 
-.access-notice-copy span {
+.access-notice-line {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.access-notice-line span {
   display: block;
+  min-width: 0;
+  flex: 1;
 }
 
 .hidden-world {
@@ -1908,6 +1917,10 @@ select {
 }
 
 @media (max-width: 470px) {
+  .access-notice-line span {
+    text-align-last: center;
+  }
+
   .brand {
     font-size: 16px;
   }
