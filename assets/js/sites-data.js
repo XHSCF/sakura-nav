@@ -36,6 +36,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "wallhaven", name: "壁纸下载", url: "https://wallhaven.cc/", description: "高质量壁纸浏览与下载。", category: "downloads", keywords: ["wallhaven", "壁纸", "wallpaper", "桌面"] },
     { id: "haowallpaper", name: "哲风壁纸", url: "https://haowallpaper.com/", description: "高清电脑与手机壁纸浏览下载。", category: "downloads", keywords: ["哲风壁纸", "Hao Wallpaper", "haowallpaper", "高清壁纸", "壁纸下载"], addedAt: "2026-07-13" },
     { id: "hifiti", name: "HiFiTi 音乐磁场", url: "https://www.hifiti.com/", description: "无损音乐与高品质音频资源分享社区。", category: "downloads", keywords: ["HiFiTi", "音乐磁场", "hifiti", "无损音乐", "FLAC", "MP3", "高品质音乐"], addedAt: "2026-07-17" },
+    { id: "seedhub", name: "SeedHub", url: "https://www.seedhub.cc/", description: "影视、动漫与剧集资源分享。", category: "downloads", keywords: ["SeedHub", "seedhub", "影视资源", "动漫资源", "剧集资源", "资源分享"], addedAt: "2026-07-17" },
 
     { id: "baimiao", name: "白描网页", url: "https://web.baimiaoapp.com/", description: "图片转文字与 OCR 识别。", category: "tools", keywords: ["白描", "baimiao", "ocr", "图片转文字"] },
     { id: "waifu2x", name: "图片放大", url: "https://www.waifu2x.net/", description: "动漫图片降噪与放大工具。", category: "tools", keywords: ["waifu2x", "图片放大", "超分辨率", "降噪"] },
@@ -47,6 +48,9 @@ window.SAKURA_DATA = Object.freeze({
     { id: "ifixit", name: "iFixit", url: "https://zh.ifixit.com/", description: "免费的设备维修指南。", category: "tools", keywords: ["ifixit", "维修", "拆机", "指南"], addedAt: "2026-07-12" },
     { id: "resizeon", name: "Resizeon", url: "https://resizeon.com/zh-cn/", description: "在线调整图片尺寸。", category: "tools", keywords: ["resizeon", "图片尺寸", "resize", "缩放"], addedAt: "2026-07-12" },
     { id: "boce", name: "拨测", url: "https://www.boce.com/", description: "网站测速与网络检测平台。", category: "tools", keywords: ["拨测", "BOCE", "boce", "网站测速", "网络检测"], addedAt: "2026-07-13" },
+    { id: "gomusic", name: "GoMusic 音乐迁移", url: "https://music.unmeta.cn/", description: "将网易云、汽水和 QQ 音乐歌单转换后迁移至其他音乐平台。", category: "tools", keywords: ["GoMusic", "音乐迁移", "unmeta", "歌单迁移", "网易云音乐", "汽水音乐", "QQ音乐"], addedAt: "2026-07-17" },
+    { id: "squoosh", name: "Squoosh", url: "https://squoosh.app/", description: "在浏览器本地压缩和转换图片格式。", category: "tools", keywords: ["Squoosh", "squoosh", "图片压缩", "图片转换", "图像优化"], addedAt: "2026-07-17" },
+    { id: "remove-bg", name: "remove.bg", url: "https://www.remove.bg/", description: "自动移除图片背景并生成透明背景。", category: "tools", keywords: ["remove.bg", "removebg", "抠图", "移除背景", "透明背景", "图片工具"], addedAt: "2026-07-17" },
 
     { id: "appstore-price", name: "App Store 价格查询", url: "https://app.vbr.me/", description: "查询 App Store 全球应用定价。", category: "ios", keywords: ["app store", "价格查询", "应用定价", "ios"], addedAt: "2026-07-12" },
     { id: "ios-update-blocker", name: "iOS 屏蔽系统更新", url: "https://f.itsnebula.net/noota-26.mobileconfig", description: "用于屏蔽 iOS 系统更新的描述文件。", category: "ios", keywords: ["ios", "屏蔽更新", "描述文件", "mobileconfig"], addedAt: "2026-07-12" },
