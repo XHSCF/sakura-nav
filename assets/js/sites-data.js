@@ -48,7 +48,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "ifixit", name: "iFixit", url: "https://zh.ifixit.com/", description: "免费的设备维修指南。", category: "tools", keywords: ["ifixit", "维修", "拆机", "指南"], addedAt: "2026-07-12" },
     { id: "resizeon", name: "Resizeon", url: "https://resizeon.com/zh-cn/", description: "在线调整图片尺寸。", category: "tools", keywords: ["resizeon", "图片尺寸", "resize", "缩放"], addedAt: "2026-07-12" },
     { id: "boce", name: "拨测", url: "https://www.boce.com/", description: "网站测速与网络检测平台。", category: "tools", keywords: ["拨测", "BOCE", "boce", "网站测速", "网络检测"], addedAt: "2026-07-13" },
-    { id: "gomusic", name: "GoMusic 音乐迁移", url: "https://music.unmeta.cn/", description: "将网易云、汽水和 QQ 音乐歌单转换后迁移至其他音乐平台。", category: "tools", keywords: ["GoMusic", "音乐迁移", "unmeta", "歌单迁移", "网易云音乐", "汽水音乐", "QQ音乐"], addedAt: "2026-07-17" },
+    { id: "gomusic", name: "GoMusic 音乐迁移", url: "https://music.unmeta.cn/", description: "将网易、汽水和QQ音乐歌单转换后迁移至其他音乐平台。", category: "tools", keywords: ["GoMusic", "音乐迁移", "unmeta", "歌单迁移", "网易云音乐", "汽水音乐", "QQ音乐"], addedAt: "2026-07-17" },
     { id: "squoosh", name: "Squoosh", url: "https://squoosh.app/", description: "在浏览器本地压缩和转换图片格式。", category: "tools", keywords: ["Squoosh", "squoosh", "图片压缩", "图片转换", "图像优化"], addedAt: "2026-07-17" },
     { id: "remove-bg", name: "remove.bg", url: "https://www.remove.bg/", description: "自动移除图片背景并生成透明背景。", category: "tools", keywords: ["remove.bg", "removebg", "抠图", "移除背景", "透明背景", "图片工具"], addedAt: "2026-07-17" },
 
