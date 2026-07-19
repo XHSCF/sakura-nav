@@ -80,7 +80,8 @@ window.SAKURA_DATA = Object.freeze({
       { id: "heiliaowang", name: "黑料网", url: "https://hlwe7.com/", description: "吃瓜爆料，每日揭秘网红黑料与明星丑闻。", keywords: ["黑料网", "hlwe7", "吃瓜", "爆料", "网红黑料", "明星丑闻"] },
       { id: "missav", name: "MissAV", url: "https://missav.ws/", description: "日本18+。", keywords: ["MissAV", "missav", "日本", "18+"] },
       { id: "netflav", name: "Netflav", url: "https://netflav.com/", description: "日本18+。", keywords: ["Netflav", "netflav", "日本", "18+"] },
-      { id: "asmr-one", name: "ASMR", url: "https://www.asmr.one/", description: "懂得都懂。", keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"] }
+      { id: "asmr-one", name: "ASMR", url: "https://www.asmr.one/", description: "懂得都懂。", keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"] },
+      { id: "91douyin", name: "91抖阴_v5.2.0", url: "https://qiuyw.lanzouq.com/iioFW3x8fb7i", description: "已去除广告，所有内容免费看，微仿DY式短视频看片。", keywords: ["91抖阴", "91douyin", "短视频", "去广告", "免费观看", "DY"] }
     ]
   }
 });
