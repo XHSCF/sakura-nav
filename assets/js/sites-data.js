@@ -81,7 +81,8 @@ window.SAKURA_DATA = Object.freeze({
       { id: "missav", name: "MissAV", url: "https://missav.ws/", description: "日本18+。", keywords: ["MissAV", "missav", "日本", "18+"] },
       { id: "netflav", name: "Netflav", url: "https://netflav.com/", description: "日本18+。", keywords: ["Netflav", "netflav", "日本", "18+"] },
       { id: "asmr-one", name: "ASMR", url: "https://www.asmr.one/", description: "懂得都懂。", keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"] },
-      { id: "91douyin", name: "91抖阴_v5.2.0", url: "https://qiuyw.lanzouq.com/iioFW3x8fb7i", description: "已去除广告，所有内容免费看，微仿DY式短视频看片。", keywords: ["91抖阴", "91douyin", "短视频", "去广告", "免费观看", "DY"] }
+      { id: "91douyin", name: "91抖阴_v5.2.0", url: "https://qiuyw.lanzouq.com/iioFW3x8fb7i", description: "已去除广告，所有内容免费看，微仿DY式短视频看片。", keywords: ["91抖阴", "91douyin", "短视频", "去广告", "免费观看", "DY"] },
+      { id: "jinman-tiantang", name: "禁漫天堂", url: "https://pan.baidu.com/s/1PmsCAc7P7JFAwd-p8KusmA?pwd=keyf", description: "禁漫天堂去广告，内置模块。", keywords: ["禁漫天堂", "jinman", "漫画", "去广告", "内置模块"] }
     ]
   }
 });
