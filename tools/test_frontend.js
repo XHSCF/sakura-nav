@@ -226,6 +226,9 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*156px;/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*150px;/);
+  assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*flex:\s*1 1 0;/s);
+  assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*width:\s*100%;/s);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border-radius:\s*999px;/s);
 });
 
 test("homepage keeps the four fixed views and retires curated flags", () => {
