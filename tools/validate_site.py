@@ -248,7 +248,7 @@ def validate() -> tuple[list[str], list[str]]:
             elif not re.fullmatch(r"fa-[a-z0-9-]+", category_icon):
                 errors.append(f"分类 {category_id} 的 icon 不是合法 Font Awesome 类名：{category_icon}")
             if category_id == "ios" and category_icon != "fa-mobile-alt":
-                errors.append("iOS 相关分类必须使用通用手机图标 fa-mobile-alt")
+                errors.append("iOS专区分类必须使用通用手机图标 fa-mobile-alt")
         if len(category_ids) != len(categories):
             errors.append("分类 id 存在重复")
         duplicate_category_names = sorted({name for name in category_names if category_names.count(name) > 1})

@@ -24,10 +24,11 @@
 - 在线影视 → `movies` → `fa-film`
 - 动漫番剧 → `anime` → `fa-play-circle`
 - 资源下载 → `downloads` → `fa-cloud-download-alt`
+- iOS专区 → `ios` → `fa-mobile-alt`
+- 安卓专区 → `android` → `fa-robot`
+- PC专区 → `software` → `fa-laptop-code`
 - 在线工具 → `tools` → `fa-tools`
-- iOS 相关 → `ios` → `fa-mobile-alt`
 - 游戏专区 → `games` → `fa-gamepad`
-- 软件专区 → `software` → `fa-laptop-code`
 
 旧的 `ppt` 分类参数仅作为 `software` 的 URL 兼容别名保留；新增或修改网站数据时必须使用 `software`，不得继续写入 `ppt`。
 
@@ -172,7 +173,7 @@
 - 网站卡片自动继承所属分类的本地 Font Awesome Solid 图标，同一分类下的卡片必须使用同一个分类图标；新增网站只需填写 `category`，不得为单个网站恢复独立 `icon` 字段。
 - 不请求目标网站 favicon，不使用 Google favicon 或其他远程图标服务，不恢复 `assets/images` 下旧的 `logos` 网站图标目录。分类图标缺失时使用本地 `fa-link` 回退。
 - 卡片图标的颜色、背景和边框通过现有 CSS 主题变量自动适配浅色与深色模式；不在网站数据中保存两套主题图标，也不为不同主题配置远程图片。
-- iOS 相关分类继续使用通用手机图标 `fa-mobile-alt`，不使用 `fab fa-apple` 或 Apple Logo；未经用户明确要求，不将分类图标改为任何品牌 Logo。
+- iOS专区分类继续使用通用手机图标 `fa-mobile-alt`，不使用 `fab fa-apple` 或 Apple Logo；未经用户明确要求，不将分类图标改为任何品牌 Logo。
 - 普通网站收录或删除不得修改分类图标。只有用户明确要求修改整个板块图标时才允许修改分类对象的 `icon`，修改后同板块全部卡片自动同步；不得为了单个网站而修改整个板块图标。
 - 不修改 SAKURA 樱花品牌系统，但网站卡片不再固定使用樱花。根目录 `sakura-icon.png` 是唯一品牌图标母版；顶部和页脚品牌标志、浏览器 PNG favicon、Apple Touch Icon、PWA 192/512 图标及 Open Graph 分享资源都必须从该母版导出并保持同一造型。
 - 普通网站收录或删除不得修改页面布局、CSS、搜索、收藏、最近访问、筛选、README、GitHub Actions 或 Cloudflare 配置。

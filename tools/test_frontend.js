@@ -88,8 +88,8 @@ test("multi-keyword search normalizes whitespace and matches all terms", () => {
   };
   const terms = core.queryTerms("  开源   bt下载 ");
   assert.deepEqual(terms, ["开源", "bt下载"]);
-  assert.equal(core.siteMatchesTerms(site, "软件专区", terms), true);
-  assert.equal(core.siteMatchesTerms(site, "软件专区", ["开源", "字幕"]), false);
+  assert.equal(core.siteMatchesTerms(site, "PC专区", terms), true);
+  assert.equal(core.siteMatchesTerms(site, "PC专区", ["开源", "字幕"]), false);
 });
 
 test("hidden section passphrase requires an exact normalized match", () => {

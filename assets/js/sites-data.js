@@ -3,10 +3,11 @@ window.SAKURA_DATA = Object.freeze({
     { id: "movies", name: "在线影视", icon: "fa-film" },
     { id: "anime", name: "动漫番剧", icon: "fa-play-circle" },
     { id: "downloads", name: "资源下载", icon: "fa-cloud-download-alt" },
+    { id: "ios", name: "iOS专区", icon: "fa-mobile-alt" },
+    { id: "android", name: "安卓专区", icon: "fa-robot" },
+    { id: "software", name: "PC专区", icon: "fa-laptop-code" },
     { id: "tools", name: "在线工具", icon: "fa-tools" },
-    { id: "ios", name: "iOS 相关", icon: "fa-mobile-alt" },
-    { id: "games", name: "游戏专区", icon: "fa-gamepad" },
-    { id: "software", name: "软件专区", icon: "fa-laptop-code" }
+    { id: "games", name: "游戏专区", icon: "fa-gamepad" }
   ],
   sites: [
     { id: "aiyingyu", name: "爱美剧网", url: "https://m.aiyingyu.net/", description: "美剧在线观看。", category: "movies", keywords: ["美剧", "英剧", "aiyingyu"] },
