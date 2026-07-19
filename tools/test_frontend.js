@@ -172,7 +172,17 @@ test("browser data and core scripts expose the expected globals", () => {
   const hiddenIds = new Set();
   const hiddenUrls = new Set();
   hiddenSites.forEach((site) => {
-    assert.deepEqual(Object.keys(site).sort(), ["description", "id", "keywords", "name", "url"]);
+    const requiredFields = ["description", "id", "keywords", "name", "url"];
+    const actionFields = ["urlLabel", "secondaryUrl", "secondaryUrlLabel"];
+    const allowedFields = new Set([...requiredFields, ...actionFields]);
+    requiredFields.forEach((field) => assert.ok(Object.hasOwn(site, field)));
+    assert.ok(Object.keys(site).every((field) => allowedFields.has(field)));
+    const presentActionFields = actionFields.filter((field) => Object.hasOwn(site, field));
+    const hasUrlLabel = presentActionFields.includes("urlLabel");
+    const secondaryFieldCount = presentActionFields.filter((field) => field !== "urlLabel").length;
+    assert.ok(secondaryFieldCount === 0 || secondaryFieldCount === 2);
+    if (secondaryFieldCount) assert.equal(hasUrlLabel, true);
+    assert.equal(core.hasDualLinks(site), hasUrlLabel);
     assert.match(site.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     assert.ok(site.name.trim());
     assert.ok(site.description.trim());
@@ -183,9 +193,21 @@ test("browser data and core scripts expose the expected globals", () => {
     assert.equal(normalIds.has(site.id), false);
     assert.equal(hiddenIds.has(site.id), false);
     assert.equal(hiddenUrls.has(site.url), false);
+    if (site.secondaryUrl) {
+      assert.ok(["http:", "https:"].includes(new URL(site.secondaryUrl).protocol));
+      assert.equal(hiddenUrls.has(site.secondaryUrl), false);
+      hiddenUrls.add(site.secondaryUrl);
+    }
     hiddenIds.add(site.id);
     hiddenUrls.add(site.url);
   });
+});
+
+test("hidden dual-link cards render actions without recording visits", () => {
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+
+  assert.match(application, /const cardActions = core\.siteActions\(site\)/);
+  assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
 });
 
 test("homepage keeps the four fixed views and retires curated flags", () => {

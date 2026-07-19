@@ -392,7 +392,7 @@
 
     function createSiteCard(site, options = {}) {
       const hiddenCard = options.hidden === true;
-      const cardActions = hiddenCard ? [] : core.siteActions(site);
+      const cardActions = core.siteActions(site);
       const dualLinkCard = cardActions.length === 2;
       const article = document.createElement("article");
       article.className = "site-card";
@@ -458,7 +458,7 @@
           actionLink.rel = "noopener noreferrer";
           actionLink.textContent = action.label;
           actionLink.setAttribute("aria-label", `通过${action.label}打开 ${site.name}`);
-          actionLink.addEventListener("click", () => trackVisit(site.id));
+          if (!hiddenCard) actionLink.addEventListener("click", () => trackVisit(site.id));
           actions.appendChild(actionLink);
         });
         copy.appendChild(actions);
