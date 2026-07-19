@@ -392,7 +392,8 @@
 
     function createSiteCard(site, options = {}) {
       const hiddenCard = options.hidden === true;
-      const dualLinkCard = !hiddenCard && core.hasDualLinks(site);
+      const cardActions = hiddenCard ? [] : core.siteActions(site);
+      const dualLinkCard = cardActions.length === 2;
       const article = document.createElement("article");
       article.className = "site-card";
       article.dataset.siteId = site.id;
@@ -449,10 +450,7 @@
       if (dualLinkCard) {
         const actions = document.createElement("div");
         actions.className = "site-card-actions";
-        [
-          { label: site.urlLabel, url: site.url },
-          { label: site.secondaryUrlLabel, url: site.secondaryUrl }
-        ].forEach((action) => {
+        cardActions.forEach((action) => {
           const actionLink = document.createElement("a");
           actionLink.className = "site-card-action";
           actionLink.href = action.url;

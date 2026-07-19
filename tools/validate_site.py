@@ -280,43 +280,48 @@ def validate() -> tuple[list[str], list[str]]:
                 normalized_urls.append(normalized_url_key(values["url"]))
             except ValueError:
                 errors.append(f"网站 {site_id} 的 URL 无法解析：{values['url']}")
-            dual_values = {
-                name: field(block, name)
-                for name in ("urlLabel", "secondaryUrl", "secondaryUrlLabel")
-            }
-            dual_fields_present = {
-                name for name in dual_values
+            dual_values = {name: field(block, name) for name in ("urlLabel", "secondaryUrl", "secondaryUrlLabel")}
+            has_url_label = bool(re.search(r"\burlLabel\s*:", block))
+            secondary_fields = {"secondaryUrl", "secondaryUrlLabel"}
+            secondary_fields_present = {
+                name for name in secondary_fields
                 if re.search(rf"\b{re.escape(name)}\s*:", block)
             }
-            if dual_fields_present and dual_fields_present != set(dual_values):
-                missing = sorted(set(dual_values) - dual_fields_present)
-                errors.append(f"双按钮网站 {site_id} 缺少字段：{', '.join(missing)}")
-            elif dual_fields_present:
-                for name, value in dual_values.items():
-                    if not value:
-                        errors.append(f"双按钮网站 {site_id} 的 {name} 不能为空字符串")
+            if not has_url_label and secondary_fields_present:
+                errors.append(f"双按钮网站 {site_id} 缺少字段：urlLabel")
+            elif has_url_label:
+                if not dual_values["urlLabel"]:
+                    errors.append(f"双按钮网站 {site_id} 的 urlLabel 不能为空字符串")
+                if secondary_fields_present and secondary_fields_present != secondary_fields:
+                    missing = sorted(secondary_fields - secondary_fields_present)
+                    errors.append(f"双按钮网站 {site_id} 缺少字段：{', '.join(missing)}")
+                elif secondary_fields_present:
+                    for name in secondary_fields:
+                        if not dual_values[name]:
+                            errors.append(f"双按钮网站 {site_id} 的 {name} 不能为空字符串")
                 secondary_url = dual_values["secondaryUrl"]
                 primary_normalized = ""
                 secondary_normalized = ""
-                try:
-                    parsed_secondary_url = urlsplit(secondary_url)
-                    if parsed_secondary_url.scheme not in {"http", "https"} or not parsed_secondary_url.hostname:
-                        errors.append(f"双按钮网站 {site_id} 的 secondaryUrl 必须是完整 HTTP(S) 地址：{secondary_url}")
-                    elif parsed_secondary_url.username or parsed_secondary_url.password:
-                        errors.append(f"双按钮网站 {site_id} 的 secondaryUrl 不得包含认证信息")
-                    urls.append(secondary_url)
-                    secondary_normalized = normalized_url_key(secondary_url)
-                    normalized_urls.append(secondary_normalized)
-                except ValueError:
-                    errors.append(f"双按钮网站 {site_id} 的 secondaryUrl 无法解析：{secondary_url}")
-                try:
-                    primary_normalized = normalized_url_key(values["url"])
-                except ValueError:
-                    pass
-                if primary_normalized and primary_normalized == secondary_normalized:
-                    errors.append(f"双按钮网站 {site_id} 的两个 URL 不得相同")
-                if dual_values["urlLabel"].casefold() == dual_values["secondaryUrlLabel"].casefold():
-                    errors.append(f"双按钮网站 {site_id} 的两个按钮名称不得相同")
+                if secondary_fields_present == secondary_fields:
+                    try:
+                        parsed_secondary_url = urlsplit(secondary_url)
+                        if parsed_secondary_url.scheme not in {"http", "https"} or not parsed_secondary_url.hostname:
+                            errors.append(f"双按钮网站 {site_id} 的 secondaryUrl 必须是完整 HTTP(S) 地址：{secondary_url}")
+                        elif parsed_secondary_url.username or parsed_secondary_url.password:
+                            errors.append(f"双按钮网站 {site_id} 的 secondaryUrl 不得包含认证信息")
+                        urls.append(secondary_url)
+                        secondary_normalized = normalized_url_key(secondary_url)
+                        normalized_urls.append(secondary_normalized)
+                    except ValueError:
+                        errors.append(f"双按钮网站 {site_id} 的 secondaryUrl 无法解析：{secondary_url}")
+                    try:
+                        primary_normalized = normalized_url_key(values["url"])
+                    except ValueError:
+                        pass
+                    if primary_normalized and primary_normalized == secondary_normalized:
+                        errors.append(f"双按钮网站 {site_id} 的两个 URL 不得相同")
+                    if dual_values["urlLabel"].casefold() == dual_values["secondaryUrlLabel"].casefold():
+                        errors.append(f"双按钮网站 {site_id} 的两个按钮名称不得相同")
             if re.search(r"\bicon\s*:", block):
                 errors.append(f"网站 {site_id} 不应包含 icon 字段")
             if re.search(r"\brecent\s*:", block):

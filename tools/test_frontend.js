@@ -103,8 +103,22 @@ test("dual-link cards expose complete actions and search both destinations", () 
     keywords: ["日漫", "追番软件"]
   };
 
+  assert.deepEqual(core.siteActions(site), [
+    { label: "夸克", url: "https://pan.quark.cn/s/example" },
+    { label: "蓝奏云", url: "https://example.lanzouq.com/example" }
+  ]);
   assert.equal(core.hasDualLinks(site), true);
-  assert.equal(core.hasDualLinks({ ...site, secondaryUrlLabel: "" }), false);
+  const singleUrlSite = {
+    name: "单链接示例",
+    url: "https://example.com/download",
+    urlLabel: "下载"
+  };
+  assert.deepEqual(core.siteActions(singleUrlSite), [
+    { label: "下载", url: "https://example.com/download" },
+    { label: "暂无", url: "./404.html" }
+  ]);
+  assert.equal(core.siteMatchesTerms(singleUrlSite, "安卓专区", ["暂无"]), true);
+  assert.equal(core.hasDualLinks({ url: "https://example.com/" }), false);
   assert.equal(core.siteMatchesTerms(site, "安卓专区", ["夸克"]), true);
   assert.equal(core.siteMatchesTerms(site, "安卓专区", ["lanzouq"]), true);
   assert.equal(core.siteMatchesTerms(site, "安卓专区", ["蓝奏云"]), true);
@@ -228,11 +242,11 @@ test("the configured Android dual-link card renders only its two action links", 
     addedAt: "2026-07-19"
   });
   assert.match(application, /document\.createElement\(dualLinkCard \? "div" : "a"\)/);
-  assert.match(application, /\[\s*\{ label: site\.urlLabel, url: site\.url \},\s*\{ label: site\.secondaryUrlLabel, url: site\.secondaryUrl \}\s*\]/);
+  assert.match(application, /cardActions\.forEach\(\(action\) =>/);
   assert.match(application, /actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
 
   const healthCheck = fs.readFileSync(path.join(repositoryRoot, "tools/check_links.py"), "utf8");
-  assert.match(healthCheck, /if field\(block, "secondaryUrl"\):\s+continue/);
+  assert.match(healthCheck, /if re\.search\(r'\\burlLabel\\s\*:', block\):\s+continue/);
 });
 
 test("stored favorites keep only unique IDs that still exist", () => {

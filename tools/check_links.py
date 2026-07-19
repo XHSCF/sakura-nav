@@ -67,7 +67,7 @@ def load_sites(path: Path = DATA_FILE) -> list[Site]:
     }
     sites = []
     for block in SITE_RE.findall(text):
-        if field(block, "secondaryUrl"):
+        if re.search(r'\burlLabel\s*:', block):
             continue
         category_id = field(block, "category")
         site = Site(

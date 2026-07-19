@@ -53,9 +53,20 @@
     return cleaned.slice(0, Number.isInteger(limit) && limit > 0 ? limit : 12);
   }
 
-  function hasDualLinks(site) {
-    return [site?.url, site?.urlLabel, site?.secondaryUrl, site?.secondaryUrlLabel]
+  function siteActions(site) {
+    if (![site?.url, site?.urlLabel].every((value) => typeof value === "string" && value.trim())) return [];
+    const hasSecondaryAction = [site.secondaryUrl, site.secondaryUrlLabel]
       .every((value) => typeof value === "string" && value.trim());
+    return [
+      { label: site.urlLabel, url: site.url },
+      hasSecondaryAction
+        ? { label: site.secondaryUrlLabel, url: site.secondaryUrl }
+        : { label: "暂无", url: "./404.html" }
+    ];
+  }
+
+  function hasDualLinks(site) {
+    return siteActions(site).length === 2;
   }
 
   function siteMatchesTerms(site, categoryName, terms) {
@@ -66,6 +77,7 @@
       site.urlLabel,
       site.secondaryUrl,
       site.secondaryUrlLabel,
+      ...siteActions(site).flatMap((action) => [action.label, action.url]),
       categoryName,
       ...(Array.isArray(site.keywords) ? site.keywords : [])
     ].join(" "));
@@ -147,6 +159,7 @@
     nextThemeMode,
     sanitizeIdList,
     cleanRecentVisits,
+    siteActions,
     hasDualLinks,
     siteMatchesTerms,
     highlightSegments,
