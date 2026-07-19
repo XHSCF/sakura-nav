@@ -21,7 +21,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "sorani", name: "青空次元", url: "https://www.sorani.net/", description: "动漫番剧内容网站。", category: "anime", keywords: ["青空次元", "sorani", "动漫", "番剧"] },
     { id: "mycomic", name: "MYCOMIC", url: "https://mycomic.com/", description: "日漫、韩漫、美漫、国漫等，海量漫画免费看，无广告。", category: "anime", keywords: ["MYCOMIC", "mycomic", "日漫", "韩漫", "美漫", "国产漫画", "中文漫画", "免费漫画", "无广告"], addedAt: "2026-07-15" },
 
-    { id: "skrbt", name: "磁力搜索", url: "https://skrdizhi.com/", description: "BT 磁力搜索。", category: "downloads", keywords: ["磁力搜索", "skrbt", "bt", "torrent"] },
+    { id: "skrbt", name: "磁力搜索", url: "https://soskr.net/", description: "BT 磁力搜索。", category: "downloads", keywords: ["磁力搜索", "skrbt", "bt", "torrent"] },
     { id: "dmhy", name: "动漫花园", url: "https://share.dmhy.org/", description: "动漫资源与番剧下载。", category: "downloads", keywords: ["动漫花园", "dmhy", "bt", "番剧下载"] },
     { id: "dmhy-mirror", name: "动漫花园镜像站", url: "https://dongmanhuayuan.myheartsite.com/", description: "动漫花园同步镜像站。", category: "downloads", keywords: ["动漫花园", "dmhy", "镜像", "番剧下载"] },
     { id: "aq-pan", name: "AQ网盘资源", url: "https://wpzy.cc/", description: "网盘资源分享。", category: "downloads", keywords: ["aq", "网盘", "资源", "wpzy"] },
