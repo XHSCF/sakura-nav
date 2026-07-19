@@ -205,11 +205,14 @@ test("browser data and core scripts expose the expected globals", () => {
 
 test("hidden dual-link cards render actions without recording visits", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
 
   assert.match(application, /const cardActions = core\.siteActions\(site\)/);
   assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
   assert.match(application, /if \(!hiddenCard\) \{\s*const category = document\.createElement\("span"\)/);
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
+  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*156px;/s);
+  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*150px;/);
 });
 
 test("homepage keeps the four fixed views and retires curated flags", () => {
@@ -257,7 +260,7 @@ test("the configured Android dual-link card renders only its two action links", 
     id: "ciyuancheng-anime",
     name: "次元城动漫",
     url: "https://pan.quark.cn/s/a7d060249bb7",
-    urlLabel: "夸克",
+    urlLabel: "夸克网盘",
     secondaryUrl: "https://qiuyw.lanzouq.com/isrrM3spg3lc",
     secondaryUrlLabel: "蓝奏云",
     description: "资源丰富的日漫追番软件，解锁会员免广告。",
