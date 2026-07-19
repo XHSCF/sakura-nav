@@ -393,21 +393,17 @@
     function createSiteCard(site, options = {}) {
       const hiddenCard = options.hidden === true;
       const cardActions = core.siteActions(site);
+      const hasCardActions = cardActions.length > 0;
       const dualLinkCard = cardActions.length === 2;
       const article = document.createElement("article");
       article.className = "site-card";
       article.dataset.siteId = site.id;
+      article.classList.toggle("has-card-actions", hasCardActions);
+      article.classList.toggle("has-single-action", cardActions.length === 1);
       article.classList.toggle("has-dual-links", dualLinkCard);
 
-      const cardBody = document.createElement(dualLinkCard ? "div" : "a");
+      const cardBody = document.createElement("div");
       cardBody.className = "site-card-link";
-      if (!dualLinkCard) {
-        cardBody.href = site.url;
-        cardBody.target = "_blank";
-        cardBody.rel = "noopener noreferrer";
-        cardBody.setAttribute("aria-label", `在新标签页打开 ${site.name}`);
-        if (!hiddenCard) cardBody.addEventListener("click", () => trackVisit(site.id));
-      }
 
       const siteCategory = options.category || categoryMap.get(site.category);
       const iconBox = document.createElement("span");
@@ -450,7 +446,7 @@
 
       copy.append(title, description);
       if (meta.childElementCount) copy.appendChild(meta);
-      if (dualLinkCard) {
+      if (hasCardActions) {
         const actions = document.createElement("div");
         actions.className = "site-card-actions";
         cardActions.forEach((action) => {
@@ -524,8 +520,7 @@
       card.scrollIntoView({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
       const siteName = card.querySelector(".site-card-title")?.textContent?.trim();
       if (siteName) {
-        const instruction = card.classList.contains("has-dual-links") ? "按 Enter 选择下载按钮" : "按 Enter 打开";
-        announceUtility(`已选择 ${siteName}，${instruction}`);
+        announceUtility(`已选择 ${siteName}，按 Enter 选择操作按钮`);
       }
     }
 
@@ -536,9 +531,7 @@
       if (firstAction) {
         firstAction.focus();
         announceUtility(`已聚焦 ${firstAction.textContent} 按钮，按 Enter 打开`);
-        return;
       }
-      card?.querySelector(".site-card-link")?.click();
     }
 
     function createGroup(category, sites) {

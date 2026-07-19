@@ -92,7 +92,7 @@ test("multi-keyword search normalizes whitespace and matches all terms", () => {
   assert.equal(core.siteMatchesTerms(site, "PC专区", ["开源", "字幕"]), false);
 });
 
-test("dual-link cards expose complete actions and search both destinations", () => {
+test("single-button and dual-button cards expose complete searchable actions", () => {
   const site = {
     name: "次元城动漫",
     description: "资源丰富的日漫追番软件，解锁会员免广告。",
@@ -118,7 +118,12 @@ test("dual-link cards expose complete actions and search both destinations", () 
     { label: "暂无", url: "./404.html" }
   ]);
   assert.equal(core.siteMatchesTerms(singleUrlSite, "安卓专区", ["暂无"]), true);
-  assert.equal(core.hasDualLinks({ url: "https://example.com/" }), false);
+  const singleButtonSite = { name: "普通网站", url: "https://example.com/" };
+  assert.deepEqual(core.siteActions(singleButtonSite), [
+    { label: "点击进入", url: "https://example.com/" }
+  ]);
+  assert.equal(core.hasDualLinks(singleButtonSite), false);
+  assert.equal(core.siteMatchesTerms(singleButtonSite, "在线工具", ["点击进入"]), true);
   assert.equal(core.siteMatchesTerms(site, "安卓专区", ["夸克"]), true);
   assert.equal(core.siteMatchesTerms(site, "安卓专区", ["lanzouq"]), true);
   assert.equal(core.siteMatchesTerms(site, "安卓专区", ["蓝奏云"]), true);
@@ -157,6 +162,9 @@ test("browser data and core scripts expose the expected globals", () => {
   assert.ok(Array.isArray(data.sites));
   assert.ok(data.categories.length > 0);
   assert.ok(data.sites.length > 0);
+  data.sites.forEach((site) => {
+    assert.ok([1, 2].includes(core.siteActions(site).length));
+  });
 
   const { sites: hiddenSites, ...hiddenMeta } = data.hiddenSection;
   assert.deepEqual(hiddenMeta, {
@@ -183,6 +191,7 @@ test("browser data and core scripts expose the expected globals", () => {
     assert.ok(secondaryFieldCount === 0 || secondaryFieldCount === 2);
     if (secondaryFieldCount) assert.equal(hasUrlLabel, true);
     assert.equal(core.hasDualLinks(site), hasUrlLabel);
+    assert.ok([1, 2].includes(core.siteActions(site).length));
     assert.match(site.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     assert.ok(site.name.trim());
     assert.ok(site.description.trim());
@@ -203,11 +212,15 @@ test("browser data and core scripts expose the expected globals", () => {
   });
 });
 
-test("hidden dual-link cards render actions without recording visits", () => {
+test("all normal and hidden cards render actions with the expected visit behavior", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
 
   assert.match(application, /const cardActions = core\.siteActions\(site\)/);
+  assert.match(application, /const cardBody = document\.createElement\("div"\)/);
+  assert.doesNotMatch(application, /cardBody\.href\s*=/);
+  assert.match(application, /article\.classList\.toggle\("has-single-action", cardActions\.length === 1\)/);
+  assert.match(application, /if \(hasCardActions\) \{\s*const actions = document\.createElement\("div"\)/);
   assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
   assert.match(application, /if \(!hiddenCard\) \{\s*const category = document\.createElement\("span"\)/);
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
@@ -239,14 +252,15 @@ test("restoring all sites does not focus the search input", () => {
   assert.doesNotMatch(resetHandler, /search\?*\.focus\(/);
 });
 
-test("favorite rerenders preserve focus and keyboard selection supports dual-link cards", () => {
+test("favorite rerenders preserve focus and keyboard selection focuses card actions", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
   assert.match(application, /function scheduleFavoriteFocus\([\s\S]*?preventScroll:\s*true/);
   assert.match(application, /render\(\);\s*scheduleFavoriteFocus\(siteId, true\);/);
-  assert.match(application, /card\.classList\.contains\("has-dual-links"\) \? "按 Enter 选择下载按钮" : "按 Enter 打开"/);
+  assert.match(application, /announceUtility\(`已选择 \$\{siteName\}，按 Enter 选择操作按钮`\)/);
   assert.match(application, /const firstAction = card\?\.querySelector\("\.site-card-action"\)/);
   assert.match(application, /firstAction\.focus\(\)/);
+  assert.doesNotMatch(application, /card\?\.querySelector\("\.site-card-link"\)\?\.click\(\)/);
 });
 
 test("the configured Android dual-link card renders only its two action links", () => {
@@ -268,7 +282,7 @@ test("the configured Android dual-link card renders only its two action links", 
     keywords: ["次元城动漫", "次元城", "日漫", "追番软件", "安卓软件", "夸克", "蓝奏云"],
     addedAt: "2026-07-19"
   });
-  assert.match(application, /document\.createElement\(dualLinkCard \? "div" : "a"\)/);
+  assert.match(application, /const cardBody = document\.createElement\("div"\)/);
   assert.match(application, /cardActions\.forEach\(\(action\) =>/);
   assert.match(application, /actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
 

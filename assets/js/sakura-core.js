@@ -54,7 +54,10 @@
   }
 
   function siteActions(site) {
-    if (![site?.url, site?.urlLabel].every((value) => typeof value === "string" && value.trim())) return [];
+    if (typeof site?.url !== "string" || !site.url.trim()) return [];
+    if (typeof site.urlLabel !== "string" || !site.urlLabel.trim()) {
+      return [{ label: "点击进入", url: site.url }];
+    }
     const hasSecondaryAction = [site.secondaryUrl, site.secondaryUrlLabel]
       .every((value) => typeof value === "string" && value.trim());
     return [
