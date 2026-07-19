@@ -208,6 +208,8 @@ test("hidden dual-link cards render actions without recording visits", () => {
 
   assert.match(application, /const cardActions = core\.siteActions\(site\)/);
   assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
+  assert.match(application, /if \(!hiddenCard\) \{\s*const category = document\.createElement\("span"\)/);
+  assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
 });
 
 test("homepage keeps the four fixed views and retires curated flags", () => {

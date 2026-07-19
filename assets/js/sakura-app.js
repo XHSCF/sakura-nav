@@ -427,10 +427,12 @@
       appendHighlightedText(description, site.description);
       const meta = document.createElement("span");
       meta.className = "site-card-meta";
-      const category = document.createElement("span");
-      category.className = "site-card-category";
-      category.textContent = siteCategory?.name || site.category;
-      meta.appendChild(category);
+      if (!hiddenCard) {
+        const category = document.createElement("span");
+        category.className = "site-card-category";
+        category.textContent = siteCategory?.name || site.category;
+        meta.appendChild(category);
+      }
       if (!hiddenCard && core.isNewSite(site.addedAt, currentDay, 14)) {
         const newBadge = document.createElement("span");
         newBadge.className = "site-card-new";
@@ -446,7 +448,8 @@
         meta.appendChild(addedDate);
       }
 
-      copy.append(title, description, meta);
+      copy.append(title, description);
+      if (meta.childElementCount) copy.appendChild(meta);
       if (dualLinkCard) {
         const actions = document.createElement("div");
         actions.className = "site-card-actions";
