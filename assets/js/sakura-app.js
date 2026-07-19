@@ -392,17 +392,21 @@
 
     function createSiteCard(site, options = {}) {
       const hiddenCard = options.hidden === true;
+      const dualLinkCard = !hiddenCard && core.hasDualLinks(site);
       const article = document.createElement("article");
       article.className = "site-card";
       article.dataset.siteId = site.id;
+      article.classList.toggle("has-dual-links", dualLinkCard);
 
-      const link = document.createElement("a");
-      link.className = "site-card-link";
-      link.href = site.url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.setAttribute("aria-label", `在新标签页打开 ${site.name}`);
-      if (!hiddenCard) link.addEventListener("click", () => trackVisit(site.id));
+      const cardBody = document.createElement(dualLinkCard ? "div" : "a");
+      cardBody.className = "site-card-link";
+      if (!dualLinkCard) {
+        cardBody.href = site.url;
+        cardBody.target = "_blank";
+        cardBody.rel = "noopener noreferrer";
+        cardBody.setAttribute("aria-label", `在新标签页打开 ${site.name}`);
+        if (!hiddenCard) cardBody.addEventListener("click", () => trackVisit(site.id));
+      }
 
       const siteCategory = options.category || categoryMap.get(site.category);
       const iconBox = document.createElement("span");
@@ -442,8 +446,27 @@
       }
 
       copy.append(title, description, meta);
-      link.append(iconBox, copy);
-      article.appendChild(link);
+      if (dualLinkCard) {
+        const actions = document.createElement("div");
+        actions.className = "site-card-actions";
+        [
+          { label: site.urlLabel, url: site.url },
+          { label: site.secondaryUrlLabel, url: site.secondaryUrl }
+        ].forEach((action) => {
+          const actionLink = document.createElement("a");
+          actionLink.className = "site-card-action";
+          actionLink.href = action.url;
+          actionLink.target = "_blank";
+          actionLink.rel = "noopener noreferrer";
+          actionLink.textContent = action.label;
+          actionLink.setAttribute("aria-label", `通过${action.label}打开 ${site.name}`);
+          actionLink.addEventListener("click", () => trackVisit(site.id));
+          actions.appendChild(actionLink);
+        });
+        copy.appendChild(actions);
+      }
+      cardBody.append(iconBox, copy);
+      article.appendChild(cardBody);
       if (!hiddenCard) {
         const favoriteButton = document.createElement("button");
         favoriteButton.type = "button";
@@ -499,12 +522,21 @@
       card.classList.add("is-keyboard-selected");
       card.scrollIntoView({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
       const siteName = card.querySelector(".site-card-title")?.textContent?.trim();
-      if (siteName) announceUtility(`已选择 ${siteName}，按 Enter 打开`);
+      if (siteName) {
+        const instruction = card.classList.contains("has-dual-links") ? "按 Enter 选择下载按钮" : "按 Enter 打开";
+        announceUtility(`已选择 ${siteName}，${instruction}`);
+      }
     }
 
     function openKeyboardSelection() {
       const cards = Array.from(activeCardRoot()?.querySelectorAll(".site-card") || []);
       const card = cards[selectedCardIndex];
+      const firstAction = card?.querySelector(".site-card-action");
+      if (firstAction) {
+        firstAction.focus();
+        announceUtility(`已聚焦 ${firstAction.textContent} 按钮，按 Enter 打开`);
+        return;
+      }
       card?.querySelector(".site-card-link")?.click();
     }
 

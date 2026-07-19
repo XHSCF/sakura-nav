@@ -60,6 +60,8 @@ window.SAKURA_DATA = Object.freeze({
     { id: "ios-icons", name: "图标下载", url: "https://jiejingku.net/icon/", description: "iOS 应用图标下载。", category: "ios", keywords: ["ios", "应用图标", "icon", "捷径库"], addedAt: "2026-07-12" },
     { id: "douyin-parser", name: "抖音万能解析", url: "https://www.icloud.com/shortcuts/eb7052fb90d640ccafe843419c24fa6c", description: "解析并保存抖音无水印视频的 iOS 快捷指令。", category: "ios", keywords: ["抖音万能解析", "抖音解析", "douyin", "抖音去水印", "无水印视频", "iOS快捷指令"], addedAt: "2026-07-14" },
 
+    { id: "ciyuancheng-anime", name: "次元城动漫", url: "https://pan.quark.cn/s/a7d060249bb7", urlLabel: "夸克", secondaryUrl: "https://qiuyw.lanzouq.com/isrrM3spg3lc", secondaryUrlLabel: "蓝奏云", description: "资源丰富的日漫追番软件，解锁会员免广告。", category: "android", keywords: ["次元城动漫", "次元城", "日漫", "追番软件", "安卓软件", "夸克", "蓝奏云"], addedAt: "2026-07-19" },
+
     { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], addedAt: "2026-07-12" },
 
     { id: "qbittorrent", name: "qBittorrent", url: "https://www.qbittorrent.org/", description: "开源、无广告的跨平台 BitTorrent 客户端。", category: "software", keywords: ["qBittorrent", "qbittorrent", "BitTorrent", "BT下载", "磁力链接", "下载工具"], addedAt: "2026-07-14" },

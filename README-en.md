@@ -66,7 +66,7 @@ Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and 
 }
 ```
 
-`addedAt` is an optional valid `YYYY-MM-DD` collection date. The recent view sorts dated entries from newest to oldest and shows at most 12. The former `featured` and `popular` views are retired, so website data no longer uses those fields.
+`addedAt` is an optional valid `YYYY-MM-DD` collection date. The recent view sorts dated entries from newest to oldest and shows at most 12. To render two independent action buttons, provide `urlLabel`, `secondaryUrl`, and `secondaryUrlLabel` together; `url` remains the first action destination and the card body is not clickable. The former `featured` and `popular` views are retired, so website data no longer uses those fields.
 
 Do not add an `icon` field to website data. Each card automatically inherits the local Font Awesome icon of its category, so cards in the same category share one icon. The site does not request Google favicon, destination-site favicons, or any other remote icon service.
 

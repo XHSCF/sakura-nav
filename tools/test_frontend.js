@@ -92,6 +92,24 @@ test("multi-keyword search normalizes whitespace and matches all terms", () => {
   assert.equal(core.siteMatchesTerms(site, "PC专区", ["开源", "字幕"]), false);
 });
 
+test("dual-link cards expose complete actions and search both destinations", () => {
+  const site = {
+    name: "次元城动漫",
+    description: "资源丰富的日漫追番软件，解锁会员免广告。",
+    url: "https://pan.quark.cn/s/example",
+    urlLabel: "夸克",
+    secondaryUrl: "https://example.lanzouq.com/example",
+    secondaryUrlLabel: "蓝奏云",
+    keywords: ["日漫", "追番软件"]
+  };
+
+  assert.equal(core.hasDualLinks(site), true);
+  assert.equal(core.hasDualLinks({ ...site, secondaryUrlLabel: "" }), false);
+  assert.equal(core.siteMatchesTerms(site, "安卓专区", ["夸克"]), true);
+  assert.equal(core.siteMatchesTerms(site, "安卓专区", ["lanzouq"]), true);
+  assert.equal(core.siteMatchesTerms(site, "安卓专区", ["蓝奏云"]), true);
+});
+
 test("hidden section passphrase requires an exact normalized match", () => {
   assert.equal(core.matchesPassphrase("开门", "开门"), true);
   assert.equal(core.matchesPassphrase("  开门  ", "开门"), true);
@@ -180,12 +198,41 @@ test("restoring all sites does not focus the search input", () => {
   assert.doesNotMatch(resetHandler, /search\?*\.focus\(/);
 });
 
-test("favorite rerenders preserve a logical focus target and keyboard selection is announced", () => {
+test("favorite rerenders preserve focus and keyboard selection supports dual-link cards", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
   assert.match(application, /function scheduleFavoriteFocus\([\s\S]*?preventScroll:\s*true/);
   assert.match(application, /render\(\);\s*scheduleFavoriteFocus\(siteId, true\);/);
-  assert.match(application, /announceUtility\(`已选择 \$\{siteName\}，按 Enter 打开`\)/);
+  assert.match(application, /card\.classList\.contains\("has-dual-links"\) \? "按 Enter 选择下载按钮" : "按 Enter 打开"/);
+  assert.match(application, /const firstAction = card\?\.querySelector\("\.site-card-action"\)/);
+  assert.match(application, /firstAction\.focus\(\)/);
+});
+
+test("the configured Android dual-link card renders only its two action links", () => {
+  const context = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(repositoryRoot, "assets/js/sites-data.js"), "utf8"), context);
+  const data = JSON.parse(JSON.stringify(context.window.SAKURA_DATA));
+  const site = data.sites.find((entry) => entry.id === "ciyuancheng-anime");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+
+  assert.deepEqual(site, {
+    id: "ciyuancheng-anime",
+    name: "次元城动漫",
+    url: "https://pan.quark.cn/s/a7d060249bb7",
+    urlLabel: "夸克",
+    secondaryUrl: "https://qiuyw.lanzouq.com/isrrM3spg3lc",
+    secondaryUrlLabel: "蓝奏云",
+    description: "资源丰富的日漫追番软件，解锁会员免广告。",
+    category: "android",
+    keywords: ["次元城动漫", "次元城", "日漫", "追番软件", "安卓软件", "夸克", "蓝奏云"],
+    addedAt: "2026-07-19"
+  });
+  assert.match(application, /document\.createElement\(dualLinkCard \? "div" : "a"\)/);
+  assert.match(application, /\[\s*\{ label: site\.urlLabel, url: site\.url \},\s*\{ label: site\.secondaryUrlLabel, url: site\.secondaryUrl \}\s*\]/);
+  assert.match(application, /actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
+
+  const healthCheck = fs.readFileSync(path.join(repositoryRoot, "tools/check_links.py"), "utf8");
+  assert.match(healthCheck, /if field\(block, "secondaryUrl"\):\s+continue/);
 });
 
 test("stored favorites keep only unique IDs that still exist", () => {

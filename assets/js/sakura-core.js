@@ -53,11 +53,19 @@
     return cleaned.slice(0, Number.isInteger(limit) && limit > 0 ? limit : 12);
   }
 
+  function hasDualLinks(site) {
+    return [site?.url, site?.urlLabel, site?.secondaryUrl, site?.secondaryUrlLabel]
+      .every((value) => typeof value === "string" && value.trim());
+  }
+
   function siteMatchesTerms(site, categoryName, terms) {
     const searchable = normalize([
       site.name,
       site.description,
       site.url,
+      site.urlLabel,
+      site.secondaryUrl,
+      site.secondaryUrlLabel,
       categoryName,
       ...(Array.isArray(site.keywords) ? site.keywords : [])
     ].join(" "));
@@ -139,6 +147,7 @@
     nextThemeMode,
     sanitizeIdList,
     cleanRecentVisits,
+    hasDualLinks,
     siteMatchesTerms,
     highlightSegments,
     isNewSite,

@@ -80,6 +80,7 @@ assets/js/sites-data.js
 可选字段：
 
 - `addedAt`：收录日期，使用合法的 `YYYY-MM-DD`；“最近收录”按日期倒序显示最多 12 条
+- `urlLabel`、`secondaryUrl`、`secondaryUrlLabel`：三个字段必须同时填写，用于把卡片改为两个独立按钮；此时 `url` 是第一个按钮地址，卡片主体不可点击
 
 旧的 `featured` 与 `popular` 视图已经停用，网站数据不再使用这两个字段。
 

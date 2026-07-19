@@ -1069,6 +1069,51 @@ select {
   transform: translateY(-1px) scale(0.995);
 }
 
+.site-card.has-dual-links .site-card-link {
+  cursor: default;
+}
+
+.site-card.has-dual-links .site-card-link::after {
+  display: none;
+}
+
+.site-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.site-card-action {
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 6px 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line));
+  border-radius: 8px;
+  color: var(--primary-strong);
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.site-card-action:hover,
+.site-card-action:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 58%, var(--line));
+  color: var(--surface-solid);
+  background: linear-gradient(135deg, var(--primary-strong), var(--primary));
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.site-card-action:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
 .site-icon {
   display: grid;
   flex: 0 0 48px;
