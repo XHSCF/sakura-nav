@@ -1012,7 +1012,7 @@ select {
   border-radius: var(--radius-md);
   background: var(--surface);
   box-shadow: 0 1px 0 color-mix(in srgb, #fff 45%, transparent);
-  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .site-card-link::after {
@@ -1038,35 +1038,46 @@ select {
   height: 32px;
   padding: 0;
   place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: color-mix(in srgb, var(--muted) 62%, transparent);
-  background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
-  box-shadow: 0 4px 14px rgba(45, 38, 77, 0.08);
+  border: 1px solid transparent;
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--muted) 58%, transparent);
+  background: color-mix(in srgb, var(--surface-solid) 58%, transparent);
+  box-shadow: none;
   transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
 }
 
+.favorite-button i {
+  font-size: 14px;
+}
+
 .favorite-button:hover {
-  border-color: color-mix(in srgb, var(--pink) 42%, var(--line));
+  border-color: transparent;
   color: var(--pink);
+  background: color-mix(in srgb, var(--pink) 10%, var(--surface));
   transform: translateY(-1px);
+}
+
+.favorite-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--pink) 46%, transparent);
+  outline-offset: 2px;
 }
 
 .favorite-button.is-active,
 .favorite-button[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--pink) 42%, var(--line));
+  border-color: transparent;
   color: var(--favorite-foreground);
   background: linear-gradient(135deg, var(--pink), var(--primary));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--pink) 22%, transparent);
 }
 
 .site-card-link:hover {
   border-color: color-mix(in srgb, var(--primary) 28%, var(--line));
   box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
+  transform: none;
 }
 
 .site-card-link:active {
-  transform: translateY(-1px) scale(0.995);
+  transform: none;
 }
 
 .site-card.has-card-actions .site-card-link {
@@ -1097,10 +1108,11 @@ select {
   justify-content: center;
   padding: 8px 12px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line));
   border-radius: 999px;
   color: var(--primary-strong);
-  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 10%, transparent);
   font-size: 12px;
   font-weight: 780;
   line-height: 1.2;
@@ -1121,6 +1133,10 @@ select {
 
 .site-card-action:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.site-card-action:active {
+  transform: scale(0.97);
 }
 
 .site-icon {
