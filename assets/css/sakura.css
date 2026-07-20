@@ -1003,7 +1003,7 @@ select {
   min-height: 136px;
   height: 100%;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding: 16px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -1024,48 +1024,6 @@ select {
   font-size: 10px;
   font-weight: 900;
   content: "\f35d";
-}
-
-.favorite-button {
-  position: absolute;
-  z-index: 2;
-  top: 11px;
-  right: 11px;
-  display: grid;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  color: color-mix(in srgb, var(--muted) 58%, transparent);
-  background: color-mix(in srgb, var(--surface-solid) 58%, transparent);
-  box-shadow: none;
-  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
-}
-
-.favorite-button i {
-  font-size: 14px;
-}
-
-.favorite-button:hover {
-  border-color: transparent;
-  color: var(--pink);
-  background: color-mix(in srgb, var(--pink) 10%, var(--surface));
-  transform: translateY(-1px);
-}
-
-.favorite-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--pink) 46%, transparent);
-  outline-offset: 2px;
-}
-
-.favorite-button.is-active,
-.favorite-button[aria-pressed="true"] {
-  border-color: transparent;
-  color: var(--primary-strong);
-  background: color-mix(in srgb, var(--primary) 15%, var(--surface-solid));
-  box-shadow: none;
 }
 
 .site-card-link:hover {
@@ -1089,16 +1047,14 @@ select {
 .site-card-actions {
   position: absolute;
   z-index: 1;
-  top: calc(50% - 18px);
+  top: 50%;
   right: 16px;
   display: flex;
-  width: 152px;
-  gap: 6px;
-  margin: 0;
-}
-
-.site-card.has-single-action .site-card-actions {
   width: 92px;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  transform: translateY(-50%);
 }
 
 .site-card-action {
@@ -1143,41 +1099,39 @@ select {
 
 .site-icon {
   display: grid;
-  flex: 0 0 48px;
-  width: 48px;
-  height: 48px;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
   place-items: center;
   border: 1px solid var(--category-icon-border);
-  border-radius: 14px;
+  border-radius: 18px;
   color: var(--category-icon-color);
   background: var(--category-icon-bg);
   box-shadow: var(--category-icon-shadow);
 }
 
 .site-icon i {
-  font-size: 21px;
+  font-size: 28px;
   line-height: 1;
 }
 
 .site-card-copy {
+  display: flex;
   flex: 1 1 0;
   min-width: 0;
-}
-
-.site-card.has-single-action .site-card-copy {
+  min-height: 76px;
+  justify-content: center;
+  flex-direction: column;
   padding-right: 108px;
-}
-
-.site-card.has-dual-links .site-card-copy {
-  padding-right: 168px;
 }
 
 .site-card-title {
   display: block;
   overflow: hidden;
   color: var(--text);
-  font-size: 14px;
-  font-weight: 780;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1193,12 +1147,13 @@ select {
 
 .site-card-description {
   display: -webkit-box;
-  min-height: 2.9em;
-  margin: 4px 0 0;
+  min-height: 2.84em;
+  margin: 5px 0 0;
   overflow: hidden;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+  font-size: 14px;
+  font-weight: 520;
+  line-height: 1.42;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -1238,43 +1193,6 @@ select {
 }
 
 .hide-card-categories .site-card-category {
-  display: none;
-}
-
-.favorite-order-controls {
-  position: absolute;
-  z-index: 2;
-  top: 11px;
-  right: 50px;
-  display: flex;
-  gap: 4px;
-}
-
-.favorite-order-button {
-  display: grid;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--primary-strong);
-  background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
-  box-shadow: 0 3px 10px rgba(45, 38, 77, 0.07);
-  font-size: 9px;
-}
-
-.favorite-order-button:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--primary) 40%, var(--line));
-  background: var(--surface-soft);
-}
-
-.favorite-order-button:disabled {
-  opacity: 0.32;
-  cursor: default;
-}
-
-.site-card.has-order-controls .site-card-link::after {
   display: none;
 }
 
@@ -1772,7 +1690,7 @@ select {
   .view-switcher {
     display: grid;
     width: 100%;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 3px;
     margin-top: 10px;
     margin-right: 0;
@@ -1924,31 +1842,36 @@ select {
   .site-card-link {
     min-height: 136px;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     padding: 14px;
   }
 
   .site-card-actions {
     right: 14px;
-    width: 144px;
-  }
-
-  .site-card.has-single-action .site-card-actions {
     width: 88px;
   }
 
-  .site-card.has-single-action .site-card-copy {
+  .site-card-copy {
     padding-right: 102px;
   }
 
-  .site-card.has-dual-links .site-card-copy {
-    padding-right: 158px;
+  .site-card-title {
+    font-size: 16.5px;
+  }
+
+  .site-card-description {
+    font-size: 13.5px;
   }
 
   .site-icon {
-    flex-basis: 44px;
-    width: 44px;
-    height: 44px;
+    flex-basis: 60px;
+    width: 60px;
+    height: 60px;
+    border-radius: 17px;
+  }
+
+  .site-icon i {
+    font-size: 26px;
   }
 
   .feature-list {
@@ -2021,28 +1944,6 @@ select {
   .site-card-link {
     min-height: 136px;
     align-items: center;
-  }
-
-  .site-card-actions {
-    width: 84px;
-  }
-
-  .site-card.has-single-action .site-card-actions {
-    width: 88px;
-  }
-
-  .site-card.has-dual-links .site-card-actions {
-    top: auto;
-    bottom: 14px;
-    flex-direction: column;
-  }
-
-  .site-card.has-single-action .site-card-copy {
-    padding-right: 102px;
-  }
-
-  .site-card.has-dual-links .site-card-copy {
-    padding-right: 98px;
   }
 
   .site-card-action {

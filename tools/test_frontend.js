@@ -227,33 +227,32 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*136px;[^}]*align-items:\s*center;[^}]*padding:\s*16px;/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*136px;/);
-  assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*flex:\s*1 1 0;/s);
-  assert.match(stylesheet, /\.site-card\.has-single-action \.site-card-copy\s*\{[^}]*padding-right:\s*108px;/s);
-  assert.match(stylesheet, /\.site-card\.has-dual-links \.site-card-copy\s*\{[^}]*padding-right:\s*168px;/s);
-  assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*calc\(50% - 18px\);[^}]*right:\s*16px;[^}]*width:\s*152px;[^}]*gap:\s*6px;[^}]*margin:\s*0;/s);
-  assert.match(stylesheet, /\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*92px;/s);
+  assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*108px;/s);
+  assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*50%;[^}]*right:\s*16px;[^}]*width:\s*92px;[^}]*flex-direction:\s*column;[^}]*gap:\s*7px;[^}]*transform:\s*translateY\(-50%\);/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
-  assert.match(stylesheet, /\.site-card-description\s*\{[^}]*min-height:\s*2\.9em;[^}]*-webkit-line-clamp:\s*2;/s);
+  assert.match(stylesheet, /\.site-icon\s*\{[^}]*flex:\s*0 0 64px;[^}]*width:\s*64px;[^}]*height:\s*64px;[^}]*border-radius:\s*18px;/s);
+  assert.match(stylesheet, /\.site-icon i\s*\{[^}]*font-size:\s*28px;/s);
+  assert.match(stylesheet, /\.site-card-title\s*\{[^}]*font-size:\s*17px;[^}]*font-weight:\s*800;/s);
+  assert.match(stylesheet, /\.site-card-description\s*\{[^}]*min-height:\s*2\.84em;[^}]*color:\s*color-mix\(in srgb, var\(--text\) 72%, var\(--muted\)\);[^}]*font-size:\s*14px;[^}]*font-weight:\s*520;[^}]*-webkit-line-clamp:\s*2;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 18%, var\(--line\)\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 14%, var\(--surface\)\);/s);
-  assert.match(stylesheet, /\.favorite-button\s*\{[^}]*border:\s*1px solid transparent;[^}]*border-radius:\s*50%;[^}]*box-shadow:\s*none;/s);
-  assert.match(stylesheet, /\.favorite-button\.is-active,\s*\.favorite-button\[aria-pressed="true"\]\s*\{[^}]*border-color:\s*transparent;[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 15%, var\(--surface-solid\)\);[^}]*box-shadow:\s*none;/s);
-  assert.doesNotMatch(stylesheet, /--favorite-foreground/);
   assert.match(stylesheet, /\.site-card-link:hover\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
-  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*144px;[\s\S]*?\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*88px;/);
-  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*84px;[\s\S]*?\.site-card\.has-dual-links \.site-card-actions\s*\{[^}]*top:\s*auto;[^}]*bottom:\s*14px;[^}]*flex-direction:\s*column;[\s\S]*?\.site-card\.has-dual-links \.site-card-copy\s*\{[^}]*padding-right:\s*98px;[\s\S]*?\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*font-size:\s*12px;/);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*102px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*13\.5px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
+  assert.doesNotMatch(application, /sakura-favorites|favorite-button|favorite-order|scheduleFavoriteFocus|toggleFavorite|moveFavorite/);
+  assert.doesNotMatch(stylesheet, /favorite-button|favorite-order|has-order-controls|--favorite-foreground/);
 });
 
-test("homepage keeps the four fixed views and retires curated flags", () => {
+test("homepage keeps the three fixed views and retires curated flags", () => {
   const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
   const siteData = fs.readFileSync(path.join(repositoryRoot, "assets/js/sites-data.js"), "utf8");
   const viewIds = Array.from(homepage.matchAll(/data-view="([^"]+)"/g), (match) => match[1]);
 
-  assert.deepEqual(viewIds, ["all", "recent", "favorites", "history"]);
+  assert.deepEqual(viewIds, ["all", "recent", "history"]);
   assert.doesNotMatch(siteData, /\b(?:featured|popular)\s*:/);
+  assert.doesNotMatch(homepage, /data-view="favorites"/);
   assert.match(stylesheet, /\.view-switcher\s*\{[^}]*overflow:\s*hidden;/s);
-  assert.match(stylesheet, /@media \(max-width: 768px\)[\s\S]*?\.view-switcher\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
+  assert.match(stylesheet, /@media \(max-width: 768px\)[\s\S]*?\.view-switcher\s*\{[^}]*grid-template-columns:\s*repeat\(3,/);
 });
 
 test("restoring all sites does not focus the search input", () => {
@@ -268,11 +267,9 @@ test("restoring all sites does not focus the search input", () => {
   assert.doesNotMatch(resetHandler, /search\?*\.focus\(/);
 });
 
-test("favorite rerenders preserve focus and keyboard selection focuses card actions", () => {
+test("keyboard selection focuses card actions without opening the card", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
-  assert.match(application, /function scheduleFavoriteFocus\([\s\S]*?preventScroll:\s*true/);
-  assert.match(application, /render\(\);\s*scheduleFavoriteFocus\(siteId, true\);/);
   assert.match(application, /announceUtility\(`已选择 \$\{siteName\}，按 Enter 选择操作按钮`\)/);
   assert.match(application, /const firstAction = card\?\.querySelector\("\.site-card-action"\)/);
   assert.match(application, /firstAction\.focus\(\)/);
@@ -306,15 +303,6 @@ test("the configured Android dual-link card renders only its two action links", 
   assert.match(healthCheck, /if re\.search\(r'\\burlLabel\\s\*:', block\):\s+continue/);
 });
 
-test("stored favorites keep only unique IDs that still exist", () => {
-  const validIds = new Set(["anime1", "qbittorrent"]);
-  assert.deepEqual(
-    core.sanitizeIdList(["anime1", "missing", "anime1", 123, "qbittorrent"], validIds),
-    ["anime1", "qbittorrent"]
-  );
-  assert.deepEqual(core.sanitizeIdList({ favorites: [] }, validIds), []);
-});
-
 test("recent visits discard stale and duplicate entries and enforce the limit", () => {
   const validIds = new Set(["one", "two", "three"]);
   const visits = core.cleanRecentVisits([
@@ -330,14 +318,12 @@ test("recent visits discard stale and duplicate entries and enforce the limit", 
   ]);
 });
 
-test("new-site dates and favorite ordering respect their boundaries", () => {
+test("new-site dates respect their boundaries", () => {
   const today = Date.parse("2026-07-14T12:00:00Z");
   assert.equal(core.isNewSite("2026-07-14", today, 14), true);
   assert.equal(core.isNewSite("2026-07-01", today, 14), true);
   assert.equal(core.isNewSite("2026-06-30", today, 14), false);
   assert.equal(core.isNewSite("2026-07-15", today, 14), false);
-  assert.deepEqual(core.moveVisibleItem(["one", "hidden", "two"], ["one", "two"], "two", -1), ["two", "hidden", "one"]);
-  assert.deepEqual(core.moveVisibleItem(["one", "two", "three"], ["one", "two", "three"], "three", 1), ["one", "two", "three"]);
 });
 
 test("latest collection date ignores missing and invalid values", () => {

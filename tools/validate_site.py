@@ -165,7 +165,6 @@ def validate() -> tuple[list[str], list[str]]:
             "三档主题逻辑": "preferredThemeMode",
             "共享纯逻辑模块": "window.SAKURA_CORE",
             "当前板块复制反馈": "当前板块链接已复制",
-            "收藏排序逻辑": "moveFavorite",
             "搜索高亮逻辑": "appendHighlightedText",
             "匹配板块统计": "matchedCategories",
             "应用就绪状态": 'dataset.appReady = "true"',
@@ -181,6 +180,10 @@ def validate() -> tuple[list[str], list[str]]:
             "data-import-favorites",
             "exportFavoriteData",
             "importFavoriteData",
+            "data-view=\"favorites\"",
+            "sakura-favorites",
+            "favorite-button",
+            "favorite-order",
             "issues/new?template=invalid-link.yml",
         )
         for token in removed_tools:

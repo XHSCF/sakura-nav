@@ -14,9 +14,9 @@ SAKURA Navigation is a lightweight personal start page for frequently used websi
 - No backend, database, account system, build step, or package dependency
 - Centralized categories and websites in `assets/js/sites-data.js`
 - Search by name, description, URL, category, keywords, abbreviations, and multiple terms, with safe match highlighting and a matched-category count
-- Combined category filters with recent entries, favorites, and recent visits
+- Combined category filters with recent entries and recent visits
 - Category buttons show site totals; the recent view shows collection dates, and sites added in the last 14 days receive a `NEW` badge
-- Browser-only favorites and recent visits, with manual ordering in the favorites view
+- Browser-only recent visits for up to 12 unique sites
 - One-click recovery from empty results plus explicit feedback when JavaScript is disabled or application scripts fail to load
 - Three theme modes: system, light, and dark, plus responsive mobile, tablet, and desktop layouts
 - Local-date runtime counter starting on July 12, 2026
@@ -41,7 +41,7 @@ assets/js/sites-data.js            Categories and websites
 assets/js/theme-init.js            Initial theme selection before first paint
 assets/js/app-guard.js              Dependency-free script-load failure feedback
 assets/js/sakura-core.js            Testable search, theme, and local-data helpers
-assets/js/sakura-app.js             Search, filters, favorites, visits, theme, and global UI logic
+assets/js/sakura-app.js             Search, filters, recent visits, theme, and global UI logic
 assets/images/                      SAKURA brand mark, favicons, social image, and PWA icons
 .github/workflows/                 Automated validation and manual link checks
 tools/test_frontend.js              Dependency-free Node.js frontend regression tests
@@ -52,7 +52,7 @@ There is no root `CNAME` file. Custom domains and DNS bindings are managed in th
 
 ## Website data
 
-Every site in `assets/js/sites-data.js` has a stable unique `id`. Favorites and recent visits use this ID, so do not replace it with an array index or change it casually. A new entry only needs `id`, `name`, `url`, `description`, `category`, `keywords`, and an optional `addedAt` date:
+Every site in `assets/js/sites-data.js` has a stable unique `id`. Recent visits use this ID, so do not replace it with an array index or change it casually. A new entry only needs `id`, `name`, `url`, `description`, `category`, `keywords`, and an optional `addedAt` date:
 
 ```js
 {
@@ -81,10 +81,9 @@ The transparent master keeps the required safe area. The header and footer use `
 ## Browser-only data
 
 - `sakura-theme`: an explicit light or dark choice; an absent key means system mode
-- `sakura-favorites`: favorite site IDs in their manually selected display order
 - `sakura-recent-visits`: up to 12 unique site IDs and timestamps
 
-Reordering favorites reuses the existing ID array and creates no additional storage key. Malformed, stale, or unavailable localStorage data is ignored safely. Search and filter state is written only to the current address bar, not to localStorage, and ordinary filter changes make no additional network request. When a parameterized URL is refreshed or opened, its query string is sent to the hosting service as part of the normal page request.
+Malformed, stale, or unavailable recent-visit data is ignored safely. Search and filter state is written only to the current address bar, not to localStorage, and ordinary filter changes make no additional network request. When a parameterized URL is refreshed or opened, its query string is sent to the hosting service as part of the normal page request.
 
 ## Local preview and validation
 
@@ -96,7 +95,7 @@ node --test tools/test_frontend.js
 python -m http.server 8000
 ```
 
-Open `http://localhost:8000`. The validator checks pages, local references, IDs, categories, icons, dates, fields, normalized URL duplicates, CSP compatibility, mixed content, cache rules, and sitemap targets without third-party packages. The native Node.js suite covers theme cycling, search matching, safe highlighting, `NEW` badge boundaries, favorites cleanup and ordering, and recent-visit cleanup.
+Open `http://localhost:8000`. The validator checks pages, local references, IDs, categories, icons, dates, fields, normalized URL duplicates, CSP compatibility, mixed content, cache rules, and sitemap targets without third-party packages. The native Node.js suite covers theme cycling, search matching, safe highlighting, `NEW` badge boundaries, card interactions, and recent-visit cleanup.
 
 ## Automated site validation
 
@@ -163,6 +162,6 @@ The manifest and local icons improve iPhone, iPad, and Android home-screen use. 
 
 ## Privacy and content notice
 
-SAKURA Navigation only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or third-party analytics scripts, uses no cookies, and does not transmit favorites or visit history.
+SAKURA Navigation only links to external websites and does not host their content. Each destination is responsible for its availability, content, and terms. This personal project has no advertising or third-party analytics scripts, uses no cookies, and does not transmit visit history.
 
 Third-party assets remain subject to their licenses, including the Font Awesome license stored in the repository.

@@ -6,7 +6,6 @@
 
   const root = document.documentElement;
   const themeKey = "sakura-theme";
-  const favoritesKey = "sakura-favorites";
   const recentVisitsKey = "sakura-recent-visits";
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
@@ -217,7 +216,6 @@
     let categoryControlFrame = 0;
     let selectedCardIndex = -1;
     let utilityResetTimer = 0;
-    let visibleFavoriteIds = [];
     const now = new Date();
     const currentDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
     const normalSearchPlaceholder = search?.getAttribute("placeholder") || "";
@@ -253,9 +251,7 @@
 
     restoreUrlState();
 
-    const favorites = new Set(core.sanitizeIdList(readJsonStorage(favoritesKey, []), validIds));
     let recentVisits = core.cleanRecentVisits(readJsonStorage(recentVisitsKey, []), validIds, 12);
-    writeJsonStorage(favoritesKey, Array.from(favorites));
     writeJsonStorage(recentVisitsKey, recentVisits);
 
     function createButton(label, value, type, count) {
@@ -293,60 +289,8 @@
       writeJsonStorage(recentVisitsKey, recentVisits);
     }
 
-    function updateFavoriteButton(button, site) {
-      const active = favorites.has(site.id);
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", String(active));
-      button.setAttribute("aria-label", active ? `取消收藏 ${site.name}` : `收藏 ${site.name}`);
-      button.setAttribute("title", active ? "取消收藏" : "添加到我的常用");
-    }
-
-    function scheduleFavoriteFocus(siteId, preferOrderControl = false) {
-      window.requestAnimationFrame(() => {
-        if (state.view !== "favorites") return;
-        const card = Array.from(gridRoot.querySelectorAll(".site-card"))
-          .find((item) => item.dataset.siteId === siteId);
-        const orderControl = preferOrderControl
-          ? card?.querySelector(".favorite-order-button:not(:disabled)")
-          : null;
-        const target = orderControl
-          || card?.querySelector(".favorite-button")
-          || viewSwitcher?.querySelector('[data-view="favorites"]');
-        target?.focus({ preventScroll: true });
-      });
-    }
-
-    function toggleFavorite(site, button) {
-      const wasFavorite = favorites.has(site.id);
-      const favoriteIndex = visibleFavoriteIds.indexOf(site.id);
-      const nextFocusId = wasFavorite && state.view === "favorites"
-        ? (visibleFavoriteIds[favoriteIndex + 1] || visibleFavoriteIds[favoriteIndex - 1] || "")
-        : site.id;
-      if (wasFavorite) favorites.delete(site.id);
-      else favorites.add(site.id);
-      writeJsonStorage(favoritesKey, Array.from(favorites));
-      if (state.view === "favorites") {
-        render();
-        scheduleFavoriteFocus(nextFocusId);
-      } else {
-        updateFavoriteButton(button, site);
-      }
-      announceUtility(wasFavorite ? `${site.name} 已从我的常用移除` : `${site.name} 已添加到我的常用`);
-    }
-
-    function moveFavorite(siteId, direction) {
-      const nextOrder = core.moveVisibleItem(Array.from(favorites), visibleFavoriteIds, siteId, direction);
-      favorites.clear();
-      nextOrder.forEach((id) => favorites.add(id));
-      writeJsonStorage(favoritesKey, nextOrder);
-      render();
-      scheduleFavoriteFocus(siteId, true);
-      announceUtility("收藏顺序已更新");
-    }
-
     function matchesView(site) {
       if (state.view === "recent") return Boolean(site.addedAt);
-      if (state.view === "favorites") return favorites.has(site.id);
       if (state.view === "history") return recentVisits.some((entry) => entry.id === site.id);
       return true;
     }
@@ -365,9 +309,6 @@
       } else if (state.view === "recent") {
         sites.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
         return sites.slice(0, 12);
-      } else if (state.view === "favorites") {
-        const order = new Map(Array.from(favorites, (id, index) => [id, index]));
-        sites.sort((a, b) => order.get(a.id) - order.get(b.id));
       }
       return sites;
     }
@@ -464,36 +405,6 @@
       }
       cardBody.append(iconBox, copy);
       article.appendChild(cardBody);
-      if (!hiddenCard) {
-        const favoriteButton = document.createElement("button");
-        favoriteButton.type = "button";
-        favoriteButton.className = "favorite-button";
-        favoriteButton.innerHTML = '<i class="fas fa-star" aria-hidden="true"></i>';
-        updateFavoriteButton(favoriteButton, site);
-        favoriteButton.addEventListener("click", () => toggleFavorite(site, favoriteButton));
-        article.appendChild(favoriteButton);
-      }
-      if (!hiddenCard && state.view === "favorites") {
-        const favoriteIndex = visibleFavoriteIds.indexOf(site.id);
-        const controls = document.createElement("span");
-        controls.className = "favorite-order-controls";
-        article.classList.add("has-order-controls");
-        [
-          { direction: -1, icon: "fa-chevron-left", label: `将 ${site.name} 前移`, disabled: favoriteIndex <= 0 },
-          { direction: 1, icon: "fa-chevron-right", label: `将 ${site.name} 后移`, disabled: favoriteIndex >= visibleFavoriteIds.length - 1 }
-        ].forEach((control) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "favorite-order-button";
-          button.disabled = control.disabled;
-          button.setAttribute("aria-label", control.label);
-          button.setAttribute("title", control.label);
-          button.innerHTML = `<i class="fas ${control.icon}" aria-hidden="true"></i>`;
-          button.addEventListener("click", () => moveFavorite(site.id, control.direction));
-          controls.appendChild(button);
-        });
-        article.appendChild(controls);
-      }
       return article;
     }
 
@@ -561,10 +472,7 @@
       if (!empty) return;
       empty.classList.toggle("is-visible", siteCount === 0);
       if (siteCount !== 0) return;
-      if (state.view === "favorites" && !state.terms.length && state.category === "all") {
-        if (emptyTitle) emptyTitle.textContent = "还没有添加我的常用";
-        if (emptyMessage) emptyMessage.textContent = "点击网站卡片右上角的星标，即可在这里快速找到它。";
-      } else if (state.view === "history" && !state.terms.length && state.category === "all") {
+      if (state.view === "history" && !state.terms.length && state.category === "all") {
         if (emptyTitle) emptyTitle.textContent = "还没有最近访问记录";
         if (emptyMessage) emptyMessage.textContent = "打开一个网站后，它会安全地保存在当前浏览器中。";
       } else {
@@ -577,16 +485,14 @@
       scrollRequestToken += 1;
       resetKeyboardSelection();
       const sites = filteredSites();
-      visibleFavoriteIds = state.view === "favorites" ? sites.map((site) => site.id) : [];
       const fragment = document.createDocumentFragment();
       gridRoot.replaceChildren();
       gridRoot.classList.toggle("hide-card-categories", state.view === "all" && !state.terms.length);
 
-      if ((state.view === "history" || state.view === "recent" || state.view === "favorites") && sites.length) {
+      if ((state.view === "history" || state.view === "recent") && sites.length) {
         const groups = {
           history: { id: "history", name: "最近访问", icon: "fa-history" },
-          recent: { id: "recent", name: "最近收录", icon: "fa-clock" },
-          favorites: { id: "favorites", name: "我的常用", icon: "fa-star" }
+          recent: { id: "recent", name: "最近收录", icon: "fa-clock" }
         };
         const group = groups[state.view];
         fragment.appendChild(createGroup(group, sites));

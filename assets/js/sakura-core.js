@@ -35,11 +35,6 @@
     return validMode === "light" ? "dark" : "auto";
   }
 
-  function sanitizeIdList(value, validIds) {
-    if (!Array.isArray(value)) return [];
-    return Array.from(new Set(value.filter((id) => typeof id === "string" && validIds.has(id))));
-  }
-
   function cleanRecentVisits(value, validIds, limit) {
     if (!Array.isArray(value)) return [];
     const seen = new Set();
@@ -140,19 +135,6 @@
     }, "");
   }
 
-  function moveVisibleItem(values, visibleValues, item, direction) {
-    const items = Array.isArray(values) ? values.slice() : [];
-    const visibleItems = Array.isArray(visibleValues) ? visibleValues : items;
-    const index = visibleItems.indexOf(item);
-    const offset = direction < 0 ? -1 : 1;
-    const targetItem = visibleItems[index + offset];
-    const itemIndex = items.indexOf(item);
-    const targetIndex = items.indexOf(targetItem);
-    if (index < 0 || itemIndex < 0 || targetIndex < 0) return items;
-    [items[itemIndex], items[targetIndex]] = [items[targetIndex], items[itemIndex]];
-    return items;
-  }
-
   return {
     normalize,
     queryTerms,
@@ -160,14 +142,12 @@
     normalizeThemeMode,
     resolveTheme,
     nextThemeMode,
-    sanitizeIdList,
     cleanRecentVisits,
     siteActions,
     hasDualLinks,
     siteMatchesTerms,
     highlightSegments,
     isNewSite,
-    latestAddedDate,
-    moveVisibleItem
+    latestAddedDate
   };
 });
