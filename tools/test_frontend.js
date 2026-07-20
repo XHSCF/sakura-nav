@@ -224,20 +224,24 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
   assert.match(application, /if \(!hiddenCard\) \{\s*const category = document\.createElement\("span"\)/);
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
-  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*156px;/s);
-  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*150px;/);
+  assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
+  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*136px;[^}]*align-items:\s*center;[^}]*padding:\s*16px;/s);
+  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*136px;/);
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*flex:\s*1 1 0;/s);
-  assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*width:\s*min\(100%, 224px\);[^}]*gap:\s*8px;[^}]*margin:\s*10px auto 0;/s);
-  assert.match(stylesheet, /\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*min\(100%, 108px\);/s);
+  assert.match(stylesheet, /\.site-card\.has-single-action \.site-card-copy\s*\{[^}]*padding-right:\s*108px;/s);
+  assert.match(stylesheet, /\.site-card\.has-dual-links \.site-card-copy\s*\{[^}]*padding-right:\s*168px;/s);
+  assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*calc\(50% - 18px\);[^}]*right:\s*16px;[^}]*width:\s*152px;[^}]*gap:\s*6px;[^}]*margin:\s*0;/s);
+  assert.match(stylesheet, /\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*92px;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
+  assert.match(stylesheet, /\.site-card-description\s*\{[^}]*min-height:\s*2\.9em;[^}]*-webkit-line-clamp:\s*2;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 18%, var\(--line\)\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 14%, var\(--surface\)\);/s);
   assert.match(stylesheet, /\.favorite-button\s*\{[^}]*border:\s*1px solid transparent;[^}]*border-radius:\s*50%;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.favorite-button\.is-active,\s*\.favorite-button\[aria-pressed="true"\]\s*\{[^}]*border-color:\s*transparent;[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 15%, var\(--surface-solid\)\);[^}]*box-shadow:\s*none;/s);
   assert.doesNotMatch(stylesheet, /--favorite-foreground/);
   assert.match(stylesheet, /\.site-card-link:hover\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
-  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*min\(100%, 240px\);[\s\S]*?\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*min\(100%, 112px\);[\s\S]*?\.site-card-action\s*\{[^}]*min-height:\s*38px;/);
-  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*min\(100%, 264px\);[\s\S]*?\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*min\(100%, 120px\);[\s\S]*?\.site-card-action\s*\{[^}]*min-height:\s*40px;[^}]*font-size:\s*13px;/);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*144px;[\s\S]*?\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*88px;/);
+  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*84px;[\s\S]*?\.site-card\.has-dual-links \.site-card-actions\s*\{[^}]*top:\s*auto;[^}]*bottom:\s*14px;[^}]*flex-direction:\s*column;[\s\S]*?\.site-card\.has-dual-links \.site-card-copy\s*\{[^}]*padding-right:\s*98px;[\s\S]*?\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*font-size:\s*12px;/);
 });
 
 test("homepage keeps the four fixed views and retires curated flags", () => {

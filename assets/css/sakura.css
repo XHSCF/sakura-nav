@@ -989,7 +989,7 @@ select {
 
 .site-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -1000,11 +1000,11 @@ select {
 
 .site-card-link {
   display: flex;
-  min-height: 156px;
+  min-height: 136px;
   height: 100%;
   align-items: center;
   gap: 14px;
-  padding: 17px 48px 17px 17px;
+  padding: 16px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -1087,14 +1087,18 @@ select {
 }
 
 .site-card-actions {
+  position: absolute;
+  z-index: 1;
+  top: calc(50% - 18px);
+  right: 16px;
   display: flex;
-  width: min(100%, 224px);
-  gap: 8px;
-  margin: 10px auto 0;
+  width: 152px;
+  gap: 6px;
+  margin: 0;
 }
 
 .site-card.has-single-action .site-card-actions {
-  width: min(100%, 108px);
+  width: 92px;
 }
 
 .site-card-action {
@@ -1104,7 +1108,7 @@ select {
   flex: 1 1 0;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 8px 9px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line));
   border-radius: 999px;
@@ -1158,7 +1162,14 @@ select {
 .site-card-copy {
   flex: 1 1 0;
   min-width: 0;
-  padding-right: 8px;
+}
+
+.site-card.has-single-action .site-card-copy {
+  padding-right: 108px;
+}
+
+.site-card.has-dual-links .site-card-copy {
+  padding-right: 168px;
 }
 
 .site-card-title {
@@ -1233,8 +1244,8 @@ select {
 .favorite-order-controls {
   position: absolute;
   z-index: 2;
-  right: 11px;
-  bottom: 11px;
+  top: 11px;
+  right: 50px;
   display: flex;
   gap: 4px;
 }
@@ -1261,10 +1272,6 @@ select {
 .favorite-order-button:disabled {
   opacity: 0.32;
   cursor: default;
-}
-
-.site-card.has-order-controls .site-card-link {
-  padding-right: 78px;
 }
 
 .site-card.has-order-controls .site-card-link::after {
@@ -1558,7 +1565,7 @@ select {
 
 @media (max-width: 1050px) {
   .site-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
 }
@@ -1915,28 +1922,33 @@ select {
   }
 
   .site-card-link {
-    min-height: 156px;
-    align-items: flex-start;
-    gap: 11px;
-    padding: 14px 46px 14px 14px;
+    min-height: 136px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
   }
 
   .site-card-actions {
-    width: min(100%, 240px);
+    right: 14px;
+    width: 144px;
   }
 
   .site-card.has-single-action .site-card-actions {
-    width: min(100%, 112px);
+    width: 88px;
   }
 
-  .site-card-action {
-    min-height: 38px;
+  .site-card.has-single-action .site-card-copy {
+    padding-right: 102px;
+  }
+
+  .site-card.has-dual-links .site-card-copy {
+    padding-right: 158px;
   }
 
   .site-icon {
-    flex-basis: 42px;
-    width: 42px;
-    height: 42px;
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
   }
 
   .feature-list {
@@ -2007,22 +2019,36 @@ select {
   }
 
   .site-card-link {
-    min-height: 150px;
+    min-height: 136px;
     align-items: center;
   }
 
   .site-card-actions {
-    width: min(100%, 264px);
+    width: 84px;
   }
 
   .site-card.has-single-action .site-card-actions {
-    width: min(100%, 120px);
+    width: 88px;
+  }
+
+  .site-card.has-dual-links .site-card-actions {
+    top: auto;
+    bottom: 14px;
+    flex-direction: column;
+  }
+
+  .site-card.has-single-action .site-card-copy {
+    padding-right: 102px;
+  }
+
+  .site-card.has-dual-links .site-card-copy {
+    padding-right: 98px;
   }
 
   .site-card-action {
-    min-height: 40px;
-    padding: 9px 12px;
-    font-size: 13px;
+    min-height: 36px;
+    padding: 8px 9px;
+    font-size: 12px;
   }
 
 }
