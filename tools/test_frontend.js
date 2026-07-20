@@ -227,8 +227,11 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*156px;/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*150px;/);
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*flex:\s*1 1 0;/s);
-  assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*width:\s*100%;/s);
-  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border-radius:\s*999px;/s);
+  assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*width:\s*min\(100%, 224px\);[^}]*gap:\s*8px;[^}]*margin:\s*10px auto 0;/s);
+  assert.match(stylesheet, /\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*min\(100%, 108px\);/s);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*min\(100%, 240px\);[\s\S]*?\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*min\(100%, 112px\);[\s\S]*?\.site-card-action\s*\{[^}]*min-height:\s*38px;/);
+  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*min\(100%, 264px\);[\s\S]*?\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*min\(100%, 120px\);[\s\S]*?\.site-card-action\s*\{[^}]*min-height:\s*40px;[^}]*font-size:\s*13px;/);
 });
 
 test("homepage keeps the four fixed views and retires curated flags", () => {
