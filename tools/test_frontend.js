@@ -232,6 +232,8 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 18%, var\(--line\)\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 14%, var\(--surface\)\);/s);
   assert.match(stylesheet, /\.favorite-button\s*\{[^}]*border:\s*1px solid transparent;[^}]*border-radius:\s*50%;[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.favorite-button\.is-active,\s*\.favorite-button\[aria-pressed="true"\]\s*\{[^}]*border-color:\s*transparent;[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 15%, var\(--surface-solid\)\);[^}]*box-shadow:\s*none;/s);
+  assert.doesNotMatch(stylesheet, /--favorite-foreground/);
   assert.match(stylesheet, /\.site-card-link:hover\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*min\(100%, 240px\);[\s\S]*?\.site-card\.has-single-action \.site-card-actions\s*\{[^}]*width:\s*min\(100%, 112px\);[\s\S]*?\.site-card-action\s*\{[^}]*min-height:\s*38px;/);

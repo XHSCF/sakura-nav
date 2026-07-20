@@ -10,7 +10,6 @@
   --primary: #7565d9;
   --primary-strong: #5c4fc1;
   --accent-foreground: #ffffff;
-  --favorite-foreground: #252338;
   --pink: #e985a7;
   --blue: #6f9ee8;
   --danger: #c9566f;
@@ -42,7 +41,6 @@
   --primary: #a99cf3;
   --primary-strong: #c4bbff;
   --accent-foreground: #171a24;
-  --favorite-foreground: #171a24;
   --pink: #f29ab6;
   --blue: #86afea;
   --danger: #f18ca1;
@@ -1065,9 +1063,9 @@ select {
 .favorite-button.is-active,
 .favorite-button[aria-pressed="true"] {
   border-color: transparent;
-  color: var(--favorite-foreground);
-  background: linear-gradient(135deg, var(--pink), var(--primary));
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--pink) 22%, transparent);
+  color: var(--primary-strong);
+  background: color-mix(in srgb, var(--primary) 15%, var(--surface-solid));
+  box-shadow: none;
 }
 
 .site-card-link:hover {
