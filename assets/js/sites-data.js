@@ -53,6 +53,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "squoosh", name: "Squoosh", url: "https://squoosh.app/", description: "在浏览器本地压缩和转换图片格式。", category: "tools", keywords: ["Squoosh", "squoosh", "图片压缩", "图片转换", "图像优化"], addedAt: "2026-07-17" },
     { id: "remove-bg", name: "remove.bg", url: "https://www.remove.bg/", description: "自动移除图片背景并生成透明背景。", category: "tools", keywords: ["remove.bg", "removebg", "抠图", "移除背景", "透明背景", "图片工具"], addedAt: "2026-07-17" },
     { id: "ustc-speedtest", name: "测网速", url: "https://test.ustc.edu.cn/", description: "测试网络延迟、抖动及上传下载速度。", category: "tools", keywords: ["测网速", "测速", "USTC", "test.ustc.edu.cn", "网络测速", "网络延迟", "下载速度", "上传速度"], addedAt: "2026-07-19" },
+    { id: "weixin-shipinhao", name: "微信视频号下载", url: "https://sph.litao.workers.dev/", description: "微信视频号下载器。", category: "tools", keywords: ["视频号", "微信", "下载"], addedAt: "2026-07-21" },
 
     { id: "appstore-price", name: "App Store 价格查询", url: "https://app.vbr.me/", description: "查询 App Store 全球应用定价。", category: "ios", keywords: ["app store", "价格查询", "应用定价", "ios"], addedAt: "2026-07-12" },
     { id: "ios-update-blocker", name: "iOS 屏蔽系统更新", url: "https://f.itsnebula.net/noota-26.mobileconfig", description: "用于屏蔽 iOS 系统更新的描述文件。", category: "ios", keywords: ["ios", "屏蔽更新", "描述文件", "mobileconfig"], addedAt: "2026-07-12" },
