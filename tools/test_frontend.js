@@ -234,12 +234,25 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-icon i\s*\{[^}]*font-size:\s*28px;/s);
   assert.match(stylesheet, /\.site-card-title\s*\{[^}]*font-size:\s*17px;[^}]*font-weight:\s*800;/s);
   assert.match(stylesheet, /\.site-card-description\s*\{[^}]*min-height:\s*2\.84em;[^}]*color:\s*color-mix\(in srgb, var\(--text\) 72%, var\(--muted\)\);[^}]*font-size:\s*14px;[^}]*font-weight:\s*520;[^}]*-webkit-line-clamp:\s*2;/s);
-  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 18%, var\(--line\)\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 14%, var\(--surface\)\);/s);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 22%, var\(--glass-border\)\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg-strong\)\);[^}]*box-shadow:\s*inset 0 1px 0/s);
   assert.match(stylesheet, /\.site-card-link:hover\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*102px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*13\.5px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
   assert.doesNotMatch(application, /sakura-favorites|favorite-button|favorite-order|scheduleFavoriteFocus|toggleFavorite|moveFavorite/);
   assert.doesNotMatch(stylesheet, /favorite-button|favorite-order|has-order-controls|--favorite-foreground/);
+});
+
+test("navigation controls use lightweight Liquid Glass with accessible fallbacks", () => {
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+
+  assert.match(stylesheet, /:root\s*\{[^}]*--glass-bg:\s*rgba\(255, 255, 255, 0\.58\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
+  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--glass-bg:\s*rgba\(33, 36, 49, 0\.6\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
+  assert.match(stylesheet, /\.site-header\s*\{[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(22px\) saturate\(155%\);/s);
+  assert.match(stylesheet, /\.view-switcher\s*\{[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-header,[\s\S]*?\.category-bar\s*\{[^}]*backdrop-filter:\s*blur\(14px\) saturate\(135%\);/);
+  assert.match(stylesheet, /@supports not \(\(backdrop-filter:\s*blur\(1px\)\) or \(-webkit-backdrop-filter:\s*blur\(1px\)\)\)[\s\S]*?background:\s*var\(--glass-bg-fallback\);/);
+  assert.match(stylesheet, /@media \(prefers-reduced-transparency:\s*reduce\)[\s\S]*?backdrop-filter:\s*none;/);
 });
 
 test("homepage keeps the three fixed views and retires curated flags", () => {
