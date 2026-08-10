@@ -293,6 +293,9 @@ test("segmented controls use a raised active capsule without a clipped hero glow
   assert.match(stylesheet, /body\s*\{[\s\S]*radial-gradient\(circle at 50% 12rem,[^;]+var\(--bg\);/);
   assert.match(stylesheet, /\.view-switcher,\s*\.category-bar\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\);/s);
   assert.doesNotMatch(stylesheet, /\.view-switcher,\s*\.category-bar\s*\{[^}]*0 8px 24px/s);
+  assert.match(stylesheet, /\.filter-chip-count,\s*\.group-count\s*\{[^}]*min-width:\s*22px;[^}]*height:\s*22px;[^}]*font-variant-numeric:\s*tabular-nums;/s);
+  assert.match(stylesheet, /\.filter-chip-count\s*\{[^}]*margin-left:\s*6px;/s);
+  assert.match(stylesheet, /\.group-count\s*\{[^}]*min-width:\s*24px;[^}]*margin-left:\s*-4px;/s);
   assert.match(stylesheet, /\.view-switcher \.filter-chip,\s*\.category-bar \.filter-chip\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.filter-chip\.is-bouncing\s*\{[^}]*animation:\s*segmented-control-bounce 280ms/s);
   assert.match(application, /becameActive[\s\S]*!reducedMotion[\s\S]*classList\.add\("is-bouncing"\)/);
