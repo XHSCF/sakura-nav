@@ -6,6 +6,7 @@
 
   const root = document.documentElement;
   const themeKey = "sakura-theme";
+  const colorThemeKey = "sakura-color-theme";
   const recentVisitsKey = "sakura-recent-visits";
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
@@ -54,6 +55,34 @@
     return core.normalizeThemeMode(readTextStorage(themeKey));
   }
 
+  function preferredColorTheme() {
+    return core.normalizeColorTheme(readTextStorage(colorThemeKey));
+  }
+
+  function applyColorTheme(themeId, persist) {
+    const validThemeId = core.normalizeColorTheme(themeId);
+    const selectedTheme = core.colorThemes.find((theme) => theme.id === validThemeId);
+    root.dataset.colorTheme = validThemeId;
+
+    if (persist) {
+      if (validThemeId === "miku") removeTextStorage(colorThemeKey);
+      else writeTextStorage(colorThemeKey, validThemeId);
+    }
+
+    document.querySelectorAll("[data-color-theme-toggle]").forEach((button) => {
+      button.setAttribute("aria-label", `当前配色：${selectedTheme.name}；点击选择其他配色`);
+      button.setAttribute("title", `配色：${selectedTheme.name}`);
+    });
+
+    document.querySelectorAll("[data-color-theme-option]").forEach((button) => {
+      const selected = button.dataset.colorThemeOption === validThemeId;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-checked", String(selected));
+      const check = button.querySelector("i");
+      if (check) check.hidden = !selected;
+    });
+  }
+
   function applyTheme(mode, persist) {
     const validMode = core.normalizeThemeMode(mode);
     const theme = core.resolveTheme(validMode, systemDarkMode.matches);
@@ -83,6 +112,7 @@
 
   function setupGlobalUI() {
     applyTheme(preferredThemeMode(), false);
+    applyColorTheme(preferredColorTheme(), false);
 
     document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -95,6 +125,67 @@
     };
     if (systemDarkMode.addEventListener) systemDarkMode.addEventListener("change", syncSystemTheme);
     else systemDarkMode.addListener?.(syncSystemTheme);
+
+    document.querySelectorAll("[data-color-theme-control]").forEach((control) => {
+      const toggle = control.querySelector("[data-color-theme-toggle]");
+      const panel = control.querySelector("[data-color-theme-panel]");
+      if (!toggle || !panel) return;
+
+      const options = core.colorThemes.map((theme) => {
+        const button = document.createElement("button");
+        button.className = "color-theme-option";
+        button.type = "button";
+        button.dataset.colorThemeOption = theme.id;
+        button.setAttribute("role", "radio");
+        button.setAttribute("aria-checked", "false");
+        button.innerHTML = `<span class="color-theme-swatch" style="--swatch: ${theme.color}" aria-hidden="true"></span><span>${theme.name}</span><i class="fas fa-check" aria-hidden="true" hidden></i>`;
+        button.addEventListener("click", () => {
+          applyColorTheme(theme.id, true);
+          closeColorThemePanel();
+          toggle.focus();
+        });
+        return button;
+      });
+      panel.replaceChildren(...options);
+      applyColorTheme(root.dataset.colorTheme, false);
+
+      function closeColorThemePanel() {
+        panel.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+      }
+
+      toggle.addEventListener("click", () => {
+        const open = panel.hidden;
+        panel.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        if (open) panel.querySelector('[aria-checked="true"]')?.focus();
+      });
+
+      panel.addEventListener("keydown", (event) => {
+        if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) return;
+        const buttons = Array.from(panel.querySelectorAll("[data-color-theme-option]"));
+        const currentIndex = Math.max(0, buttons.indexOf(document.activeElement));
+        let nextIndex = currentIndex;
+        if (event.key === "Home") nextIndex = 0;
+        else if (event.key === "End") nextIndex = buttons.length - 1;
+        else if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (currentIndex + 1) % buttons.length;
+        else nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+        event.preventDefault();
+        const nextButton = buttons[nextIndex];
+        nextButton.focus();
+        applyColorTheme(nextButton.dataset.colorThemeOption, true);
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!control.contains(event.target)) closeColorThemePanel();
+      });
+
+      control.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || panel.hidden) return;
+        closeColorThemePanel();
+        toggle.focus();
+      });
+    });
 
     const menuButton = document.querySelector("[data-menu-toggle]");
     const nav = document.querySelector("[data-site-nav]");

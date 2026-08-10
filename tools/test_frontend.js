@@ -20,6 +20,9 @@ test("public pages use the current brand without exposing repository details", (
     assert.doesNotMatch(source, /assets\/images\/og-sakura\.png/);
     assert.match(source, /<meta name="twitter:card" content="summary">/);
     assert.match(source, /<meta (?:property="og:image"|name="twitter:image") content="https:\/\/skrto\.top\/assets\/images\/icons\/pwa-512\.png">/);
+    assert.match(source, /data-color-theme-control/);
+    assert.match(source, /data-color-theme-toggle/);
+    assert.match(source, /data-color-theme-panel/);
   });
 
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "manifest.webmanifest"), "utf8"));
@@ -36,23 +39,44 @@ test("theme mode follows the expected three-state cycle", () => {
   assert.equal(core.nextThemeMode("dark"), "auto");
 });
 
+test("color themes include every requested palette and default to Miku green", () => {
+  assert.deepEqual(
+    core.colorThemes.map((theme) => [theme.id, theme.name, theme.color]),
+    [
+      ["miku", "初音绿", "#39C5BB"],
+      ["purple", "经典紫", "#7565D9"],
+      ["ocean", "海洋蓝", "#2484E4"],
+      ["apple", "苹果绿", "#34C759"],
+      ["sakura", "樱花粉", "#E784A6"],
+      ["amber", "琥珀橙", "#E89A2E"],
+      ["black-gold", "黑金色", "#C49A45"],
+      ["teal", "青绿色", "#089E98"]
+    ]
+  );
+  assert.equal(core.normalizeColorTheme(null), "miku");
+  assert.equal(core.normalizeColorTheme("unknown"), "miku");
+  assert.equal(core.normalizeColorTheme("purple"), "purple");
+});
+
 test("theme initialization applies saved and system preferences before paint", () => {
   const source = fs.readFileSync(path.join(repositoryRoot, "assets/js/theme-init.js"), "utf8");
-  function initialize(saved, systemDark) {
+  function initialize(savedMode, savedColorTheme, systemDark) {
     const dataset = {};
     vm.runInNewContext(source, {
       document: { documentElement: { dataset } },
       window: {
-        localStorage: { getItem: () => saved },
+        localStorage: {
+          getItem: (key) => key === "sakura-theme" ? savedMode : savedColorTheme
+        },
         matchMedia: () => ({ matches: systemDark })
       }
     });
     return dataset;
   }
 
-  assert.deepEqual(initialize(null, true), { themeMode: "auto", theme: "dark" });
-  assert.deepEqual(initialize("light", true), { themeMode: "light", theme: "light" });
-  assert.deepEqual(initialize("dark", false), { themeMode: "dark", theme: "dark" });
+  assert.deepEqual(initialize(null, null, true), { themeMode: "auto", theme: "dark", colorTheme: "miku" });
+  assert.deepEqual(initialize("light", "purple", true), { themeMode: "light", theme: "light", colorTheme: "purple" });
+  assert.deepEqual(initialize("dark", "invalid", false), { themeMode: "dark", theme: "dark", colorTheme: "miku" });
 });
 
 test("application guard reveals fallback only when initialization is incomplete", () => {

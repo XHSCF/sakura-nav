@@ -35,6 +35,21 @@
     return validMode === "light" ? "dark" : "auto";
   }
 
+  const colorThemes = Object.freeze([
+    Object.freeze({ id: "miku", name: "初音绿", color: "#39C5BB" }),
+    Object.freeze({ id: "purple", name: "经典紫", color: "#7565D9" }),
+    Object.freeze({ id: "ocean", name: "海洋蓝", color: "#2484E4" }),
+    Object.freeze({ id: "apple", name: "苹果绿", color: "#34C759" }),
+    Object.freeze({ id: "sakura", name: "樱花粉", color: "#E784A6" }),
+    Object.freeze({ id: "amber", name: "琥珀橙", color: "#E89A2E" }),
+    Object.freeze({ id: "black-gold", name: "黑金色", color: "#C49A45" }),
+    Object.freeze({ id: "teal", name: "青绿色", color: "#089E98" })
+  ]);
+
+  function normalizeColorTheme(value) {
+    return colorThemes.some((theme) => theme.id === value) ? value : "miku";
+  }
+
   function cleanRecentVisits(value, validIds, limit) {
     if (!Array.isArray(value)) return [];
     const seen = new Set();
@@ -142,6 +157,8 @@
     normalizeThemeMode,
     resolveTheme,
     nextThemeMode,
+    colorThemes,
+    normalizeColorTheme,
     cleanRecentVisits,
     siteActions,
     hasDualLinks,
