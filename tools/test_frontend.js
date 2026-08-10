@@ -275,6 +275,9 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
   assert.match(stylesheet, /:root\s*\{[^}]*--glass-bg:\s*rgba\(255, 255, 255, 0\.58\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
   assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--glass-bg:\s*rgba\(33, 36, 49, 0\.6\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
   assert.match(stylesheet, /\.site-header\s*\{[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(22px\) saturate\(155%\);/s);
+  assert.match(stylesheet, /\.site-nav\s*\{[^}]*color-mix\(in srgb, var\(--surface-solid\) 94%, var\(--glass-bg-strong\)\);/s);
+  assert.match(stylesheet, /\.nav-link\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface-solid\) 90%, var\(--glass-bg-strong\)\);/s);
+  assert.match(stylesheet, /\.icon-button\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\)/s);
   assert.match(stylesheet, /\.view-switcher\s*\{[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-header,[\s\S]*?\.category-bar\s*\{[^}]*backdrop-filter:\s*blur\(14px\) saturate\(135%\);/);
