@@ -107,7 +107,7 @@
     });
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.content = theme === "dark" ? "#171a24" : "#f6f5fa";
+    if (themeMeta) themeMeta.content = theme === "dark" ? "#171a24" : "#e4eef4";
   }
 
   function setupGlobalUI() {
