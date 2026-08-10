@@ -364,11 +364,18 @@
       return button;
     }
 
-    function updatePressed(container, key, activeValue) {
+    function updatePressed(container, key, activeValue, animate) {
       container.querySelectorAll(`[data-${key}]`).forEach((button) => {
         const active = button.dataset[key] === activeValue;
+        const becameActive = active && !button.classList.contains("is-active");
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", String(active));
+        if (animate && becameActive && !reducedMotion) {
+          button.classList.remove("is-bouncing");
+          void button.offsetWidth;
+          button.classList.add("is-bouncing");
+          button.addEventListener("animationend", () => button.classList.remove("is-bouncing"), { once: true });
+        }
       });
     }
 
@@ -822,7 +829,7 @@
         const button = event.target.closest("[data-category]");
         if (!button) return;
         state.category = button.dataset.category;
-        updatePressed(categoryBar, "category", state.category);
+        updatePressed(categoryBar, "category", state.category, true);
         updateUrlState();
         render();
         centerCategoryButton(button);
@@ -840,7 +847,7 @@
       const button = event.target.closest("[data-view]");
       if (!button) return;
       state.view = button.dataset.view;
-      updatePressed(viewSwitcher, "view", state.view);
+      updatePressed(viewSwitcher, "view", state.view, true);
       updateUrlState();
       render();
       scheduleResultScroll();

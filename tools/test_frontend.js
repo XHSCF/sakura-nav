@@ -282,6 +282,17 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
   assert.match(stylesheet, /@media \(prefers-reduced-transparency:\s*reduce\)[\s\S]*?backdrop-filter:\s*none;/);
 });
 
+test("segmented controls use a raised active capsule without a clipped hero glow", () => {
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+
+  assert.doesNotMatch(stylesheet, /\.hero::before\s*\{/);
+  assert.match(stylesheet, /body\s*\{[\s\S]*radial-gradient\(circle at 50% 12rem,[^;]+var\(--bg\);/);
+  assert.match(stylesheet, /\.view-switcher \.filter-chip,\s*\.category-bar \.filter-chip\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.filter-chip\.is-bouncing\s*\{[^}]*animation:\s*segmented-control-bounce 280ms/s);
+  assert.match(application, /becameActive[\s\S]*!reducedMotion[\s\S]*classList\.add\("is-bouncing"\)/);
+});
+
 test("homepage keeps the three fixed views and retires curated flags", () => {
   const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
