@@ -25,6 +25,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "skrbt", name: "磁力搜索", url: "https://soskr.net/", description: "BT 磁力搜索。", category: "downloads", keywords: ["磁力搜索", "skrbt", "bt", "torrent"] },
     { id: "dmhy", name: "动漫花园", url: "https://share.dmhy.org/", description: "动漫资源与番剧下载。", category: "downloads", keywords: ["动漫花园", "dmhy", "bt", "番剧下载"] },
     { id: "dmhy-mirror", name: "动漫花园镜像站", url: "https://dongmanhuayuan.myheartsite.com/", description: "动漫花园同步镜像站。", category: "downloads", keywords: ["动漫花园", "dmhy", "镜像", "番剧下载"] },
+    { id: "acgnx", name: "末日动漫资源库", url: "https://share.acgnx.se/", description: "动漫 BT 资源发布与下载。", category: "downloads", keywords: ["末日动漫", "末日动漫资源库", "ACGNX", "acgnx", "动漫资源", "BT下载"], addedAt: "2026-08-11" },
     { id: "aq-pan", name: "AQ网盘资源", url: "https://wpzy.cc/", description: "网盘资源分享。", category: "downloads", keywords: ["aq", "网盘", "资源", "wpzy"] },
     { id: "trex", name: "团长资源", url: "http://t-rex.tzfile.com/", description: "网盘资源分享。", category: "downloads", keywords: ["团长", "trex", "网盘", "资源"] },
     { id: "kkdm", name: "快快动漫", url: "https://kkdm.xyz/", description: "日韩动漫资源分享。", category: "downloads", keywords: ["快快动漫", "kkdm", "日韩动漫", "下载"] },
