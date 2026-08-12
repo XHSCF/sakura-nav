@@ -39,6 +39,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "haowallpaper", name: "哲风壁纸", url: "https://haowallpaper.com/", description: "高清电脑与手机壁纸浏览下载。", category: "downloads", keywords: ["哲风壁纸", "Hao Wallpaper", "haowallpaper", "高清壁纸", "壁纸下载"], addedAt: "2026-07-13" },
     { id: "hifiti", name: "HiFiTi 音乐磁场", url: "https://www.hifiti.com/", description: "无损音乐与高品质音频资源分享社区。", category: "downloads", keywords: ["HiFiTi", "音乐磁场", "hifiti", "无损音乐", "FLAC", "MP3", "高品质音乐"], addedAt: "2026-07-17" },
     { id: "seedhub", name: "SeedHub", url: "https://www.seedhub.cc/", description: "影视、动漫与剧集资源分享。", category: "downloads", keywords: ["SeedHub", "seedhub", "影视资源", "动漫资源", "剧集资源", "资源分享"], addedAt: "2026-07-17" },
+    { id: "hdhive", name: "HDHive", url: "https://hdhive.com/", description: "影视资料搜索与收藏。", category: "downloads", keywords: ["HDHive", "hdhive", "影巢影视资料库", "影视资料", "影视搜索"], addedAt: "2026-08-12" },
 
     { id: "baimiao", name: "白描网页", url: "https://web.baimiaoapp.com/", description: "图片转文字与 OCR 识别。", category: "tools", keywords: ["白描", "baimiao", "ocr", "图片转文字"] },
     { id: "waifu2x", name: "图片放大", url: "https://www.waifu2x.net/", description: "动漫图片降噪与放大工具。", category: "tools", keywords: ["waifu2x", "图片放大", "超分辨率", "降噪"] },
