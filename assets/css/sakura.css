@@ -32,6 +32,10 @@
   --radius-sm: 12px;
   --radius-md: 18px;
   --radius-lg: 26px;
+  --apple-corner-card: 24px;
+  --apple-corner-panel: 24px;
+  --apple-corner-control: 14px;
+  --apple-corner-icon: 18px;
   --header-height: 68px;
   --content-width: 1240px;
 }
@@ -314,7 +318,7 @@ select {
   padding: 12px;
   visibility: hidden;
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: var(--apple-corner-panel);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 28%, transparent), transparent 56%),
     color-mix(in srgb, var(--surface-solid) 94%, var(--glass-bg-strong));
@@ -338,7 +342,7 @@ select {
   align-items: center;
   gap: 7px;
   padding: 8px 12px;
-  border-radius: 11px;
+  border-radius: var(--apple-corner-control);
   color: var(--muted);
   background: color-mix(in srgb, var(--surface-solid) 90%, var(--glass-bg-strong));
   font-size: 14px;
@@ -373,7 +377,7 @@ select {
   gap: 7px;
   padding: 12px;
   border: 1px solid var(--glass-border);
-  border-radius: 18px;
+  border-radius: var(--apple-corner-panel);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 30%, transparent), transparent 54%),
     var(--glass-bg-strong);
@@ -394,7 +398,7 @@ select {
   gap: 8px;
   padding: 8px 9px;
   border: 1px solid transparent;
-  border-radius: 13px;
+  border-radius: var(--apple-corner-control);
   color: var(--muted);
   background: color-mix(in srgb, var(--surface-solid) 62%, transparent);
   cursor: pointer;
@@ -440,7 +444,7 @@ select {
   padding: 0;
   place-items: center;
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--apple-corner-control);
   color: var(--muted);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 30%, transparent), transparent 62%),
@@ -1002,7 +1006,7 @@ select {
   width: 48px;
   height: 48px;
   border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line));
-  border-radius: 15px;
+  border-radius: var(--apple-corner-icon);
   font-size: 20px;
 }
 
@@ -1045,7 +1049,7 @@ select {
   padding: 22px 28px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--primary) 34%, var(--line));
-  border-radius: var(--radius-lg);
+  border-radius: var(--apple-corner-panel);
   color: var(--text);
   background:
     radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--pink) 20%, transparent), transparent 34%),
@@ -1068,7 +1072,7 @@ select {
 .hidden-world-welcome-icon {
   width: 52px;
   height: 52px;
-  border-radius: 17px;
+  border-radius: var(--apple-corner-icon);
   font-size: 23px;
 }
 
@@ -1097,7 +1101,7 @@ select {
   gap: 8px;
   padding: 28px;
   border: 1px dashed color-mix(in srgb, var(--primary) 24%, var(--line));
-  border-radius: var(--radius-lg);
+  border-radius: var(--apple-corner-panel);
   color: var(--muted);
   background: color-mix(in srgb, var(--primary) 4%, var(--surface));
   text-align: center;
@@ -1236,7 +1240,7 @@ select {
   padding: 16px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: var(--apple-corner-card);
   background: var(--surface);
   box-shadow: 0 1px 0 color-mix(in srgb, #fff 45%, transparent);
   transition: border-color 0.22s ease, box-shadow 0.22s ease;
@@ -1338,7 +1342,7 @@ select {
   height: 64px;
   place-items: center;
   border: 1px solid var(--category-icon-border);
-  border-radius: 18px;
+  border-radius: var(--apple-corner-icon);
   color: var(--category-icon-color);
   background: var(--category-icon-bg);
   box-shadow: var(--category-icon-shadow);
@@ -1439,7 +1443,7 @@ select {
   display: none;
   padding: 46px 20px;
   border: 1px dashed color-mix(in srgb, var(--primary) 35%, var(--line));
-  border-radius: var(--radius-lg);
+  border-radius: var(--apple-corner-panel);
   color: var(--muted);
   background: color-mix(in srgb, var(--primary) 5%, var(--surface));
   text-align: center;
@@ -1526,7 +1530,7 @@ select {
 
 .prose-card {
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--apple-corner-panel);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
@@ -1559,7 +1563,7 @@ select {
 
 .feature-list li {
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--apple-corner-control);
   background: var(--surface-soft);
 }
 
@@ -1576,7 +1580,7 @@ select {
   gap: 8px;
   padding: 10px 17px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--apple-corner-control);
   font-weight: 750;
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
@@ -1792,6 +1796,10 @@ select {
 
 @media (max-width: 768px) {
   :root {
+    --apple-corner-card: 22px;
+    --apple-corner-panel: 22px;
+    --apple-corner-control: 13px;
+    --apple-corner-icon: 17px;
     --header-height: 62px;
   }
 
@@ -1874,7 +1882,7 @@ select {
   .hidden-world-title-icon {
     width: 42px;
     height: 42px;
-    border-radius: 13px;
+    border-radius: var(--apple-corner-control);
     font-size: 18px;
   }
 
@@ -1897,13 +1905,13 @@ select {
     min-height: 92px;
     gap: 11px;
     padding: 18px 16px;
-    border-radius: 22px;
+    border-radius: var(--apple-corner-panel);
   }
 
   .hidden-world-welcome-icon {
     width: 44px;
     height: 44px;
-    border-radius: 14px;
+    border-radius: var(--apple-corner-control);
     font-size: 19px;
   }
 
@@ -2125,7 +2133,7 @@ select {
     flex-basis: 60px;
     width: 60px;
     height: 60px;
-    border-radius: 17px;
+    border-radius: var(--apple-corner-icon);
   }
 
   .site-icon i {
@@ -2173,6 +2181,30 @@ select {
 
   .back-to-top {
     bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Apple-style continuous corners with stable rounded fallbacks. Pills stay fully round. */
+@supports (corner-shape: squircle) {
+  .brand-mark,
+  .site-nav,
+  .nav-link,
+  .color-theme-panel,
+  .color-theme-option,
+  .icon-button,
+  .access-notice,
+  .hidden-world-title-icon,
+  .hidden-world-welcome,
+  .hidden-world-welcome-icon,
+  .hidden-world-empty,
+  .app-fallback,
+  .site-card-link,
+  .site-icon,
+  .empty-state,
+  .prose-card,
+  .feature-list li,
+  .button {
+    corner-shape: squircle;
   }
 }
 

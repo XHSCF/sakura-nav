@@ -257,7 +257,7 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*108px;/s);
   assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*50%;[^}]*right:\s*16px;[^}]*width:\s*92px;[^}]*flex-direction:\s*column;[^}]*gap:\s*7px;[^}]*transform:\s*translateY\(-50%\);/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
-  assert.match(stylesheet, /\.site-icon\s*\{[^}]*flex:\s*0 0 64px;[^}]*width:\s*64px;[^}]*height:\s*64px;[^}]*border-radius:\s*18px;/s);
+  assert.match(stylesheet, /\.site-icon\s*\{[^}]*flex:\s*0 0 64px;[^}]*width:\s*64px;[^}]*height:\s*64px;[^}]*border-radius:\s*var\(--apple-corner-icon\);/s);
   assert.match(stylesheet, /\.site-icon i\s*\{[^}]*font-size:\s*28px;/s);
   assert.match(stylesheet, /\.site-card-title\s*\{[^}]*font-size:\s*17px;[^}]*font-weight:\s*800;/s);
   assert.match(stylesheet, /\.site-card-description\s*\{[^}]*min-height:\s*2\.84em;[^}]*color:\s*color-mix\(in srgb, var\(--text\) 72%, var\(--muted\)\);[^}]*font-size:\s*14px;[^}]*font-weight:\s*520;[^}]*-webkit-line-clamp:\s*2;/s);
@@ -283,6 +283,19 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-header,[\s\S]*?\.category-bar\s*\{[^}]*backdrop-filter:\s*blur\(14px\) saturate\(135%\);/);
   assert.match(stylesheet, /@supports not \(\(backdrop-filter:\s*blur\(1px\)\) or \(-webkit-backdrop-filter:\s*blur\(1px\)\)\)[\s\S]*?background:\s*var\(--glass-bg-fallback\);/);
   assert.match(stylesheet, /@media \(prefers-reduced-transparency:\s*reduce\)[\s\S]*?backdrop-filter:\s*none;/);
+});
+
+test("cards and square controls use responsive Apple-style continuous corners", () => {
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+
+  assert.match(stylesheet, /:root\s*\{[^}]*--apple-corner-card:\s*24px;[^}]*--apple-corner-panel:\s*24px;[^}]*--apple-corner-control:\s*14px;[^}]*--apple-corner-icon:\s*18px;/s);
+  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border-radius:\s*var\(--apple-corner-card\);/s);
+  assert.match(stylesheet, /\.icon-button\s*\{[^}]*border-radius:\s*var\(--apple-corner-control\);/s);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)\s*\{[\s\S]*?:root\s*\{[^}]*--apple-corner-card:\s*22px;[^}]*--apple-corner-panel:\s*22px;[^}]*--apple-corner-control:\s*13px;[^}]*--apple-corner-icon:\s*17px;/);
+  assert.match(stylesheet, /@supports \(corner-shape:\s*squircle\)\s*\{[\s\S]*?\.site-card-link,[\s\S]*?\.site-icon,[\s\S]*?\.prose-card,[\s\S]*?\.button\s*\{\s*corner-shape:\s*squircle;/);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border-radius:\s*999px;/s);
+  assert.match(stylesheet, /\.view-switcher\s*\{[^}]*border-radius:\s*999px;/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*border-radius:\s*999px;/s);
 });
 
 test("segmented controls use a raised active capsule without a clipped hero glow", () => {
