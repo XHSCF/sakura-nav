@@ -137,6 +137,8 @@ test("admin page is script-src self compatible and exposes required management f
   const application = fs.readFileSync(path.join(root, "admin/admin.js"), "utf8");
   assert.doesNotMatch(html, /<script(?![^>]*\bsrc=)[^>]*>/i);
   ["data-login-form", "data-add-site", "data-add-category", "data-hidden-settings-form", "data-export", "data-import"].forEach((token) => assert.match(html, new RegExp(token)));
+  assert.match(html, /data-session-loading/);
+  assert.match(html, /class="login-page" data-login-page hidden/);
   ["/api/admin/login", "/api/admin/sites", "/api/admin/categories", "/api/admin/hidden-settings", "/api/admin/export", "/api/admin/import"].forEach((endpoint) => assert.ok(application.includes(endpoint)));
   assert.match(html, /name="passphrase" type="password"/);
   ["卡片管理", "分类管理", "设置与备份", "修改记录", "查看前台", "退出后台"].forEach((label) => assert.ok(html.includes(`aria-label="${label}"`)));
@@ -145,6 +147,8 @@ test("admin page is script-src self compatible and exposes required management f
   ["data-unsaved-indicator", "data-preview-fit-status"].forEach((token) => assert.match(html, new RegExp(token)));
   assert.match(html, /class="date-control"><input name="addedAt" type="date">/);
   assert.match(html, /class="radio-options">/);
+  assert.match(application, /sessionLoading\.hidden = true/);
+  assert.match(application, /await loadData\(\);\s*showApp\(\);/);
   ["function formSnapshot(", "function requestDialogClose(", "function schedulePreviewFitCheck(", 'window.addEventListener("beforeunload"'].forEach((token) => assert.ok(application.includes(token)));
 });
 

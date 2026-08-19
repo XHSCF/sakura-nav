@@ -12,6 +12,7 @@
   };
 
   const loginPage = document.querySelector("[data-login-page]");
+  const sessionLoading = document.querySelector("[data-session-loading]");
   const app = document.querySelector("[data-admin-app]");
   const loginForm = document.querySelector("[data-login-form]");
   const loginError = document.querySelector("[data-login-error]");
@@ -139,6 +140,7 @@
     });
     state.csrf = "";
     state.user = "";
+    sessionLoading.hidden = true;
     app.hidden = true;
     loginPage.hidden = false;
     loginError.hidden = !message;
@@ -147,6 +149,7 @@
   }
 
   function showApp() {
+    sessionLoading.hidden = true;
     loginPage.hidden = true;
     app.hidden = false;
     document.querySelector("[data-current-user]").textContent = state.user;
@@ -660,8 +663,8 @@
       state.csrf = payload.csrf;
       state.user = payload.user;
       loginForm.elements.password.value = "";
-      showApp();
       await loadData();
+      showApp();
     } catch (error) {
       showLogin(error.message);
     } finally {
@@ -728,8 +731,8 @@
       const { payload } = await api("/api/admin/session");
       state.csrf = payload.csrf;
       state.user = payload.user;
-      showApp();
       await loadData();
+      showApp();
     } catch (error) {
       showLogin(error.code === "ADMIN_NOT_CONFIGURED" ? error.message : "");
     }

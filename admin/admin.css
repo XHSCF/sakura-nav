@@ -43,6 +43,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .admin-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-size: 18px; font-weight: 850; text-decoration: none; }
 .admin-brand img { border-radius: 10px; }
 
+.session-loading { display: grid; min-height: 100vh; place-items: center; padding: 24px; }
+.session-loading-card { display: grid; min-width: 220px; justify-items: center; gap: 9px; padding: 28px 32px; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); text-align: center; backdrop-filter: blur(18px) saturate(145%); }
+.session-loading-card img { margin-bottom: 5px; border-radius: 12px; }
+.session-loading-card strong { font-size: 14px; }
+.session-loading-card > span:last-child { color: var(--muted); font-size: 11px; }
+.session-spinner { width: 24px; height: 24px; margin: 2px 0 4px; border: 2px solid color-mix(in srgb, var(--primary) 20%, var(--line)); border-top-color: var(--primary); border-radius: 50%; animation: session-spin .8s linear infinite; }
+@keyframes session-spin { to { transform: rotate(360deg); } }
+
 .login-page { display: grid; min-height: 100vh; place-items: center; padding: 24px; }
 .login-card { width: min(430px, 100%); padding: 34px; border: 1px solid var(--line); border-radius: 28px; corner-shape: squircle; background: var(--surface); box-shadow: var(--shadow); backdrop-filter: blur(18px) saturate(145%); }
 .login-copy { margin: 34px 0 26px; }

@@ -14,7 +14,16 @@
 <body>
   <div class="admin-atmosphere" aria-hidden="true"></div>
 
-  <main class="login-page" data-login-page>
+  <main class="session-loading" data-session-loading role="status" aria-live="polite">
+    <section class="session-loading-card">
+      <img src="../assets/images/icons/sakura-icon.png" alt="" width="44" height="44">
+      <span class="session-spinner" aria-hidden="true"></span>
+      <strong>正在验证登录状态</strong>
+      <span>请稍候…</span>
+    </section>
+  </main>
+
+  <main class="login-page" data-login-page hidden>
     <section class="login-card" aria-labelledby="login-title">
       <a class="admin-brand" href="../" aria-label="返回 SAKURA导航">
         <img src="../assets/images/icons/sakura-icon.png" alt="" width="42" height="42">
