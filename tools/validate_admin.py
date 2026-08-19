@@ -93,6 +93,21 @@ def main() -> int:
             if rule not in admin_css:
                 errors.append(f"后台卡片编辑弹窗缺少{label}")
 
+    admin_html_path = ROOT / "admin/index.html"
+    admin_js_path = ROOT / "admin/admin.js"
+    if admin_html_path.is_file() and admin_js_path.is_file():
+        admin_html = admin_html_path.read_text(encoding="utf-8")
+        admin_js = admin_js_path.read_text(encoding="utf-8")
+        interaction_rules = {
+            "未保存状态提示": "data-unsaved-indicator" in admin_html and "function formSnapshot(" in admin_js,
+            "关闭弹窗前确认": "function requestDialogClose(" in admin_js,
+            "离开页面前确认": 'window.addEventListener("beforeunload"' in admin_js,
+            "卡片显示完整性提示": "data-preview-fit-status" in admin_html and "function schedulePreviewFitCheck(" in admin_js,
+        }
+        for label, present in interaction_rules.items():
+            if not present:
+                errors.append(f"后台缺少{label}")
+
     if errors:
         for error in errors:
             print(f"ERROR: {error}")

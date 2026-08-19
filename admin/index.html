@@ -116,7 +116,7 @@
               <label class="wide-field"><span>入口口令</span><input name="passphrase" type="password" maxlength="64" autocomplete="new-password" spellcheck="false" required><small>只有完全匹配时才会进入隐藏板块。</small></label>
               <label class="wide-field"><span>欢迎词</span><input name="welcome" maxlength="80" required></label>
             </div>
-            <button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存新世界设置</span></button>
+            <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存新世界设置</span></button></div>
           </form>
 
           <section class="settings-card">
@@ -170,7 +170,7 @@
         </div>
 
         <section class="card-preview-section" aria-labelledby="preview-title">
-          <div class="preview-heading"><h3 id="preview-title">卡片预览</h3><span>实际颜色跟随前台主题</span></div>
+          <div class="preview-heading"><div><h3 id="preview-title">实时卡片预览</h3><small>实际颜色跟随前台主题</small></div><span class="preview-fit-status" data-preview-fit-status role="status" aria-live="polite">预计完整显示</span></div>
           <article class="admin-card-preview" data-card-preview>
             <span class="preview-icon"><i class="fas fa-link" data-preview-icon></i></span>
             <div class="preview-copy"><strong data-preview-name>卡片名称</strong><p data-preview-description>卡片描述会显示在这里。</p><small data-preview-category>所属分类</small></div>
@@ -178,7 +178,7 @@
           </article>
         </section>
       </div>
-      <footer class="dialog-footer"><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存卡片</span></button></footer>
+      <footer class="dialog-footer"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存卡片</span></button></footer>
     </form>
   </dialog>
 
@@ -191,7 +191,7 @@
         <label><span>Font Awesome 图标</span><input name="icon" maxlength="64" placeholder="fa-link" required></label>
         <label class="switch-control form-switch"><input type="checkbox" name="isVisible" checked><span>在前台分类栏显示</span></label>
       </div>
-      <footer class="dialog-footer"><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存分类</span></button></footer>
+      <footer class="dialog-footer"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存分类</span></button></footer>
     </form>
   </dialog>
 

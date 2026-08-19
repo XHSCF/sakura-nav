@@ -20,7 +20,12 @@
   const categoryDialog = document.querySelector("[data-category-dialog]");
   const categoryForm = document.querySelector("[data-category-form]");
   const confirmDialog = document.querySelector("[data-confirm-dialog]");
+  const hiddenSettingsForm = document.querySelector("[data-hidden-settings-form]");
   const toast = document.querySelector("[data-toast]");
+  const trackedForms = [siteForm, categoryForm, hiddenSettingsForm].filter(Boolean);
+  const formBaselines = new WeakMap();
+  const dialogClosePending = new WeakSet();
+  let previewMeasureFrame = 0;
 
   function createElement(tag, className, text) {
     const node = document.createElement(tag);
@@ -60,6 +65,49 @@
     button.setAttribute("aria-busy", String(busy));
   }
 
+  function formSnapshot(form) {
+    const values = [];
+    Array.from(form.elements).forEach((field) => {
+      if (!field.name || field.disabled || ["button", "submit"].includes(field.type)) return;
+      if (["checkbox", "radio"].includes(field.type) && !field.checked) return;
+      values.push([field.name, field.value]);
+    });
+    return JSON.stringify(values);
+  }
+
+  function isFormDirty(form) {
+    return formBaselines.has(form) && formBaselines.get(form) !== formSnapshot(form);
+  }
+
+  function updateUnsavedIndicator(form) {
+    const indicator = form.querySelector("[data-unsaved-indicator]");
+    if (indicator) indicator.hidden = !isFormDirty(form);
+  }
+
+  function setFormBaseline(form) {
+    formBaselines.set(form, formSnapshot(form));
+    updateUnsavedIndicator(form);
+  }
+
+  function hasUnsavedChanges() {
+    return trackedForms.some((form) => isFormDirty(form));
+  }
+
+  async function requestDialogClose(dialog) {
+    const form = dialog?.querySelector("form");
+    if (!form || !isFormDirty(form)) {
+      dialog?.close();
+      return;
+    }
+    if (dialogClosePending.has(dialog)) return;
+    dialogClosePending.add(dialog);
+    const discard = await confirmAction("放弃未保存修改", "当前修改还没有保存，确定关闭吗？");
+    dialogClosePending.delete(dialog);
+    if (!discard) return;
+    setFormBaseline(form);
+    dialog.close();
+  }
+
   async function api(path, options = {}) {
     const method = options.method || "GET";
     const headers = { Accept: "application/json", ...(options.headers || {}) };
@@ -82,6 +130,7 @@
   }
 
   function showLogin(message = "") {
+    trackedForms.forEach((form) => setFormBaseline(form));
     [siteDialog, categoryDialog, confirmDialog].forEach((dialog) => {
       if (dialog?.open) {
         dialog.returnValue = "";
@@ -243,13 +292,14 @@
   }
 
   function renderSettings() {
-    const form = document.querySelector("[data-hidden-settings-form]");
+    const form = hiddenSettingsForm;
     const settings = state.data.hiddenSection;
     form.elements.name.value = settings.name || "";
     form.elements.icon.value = settings.icon || "fa-door-open";
     form.elements.passphrase.value = settings.passphrase || "";
     form.elements.welcome.value = settings.welcome || "";
     form.elements.enabled.checked = settings.enabled !== false;
+    setFormBaseline(form);
   }
 
   function renderAll() {
@@ -281,7 +331,12 @@
     renderAll();
   }
 
-  function selectTab(tabId) {
+  async function selectTab(tabId) {
+    const currentTab = document.querySelector("[data-tab].is-active")?.dataset.tab;
+    if (currentTab === "settings" && tabId !== "settings" && isFormDirty(hiddenSettingsForm)) {
+      if (!(await confirmAction("放弃未保存修改", "新世界设置还没有保存，确定离开这个页面吗？"))) return;
+      renderSettings();
+    }
     document.querySelectorAll("[data-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.tab === tabId));
     document.querySelectorAll("[data-panel]").forEach((panel) => { panel.hidden = panel.dataset.panel !== tabId; });
     document.querySelector("[data-add-site]").hidden = tabId !== "sites";
@@ -333,9 +388,10 @@
       fields.category.value = state.data.categories[0]?.id || "";
     }
     updateSiteFormVisibility();
-    updateCardPreview();
     siteForm.querySelector(".dialog-scroll").scrollTop = 0;
     siteDialog.showModal();
+    setFormBaseline(siteForm);
+    updateCardPreview();
     window.setTimeout(() => fields.name.focus(), 0);
   }
 
@@ -371,6 +427,25 @@
     } else {
       actions.appendChild(createElement("span", "", "点击进入"));
     }
+    schedulePreviewFitCheck();
+  }
+
+  function schedulePreviewFitCheck() {
+    window.cancelAnimationFrame(previewMeasureFrame);
+    previewMeasureFrame = window.requestAnimationFrame(() => {
+      const preview = document.querySelector("[data-card-preview]");
+      const name = document.querySelector("[data-preview-name]");
+      const description = document.querySelector("[data-preview-description]");
+      const status = document.querySelector("[data-preview-fit-status]");
+      if (!siteDialog.open || !preview || !name || !description || !status) return;
+      const fields = siteForm.elements;
+      const nameClipped = Boolean(fields.name.value.trim()) && (name.scrollWidth > name.clientWidth + 1 || name.scrollHeight > name.clientHeight + 1);
+      const descriptionClipped = Boolean(fields.description.value.trim()) && description.scrollHeight > description.clientHeight + 1;
+      const message = nameClipped && descriptionClipped ? "名称和描述可能被截断" : nameClipped ? "名称可能被截断" : descriptionClipped ? "描述可能被截断" : "预计完整显示";
+      status.textContent = message;
+      status.classList.toggle("is-warning", nameClipped || descriptionClipped);
+      preview.classList.toggle("has-overflow-warning", nameClipped || descriptionClipped);
+    });
   }
 
   function sitePayloadFromForm() {
@@ -401,6 +476,7 @@
     setFormBusy(siteForm, true);
     try {
       await api(state.editingSiteId ? `/api/admin/sites/${encodeURIComponent(state.editingSiteId)}` : "/api/admin/sites", { method: state.editingSiteId ? "PUT" : "POST", body: payload });
+      setFormBaseline(siteForm);
       siteDialog.close();
       await loadData();
       showToast(state.editingSiteId ? "卡片已保存。" : "卡片已添加。 ");
@@ -458,6 +534,7 @@
     }
     categoryForm.querySelector(".dialog-scroll").scrollTop = 0;
     categoryDialog.showModal();
+    setFormBaseline(categoryForm);
     window.setTimeout(() => fields.name.focus(), 0);
   }
 
@@ -474,6 +551,7 @@
     setFormBusy(categoryForm, true);
     try {
       await api(state.editingCategoryId ? `/api/admin/categories/${encodeURIComponent(state.editingCategoryId)}` : "/api/admin/categories", { method: state.editingCategoryId ? "PUT" : "POST", body: payload });
+      setFormBaseline(categoryForm);
       categoryDialog.close();
       await loadData();
       showToast(state.editingCategoryId ? "分类已保存。" : "分类已添加。 ");
@@ -508,6 +586,7 @@
   }
 
   function confirmAction(title, message) {
+    if (confirmDialog.open) return Promise.resolve(false);
     document.querySelector("[data-confirm-title]").textContent = title;
     document.querySelector("[data-confirm-message]").textContent = message;
     confirmDialog.returnValue = "";
@@ -591,20 +670,21 @@
   });
 
   document.querySelector("[data-logout]")?.addEventListener("click", async () => {
+    if (hasUnsavedChanges() && !(await confirmAction("放弃未保存修改", "退出后台会丢失尚未保存的修改，确定退出吗？"))) return;
     try { await api("/api/admin/logout", { method: "POST" }); } catch (_) { /* Cookie is cleared by re-login if needed. */ }
     showLogin("已安全退出后台。 ");
   });
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => selectTab(button.dataset.tab)));
   document.querySelector("[data-add-site]")?.addEventListener("click", () => openSiteDialog());
   document.querySelector("[data-add-category]")?.addEventListener("click", () => openCategoryDialog());
-  document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog")?.close()));
+  document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => requestDialogClose(button.closest("dialog"))));
   ["data-site-search", "data-site-category-filter", "data-site-visibility-filter", "data-site-status-filter"].forEach((attribute) => {
     const control = document.querySelector(`[${attribute}]`);
     control?.addEventListener(control.matches("input") ? "input" : "change", renderSites);
   });
   siteForm?.addEventListener("submit", saveSite);
   categoryForm?.addEventListener("submit", saveCategory);
-  document.querySelector("[data-hidden-settings-form]")?.addEventListener("submit", saveHiddenSettings);
+  hiddenSettingsForm?.addEventListener("submit", saveHiddenSettings);
   document.querySelector("[data-export]")?.addEventListener("click", exportBackup);
   document.querySelector("[data-import]")?.addEventListener("change", importBackup);
 
@@ -625,9 +705,23 @@
     categoryForm.elements.id.value = nextCategoryId(slugify(categoryForm.elements.name.value));
   });
 
+  trackedForms.forEach((form) => {
+    ["input", "change"].forEach((eventName) => form.addEventListener(eventName, () => updateUnsavedIndicator(form)));
+  });
+
   [siteDialog, categoryDialog].forEach((dialog) => dialog?.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
+    if (event.target === dialog) requestDialogClose(dialog);
   }));
+  [siteDialog, categoryDialog].forEach((dialog) => dialog?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    requestDialogClose(dialog);
+  }));
+  window.addEventListener("resize", schedulePreviewFitCheck);
+  window.addEventListener("beforeunload", (event) => {
+    if (!hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
 
   (async () => {
     try {

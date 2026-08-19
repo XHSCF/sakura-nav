@@ -142,6 +142,8 @@ test("admin page is script-src self compatible and exposes required management f
   ["卡片管理", "分类管理", "设置与备份", "修改记录", "查看前台", "退出后台"].forEach((label) => assert.ok(html.includes(`aria-label="${label}"`)));
   assert.match(application, /function localDateValue\(/);
   assert.match(application, /confirmDialog\.returnValue = ""/);
+  ["data-unsaved-indicator", "data-preview-fit-status"].forEach((token) => assert.match(html, new RegExp(token)));
+  ["function formSnapshot(", "function requestDialogClose(", "function schedulePreviewFitCheck(", 'window.addEventListener("beforeunload"'].forEach((token) => assert.ok(application.includes(token)));
 });
 
 test("frontend loads database data with a bundled snapshot fallback", () => {
