@@ -83,7 +83,9 @@ def main() -> int:
         dialog_layout_rules = {
             "弹窗纵向布局": ".dialog-card { display: flex;",
             "动态视口高度": "calc(100dvh - 30px)",
+            "表单控件宽度约束": "min-width: 0; max-width: 100%;",
             "表单滚动区可收缩": ".dialog-scroll { min-height: 0;",
+            "禁止横向滚动": "overflow-x: hidden;",
             "表单滚动区触摸滚动": "touch-action: pan-y;",
             "移动端底部安全区": "env(safe-area-inset-bottom)",
         }

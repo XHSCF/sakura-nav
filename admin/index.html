@@ -43,23 +43,23 @@
 
   <div class="admin-app" data-admin-app hidden>
     <header class="admin-header">
-      <a class="admin-brand" href="../">
+      <a class="admin-brand" href="../" aria-label="返回网站首页">
         <img src="../assets/images/icons/sakura-icon.png" alt="" width="36" height="36">
         <span>SAKURA管理后台</span>
       </a>
       <div class="header-actions">
         <span class="current-user"><i class="fas fa-user-shield" aria-hidden="true"></i><span data-current-user></span></span>
-        <a class="secondary-button" href="../" target="_blank" rel="noopener"><i class="fas fa-external-link-alt" aria-hidden="true"></i><span>查看前台</span></a>
-        <button class="secondary-button" type="button" data-logout><i class="fas fa-sign-out-alt" aria-hidden="true"></i><span>退出</span></button>
+        <a class="secondary-button" href="../" target="_blank" rel="noopener" aria-label="查看前台"><i class="fas fa-external-link-alt" aria-hidden="true"></i><span>查看前台</span></a>
+        <button class="secondary-button" type="button" data-logout aria-label="退出后台"><i class="fas fa-sign-out-alt" aria-hidden="true"></i><span>退出</span></button>
       </div>
     </header>
 
     <div class="admin-layout">
       <aside class="admin-sidebar" aria-label="后台导航">
-        <button class="sidebar-tab is-active" type="button" data-tab="sites"><i class="fas fa-th-large" aria-hidden="true"></i><span>卡片管理</span></button>
-        <button class="sidebar-tab" type="button" data-tab="categories"><i class="fas fa-layer-group" aria-hidden="true"></i><span>分类管理</span></button>
-        <button class="sidebar-tab" type="button" data-tab="settings"><i class="fas fa-cog" aria-hidden="true"></i><span>设置与备份</span></button>
-        <button class="sidebar-tab" type="button" data-tab="history"><i class="fas fa-history" aria-hidden="true"></i><span>修改记录</span></button>
+        <button class="sidebar-tab is-active" type="button" data-tab="sites" aria-label="卡片管理"><i class="fas fa-th-large" aria-hidden="true"></i><span>卡片管理</span></button>
+        <button class="sidebar-tab" type="button" data-tab="categories" aria-label="分类管理"><i class="fas fa-layer-group" aria-hidden="true"></i><span>分类管理</span></button>
+        <button class="sidebar-tab" type="button" data-tab="settings" aria-label="设置与备份"><i class="fas fa-cog" aria-hidden="true"></i><span>设置与备份</span></button>
+        <button class="sidebar-tab" type="button" data-tab="history" aria-label="修改记录"><i class="fas fa-history" aria-hidden="true"></i><span>修改记录</span></button>
       </aside>
 
       <main class="admin-main">
@@ -85,7 +85,7 @@
             <span class="result-count" data-site-result-count>0 张卡片</span>
           </div>
           <div class="filter-toolbar">
-            <label class="search-control"><i class="fas fa-search" aria-hidden="true"></i><input type="search" placeholder="搜索名称、ID、网址或关键词" data-site-search></label>
+            <label class="search-control"><i class="fas fa-search" aria-hidden="true"></i><input type="search" placeholder="搜索名称、ID、网址或关键词" aria-label="搜索卡片" data-site-search></label>
             <select data-site-category-filter aria-label="按分类筛选"><option value="all">全部分类</option></select>
             <select data-site-visibility-filter aria-label="按位置筛选"><option value="all">公开与隐藏</option><option value="public">仅公开</option><option value="hidden">仅新世界</option></select>
             <select data-site-status-filter aria-label="按状态筛选"><option value="all">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option></select>
@@ -113,7 +113,7 @@
             <div class="form-grid two-columns">
               <label><span>板块名称</span><input name="name" maxlength="30" required></label>
               <label><span>图标类名</span><input name="icon" maxlength="64" placeholder="fa-door-open" required></label>
-              <label class="wide-field"><span>入口口令</span><input name="passphrase" maxlength="64" autocomplete="off" required><small>只有完全匹配时才会进入隐藏板块。</small></label>
+              <label class="wide-field"><span>入口口令</span><input name="passphrase" type="password" maxlength="64" autocomplete="new-password" spellcheck="false" required><small>只有完全匹配时才会进入隐藏板块。</small></label>
               <label class="wide-field"><span>欢迎词</span><input name="welcome" maxlength="80" required></label>
             </div>
             <button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存新世界设置</span></button>

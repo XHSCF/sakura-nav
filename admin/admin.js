@@ -53,6 +53,13 @@
     state.toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3600);
   }
 
+  function setFormBusy(form, busy) {
+    const button = form?.querySelector("button[type='submit']");
+    if (!button) return;
+    button.disabled = busy;
+    button.setAttribute("aria-busy", String(busy));
+  }
+
   async function api(path, options = {}) {
     const method = options.method || "GET";
     const headers = { Accept: "application/json", ...(options.headers || {}) };
@@ -75,6 +82,12 @@
   }
 
   function showLogin(message = "") {
+    [siteDialog, categoryDialog, confirmDialog].forEach((dialog) => {
+      if (dialog?.open) {
+        dialog.returnValue = "";
+        dialog.close();
+      }
+    });
     state.csrf = "";
     state.user = "";
     app.hidden = true;
@@ -255,6 +268,13 @@
     return new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(date);
   }
 
+  function localDateValue(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   async function loadData() {
     const { payload } = await api("/api/admin/data");
     state.data = payload.data;
@@ -298,7 +318,7 @@
     fields.status.value = site?.status || "published";
     fields.location.value = site?.isHidden ? "hidden" : "public";
     fields.cardType.value = site?.urlLabel ? "dual" : "single";
-    fields.addedAt.value = site?.addedAt || new Date().toISOString().slice(0, 10);
+    fields.addedAt.value = site?.addedAt || localDateValue();
     if (site) {
       fields.name.value = duplicate ? `${site.name} 副本` : site.name;
       fields.id.value = duplicate ? nextUniqueId(`${site.id}-copy`) : site.id;
@@ -314,6 +334,7 @@
     }
     updateSiteFormVisibility();
     updateCardPreview();
+    siteForm.querySelector(".dialog-scroll").scrollTop = 0;
     siteDialog.showModal();
     window.setTimeout(() => fields.name.focus(), 0);
   }
@@ -356,6 +377,7 @@
     const fields = siteForm.elements;
     const dual = fields.cardType.value === "dual";
     const hidden = fields.location.value === "hidden";
+    const secondaryUrl = dual ? fields.secondaryUrl.value.trim() : "";
     return {
       id: state.editingSiteId || fields.id.value,
       name: fields.name.value,
@@ -364,8 +386,8 @@
       isHidden: hidden,
       url: fields.url.value,
       urlLabel: dual ? fields.urlLabel.value : null,
-      secondaryUrl: dual ? fields.secondaryUrl.value : null,
-      secondaryUrlLabel: dual ? fields.secondaryUrlLabel.value : null,
+      secondaryUrl: secondaryUrl || null,
+      secondaryUrlLabel: secondaryUrl ? fields.secondaryUrlLabel.value : null,
       keywords: fields.keywords.value.split(/[,，\n]/).map((value) => value.trim()).filter(Boolean),
       addedAt: hidden ? null : fields.addedAt.value,
       sortOrder: state.editingSiteId ? state.data.sites.find((site) => site.id === state.editingSiteId)?.sortOrder || 0 : 9999,
@@ -376,6 +398,7 @@
   async function saveSite(event) {
     event.preventDefault();
     const payload = sitePayloadFromForm();
+    setFormBusy(siteForm, true);
     try {
       await api(state.editingSiteId ? `/api/admin/sites/${encodeURIComponent(state.editingSiteId)}` : "/api/admin/sites", { method: state.editingSiteId ? "PUT" : "POST", body: payload });
       siteDialog.close();
@@ -383,6 +406,8 @@
       showToast(state.editingSiteId ? "卡片已保存。" : "卡片已添加。 ");
     } catch (error) {
       showToast(error.message, true);
+    } finally {
+      setFormBusy(siteForm, false);
     }
   }
 
@@ -431,6 +456,7 @@
       fields.icon.value = "fa-link";
       fields.isVisible.checked = true;
     }
+    categoryForm.querySelector(".dialog-scroll").scrollTop = 0;
     categoryDialog.showModal();
     window.setTimeout(() => fields.name.focus(), 0);
   }
@@ -445,12 +471,14 @@
       isVisible: fields.isVisible.checked,
       sortOrder: state.editingCategoryId ? categoryById(state.editingCategoryId)?.sortOrder || 0 : 9999
     };
+    setFormBusy(categoryForm, true);
     try {
       await api(state.editingCategoryId ? `/api/admin/categories/${encodeURIComponent(state.editingCategoryId)}` : "/api/admin/categories", { method: state.editingCategoryId ? "PUT" : "POST", body: payload });
       categoryDialog.close();
       await loadData();
       showToast(state.editingCategoryId ? "分类已保存。" : "分类已添加。 ");
     } catch (error) { showToast(error.message, true); }
+    finally { setFormBusy(categoryForm, false); }
   }
 
   async function deleteCategory(category) {
@@ -482,6 +510,7 @@
   function confirmAction(title, message) {
     document.querySelector("[data-confirm-title]").textContent = title;
     document.querySelector("[data-confirm-message]").textContent = message;
+    confirmDialog.returnValue = "";
     confirmDialog.showModal();
     return new Promise((resolve) => {
       confirmDialog.addEventListener("close", () => resolve(confirmDialog.returnValue === "confirm"), { once: true });
@@ -491,6 +520,7 @@
   async function saveHiddenSettings(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    setFormBusy(form, true);
     try {
       await api("/api/admin/hidden-settings", { method: "PUT", body: {
         id: state.data.hiddenSection.id || "new-world",
@@ -503,6 +533,7 @@
       await loadData();
       showToast("新世界设置已保存。 ");
     } catch (error) { showToast(error.message, true); }
+    finally { setFormBusy(form, false); }
   }
 
   async function exportBackup() {
@@ -513,8 +544,11 @@
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `sakura-nav-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.hidden = true;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(link.href);
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
       showToast("备份已导出。 ");
     } catch (error) { showToast(error.message, true); }
   }
@@ -523,6 +557,7 @@
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    if (file.size > 1024 * 1024) { showToast("备份文件不能超过 1 MB。", true); return; }
     let backup;
     try { backup = JSON.parse(await file.text()); } catch (_) { showToast("选择的文件不是有效 JSON。", true); return; }
     if (!(await confirmAction("导入备份", "导入会替换数据库中的全部分类、卡片和新世界设置。确定继续吗？"))) return;

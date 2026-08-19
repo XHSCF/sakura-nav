@@ -104,6 +104,12 @@ test("worker rejects invalid IDs, categories and incomplete dual-button data", a
   assert.throws(() => validateSitePayload({
     id: "bad-dual", name: "错误", description: "错误卡片。", category: "tools", url: "https://example.com/", urlLabel: "网盘一", secondaryUrl: "https://example.com/two"
   }, new Set(["tools"])), /同时填写/);
+  assert.throws(() => validateSitePayload({
+    id: "bad-date", name: "错误日期", description: "日期不存在。", category: "tools", url: "https://example.com/", addedAt: "2026-02-30"
+  }, new Set(["tools"])), /有效的 YYYY-MM-DD/);
+  assert.throws(() => validateSitePayload({
+    id: "bad-status", name: "错误状态", description: "状态不可用。", category: "tools", url: "https://example.com/", status: "pending"
+  }, new Set(["tools"])), /发布状态/);
 });
 
 test("worker secret comparison and hidden unlock hash normalize safely", async () => {
@@ -132,6 +138,10 @@ test("admin page is script-src self compatible and exposes required management f
   assert.doesNotMatch(html, /<script(?![^>]*\bsrc=)[^>]*>/i);
   ["data-login-form", "data-add-site", "data-add-category", "data-hidden-settings-form", "data-export", "data-import"].forEach((token) => assert.match(html, new RegExp(token)));
   ["/api/admin/login", "/api/admin/sites", "/api/admin/categories", "/api/admin/hidden-settings", "/api/admin/export", "/api/admin/import"].forEach((endpoint) => assert.ok(application.includes(endpoint)));
+  assert.match(html, /name="passphrase" type="password"/);
+  ["卡片管理", "分类管理", "设置与备份", "修改记录", "查看前台", "退出后台"].forEach((label) => assert.ok(html.includes(`aria-label="${label}"`)));
+  assert.match(application, /function localDateValue\(/);
+  assert.match(application, /confirmDialog\.returnValue = ""/);
 });
 
 test("frontend loads database data with a bundled snapshot fallback", () => {
@@ -210,6 +220,12 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     sortOrder: 999,
     status: "published"
   };
+  const invalidSiteRouteResponse = await module.default.fetch(request("/api/admin/sites-extra", { method: "POST", body: newSite, cookie, csrf: login.csrf }), env);
+  assert.equal(invalidSiteRouteResponse.status, 404);
+  const invalidCategoryRouteResponse = await module.default.fetch(request("/api/admin/categories-extra", {
+    method: "POST", body: { id: "invalid-route", name: "伪接口分类", icon: "fa-link" }, cookie, csrf: login.csrf
+  }), env);
+  assert.equal(invalidCategoryRouteResponse.status, 404);
   const createResponse = await module.default.fetch(request("/api/admin/sites", { method: "POST", body: newSite, cookie, csrf: login.csrf }), env);
   assert.equal(createResponse.status, 201);
 

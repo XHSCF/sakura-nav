@@ -6,6 +6,7 @@ const MAX_JSON_BYTES = 256 * 1024;
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ICON_PATTERN = /^fa-[a-z0-9-]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const SITE_STATUSES = new Set(["draft", "published"]);
 const encoder = new TextEncoder();
 
 function apiHeaders(extra = {}) {
@@ -124,7 +125,10 @@ function validateUrl(value, label, optional = false) {
 function validateDate(value, hidden) {
   const text = cleanText(value);
   if (hidden || !text) return null;
-  if (!DATE_PATTERN.test(text) || Number.isNaN(Date.parse(`${text}T00:00:00Z`))) throw new ApiError("收录日期格式必须为 YYYY-MM-DD。");
+  const date = new Date(`${text}T00:00:00Z`);
+  if (!DATE_PATTERN.test(text) || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
+    throw new ApiError("收录日期必须是有效的 YYYY-MM-DD 日期。");
+  }
   return text;
 }
 
@@ -163,7 +167,8 @@ export function validateSitePayload(payload, categoryIds = new Set()) {
   const url = validateUrl(payload?.url, "第一个按钮链接");
   if (secondaryUrl === url) throw new ApiError("两个按钮不能使用相同链接。");
   if (secondaryUrlLabel && secondaryUrlLabel === urlLabel) throw new ApiError("两个按钮不能使用相同名称。");
-  const status = payload?.status === "draft" ? "draft" : "published";
+  const status = payload?.status ?? "published";
+  if (!SITE_STATUSES.has(status)) throw new ApiError("发布状态不正确。");
   return {
     id: validateId(payload?.id, "卡片 ID"),
     name: requireString(payload?.name, "卡片名称", 60),
@@ -621,8 +626,8 @@ async function handleAdmin(request, env, pathname) {
   if (request.method === "POST" && pathname === "/api/admin/import") return handleImport(request, env);
   if (request.method === "POST" && pathname === "/api/admin/reorder") return handleReorder(request, env);
   if (request.method === "PUT" && pathname === "/api/admin/hidden-settings") return handleHiddenSettings(request, env);
-  if (pathname.startsWith("/api/admin/sites")) return handleSiteMutation(request, env, pathname);
-  if (pathname.startsWith("/api/admin/categories")) return handleCategoryMutation(request, env, pathname);
+  if (/^\/api\/admin\/sites(?:\/[a-z0-9-]+)?$/.test(pathname)) return handleSiteMutation(request, env, pathname);
+  if (/^\/api\/admin\/categories(?:\/[a-z0-9-]+)?$/.test(pathname)) return handleCategoryMutation(request, env, pathname);
   return errorResponse("接口不存在。", 404, "NOT_FOUND");
 }
 
