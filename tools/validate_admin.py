@@ -88,6 +88,10 @@ def main() -> int:
             "禁止横向滚动": "overflow-x: hidden;",
             "表单滚动区触摸滚动": "touch-action: pan-y;",
             "移动端底部安全区": "env(safe-area-inset-bottom)",
+            "日期控件宽度外壳": ".date-control { display: block; width: 100%; min-width: 0; max-width: 100%; overflow: hidden;",
+            "日期控件内部宽度约束": '.admin-form .date-control input[type="date"]',
+            "弹窗细窄滚动条": "scrollbar-width: thin;",
+            "背景页面滚动锁定": "body:has(.admin-dialog[open])",
         }
         for label, rule in dialog_layout_rules.items():
             if rule not in admin_css:

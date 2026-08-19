@@ -155,9 +155,9 @@
           <label><span>卡片名称</span><input name="name" maxlength="60" required></label>
           <label><span>卡片 ID</span><input name="id" maxlength="64" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required><small>自动生成，创建后保持不变。</small></label>
           <label class="wide-field"><span>卡片描述</span><textarea name="description" maxlength="100" rows="2" required></textarea><small><span data-description-count>0</span>/100，请确保前台两行内能够完整显示。</small></label>
-          <fieldset class="wide-field radio-field"><legend>卡片位置</legend><label><input type="radio" name="location" value="public" checked><span>普通分类</span></label><label><input type="radio" name="location" value="hidden"><span>新世界</span></label></fieldset>
+          <fieldset class="wide-field radio-field"><legend>卡片位置</legend><div class="radio-options"><label><input type="radio" name="location" value="public" checked><span>普通分类</span></label><label><input type="radio" name="location" value="hidden"><span>新世界</span></label></div></fieldset>
           <label data-category-field><span>所属分类</span><select name="category" required></select></label>
-          <label data-added-field><span>收录日期</span><input name="addedAt" type="date"></label>
+          <label data-added-field><span>收录日期</span><span class="date-control"><input name="addedAt" type="date"></span></label>
           <label><span>卡片类型</span><select name="cardType"><option value="single">单按钮卡片</option><option value="dual">双按钮卡片</option></select></label>
           <label><span>发布状态</span><select name="status"><option value="published">立即发布</option><option value="draft">保存为草稿</option></select></label>
           <label class="wide-field"><span>第一个按钮链接</span><input name="url" type="url" maxlength="2048" placeholder="https://example.com/" required></label>

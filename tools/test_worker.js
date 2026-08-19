@@ -143,6 +143,8 @@ test("admin page is script-src self compatible and exposes required management f
   assert.match(application, /function localDateValue\(/);
   assert.match(application, /confirmDialog\.returnValue = ""/);
   ["data-unsaved-indicator", "data-preview-fit-status"].forEach((token) => assert.match(html, new RegExp(token)));
+  assert.match(html, /class="date-control"><input name="addedAt" type="date">/);
+  assert.match(html, /class="radio-options">/);
   ["function formSnapshot(", "function requestDialogClose(", "function schedulePreviewFitCheck(", 'window.addEventListener("beforeunload"'].forEach((token) => assert.ok(application.includes(token)));
 });
 
