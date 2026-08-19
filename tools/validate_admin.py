@@ -77,6 +77,20 @@ def main() -> int:
         if not (ROOT / relative).is_file():
             errors.append(f"缺少后台文件：{relative}")
 
+    admin_css_path = ROOT / "admin/admin.css"
+    if admin_css_path.is_file():
+        admin_css = admin_css_path.read_text(encoding="utf-8")
+        dialog_layout_rules = {
+            "弹窗纵向布局": ".dialog-card { display: flex;",
+            "动态视口高度": "calc(100dvh - 30px)",
+            "表单滚动区可收缩": ".dialog-scroll { min-height: 0;",
+            "表单滚动区触摸滚动": "touch-action: pan-y;",
+            "移动端底部安全区": "env(safe-area-inset-bottom)",
+        }
+        for label, rule in dialog_layout_rules.items():
+            if rule not in admin_css:
+                errors.append(f"后台卡片编辑弹窗缺少{label}")
+
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
