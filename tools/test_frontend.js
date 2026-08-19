@@ -298,7 +298,7 @@ test("cards and square controls use responsive Apple-style continuous corners", 
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border-radius:\s*999px;/s);
 });
 
-test("segmented controls use a raised active capsule without a clipped hero glow", () => {
+test("segmented controls use one sliding indicator without bounce", () => {
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
@@ -310,11 +310,15 @@ test("segmented controls use a raised active capsule without a clipped hero glow
   assert.match(stylesheet, /\.filter-chip-count\s*\{[^}]*margin-left:\s*6px;/s);
   assert.match(stylesheet, /\.group-count\s*\{[^}]*min-width:\s*24px;[^}]*margin-left:\s*-4px;/s);
   assert.match(stylesheet, /\.view-switcher \.filter-chip,\s*\.category-bar \.filter-chip\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
-  assert.match(stylesheet, /\.view-switcher \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*0 0 10px color-mix\(in srgb, var\(--primary\) 11%, transparent\),[^}]*0 0 3px color-mix\(in srgb, var\(--text\) 5%, transparent\);/s);
+  assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*width:\s*var\(--segmented-indicator-width, 0px\);[^}]*transform:\s*translate3d\(var\(--segmented-indicator-x, 0px\), 0, 0\);[^}]*width 240ms[^}]*transform 240ms/s);
+  assert.match(stylesheet, /\.view-switcher \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*0 0 9px color-mix\(in srgb, var\(--primary\) 7%, transparent\);/s);
   assert.match(stylesheet, /\.site-card-action:hover,[\s\S]*?\.site-card-action:focus-visible\s*\{[^}]*0 0 13px color-mix\(in srgb, var\(--primary\) 16%, transparent\);/s);
-  assert.match(stylesheet, /\.filter-chip\.is-bouncing\s*\{[^}]*animation:\s*segmented-control-bounce 280ms/s);
-  assert.match(application, /becameActive[\s\S]*!reducedMotion[\s\S]*classList\.add\("is-bouncing"\)/);
+  assert.match(application, /function ensureSegmentedIndicator\(container\)[\s\S]*container\.prepend\(indicator\)/);
+  assert.match(application, /indicator\.style\.setProperty\("--segmented-indicator-x", `\$\{active\.offsetLeft\}px`\)/);
+  assert.match(application, /const shouldAnimate = animate && !reducedMotion/);
+  assert.doesNotMatch(stylesheet, /is-bouncing|segmented-control-bounce/);
+  assert.doesNotMatch(application, /is-bouncing|animationend/);
 });
 
 test("homepage keeps the three fixed views and retires curated flags", () => {

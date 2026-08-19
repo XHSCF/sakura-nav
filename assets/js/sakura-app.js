@@ -305,6 +305,7 @@
     let hiddenTransitionToken = 0;
     let normalScrollY = 0;
     let categoryControlFrame = 0;
+    let segmentedIndicatorFrame = 0;
     let selectedCardIndex = -1;
     let utilityResetTimer = 0;
     const now = new Date();
@@ -345,6 +346,48 @@
     let recentVisits = core.cleanRecentVisits(readJsonStorage(recentVisitsKey, []), validIds, 12);
     writeJsonStorage(recentVisitsKey, recentVisits);
 
+    function ensureSegmentedIndicator(container) {
+      if (!container) return null;
+      let indicator = container.querySelector("[data-segmented-indicator]");
+      if (indicator) return indicator;
+      indicator = document.createElement("span");
+      indicator.className = "segmented-indicator";
+      indicator.dataset.segmentedIndicator = "";
+      indicator.setAttribute("aria-hidden", "true");
+      container.prepend(indicator);
+      return indicator;
+    }
+
+    const categoryIndicator = ensureSegmentedIndicator(categoryBar);
+    const viewIndicator = ensureSegmentedIndicator(viewSwitcher);
+
+    function updateSegmentedIndicator(container, indicator, animate = false) {
+      if (!container || !indicator) return;
+      const active = container.querySelector(".filter-chip.is-active");
+      if (!active) {
+        container.classList.remove("has-segmented-indicator");
+        return;
+      }
+
+      const shouldAnimate = animate && !reducedMotion && container.classList.contains("has-segmented-indicator");
+      indicator.classList.toggle("is-snapping", !shouldAnimate);
+      indicator.style.setProperty("--segmented-indicator-x", `${active.offsetLeft}px`);
+      indicator.style.setProperty("--segmented-indicator-width", `${active.offsetWidth}px`);
+      container.classList.add("has-segmented-indicator");
+      if (!shouldAnimate) {
+        void indicator.offsetWidth;
+        indicator.classList.remove("is-snapping");
+      }
+    }
+
+    function scheduleSegmentedIndicators() {
+      window.cancelAnimationFrame(segmentedIndicatorFrame);
+      segmentedIndicatorFrame = window.requestAnimationFrame(() => {
+        updateSegmentedIndicator(categoryBar, categoryIndicator);
+        updateSegmentedIndicator(viewSwitcher, viewIndicator);
+      });
+    }
+
     function createButton(label, value, type, count) {
       const button = document.createElement("button");
       button.type = "button";
@@ -365,18 +408,14 @@
     }
 
     function updatePressed(container, key, activeValue, animate) {
+      if (!container) return;
       container.querySelectorAll(`[data-${key}]`).forEach((button) => {
         const active = button.dataset[key] === activeValue;
-        const becameActive = active && !button.classList.contains("is-active");
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", String(active));
-        if (animate && becameActive && !reducedMotion) {
-          button.classList.remove("is-bouncing");
-          void button.offsetWidth;
-          button.classList.add("is-bouncing");
-          button.addEventListener("animationend", () => button.classList.remove("is-bouncing"), { once: true });
-        }
       });
+      const indicator = container === categoryBar ? categoryIndicator : viewIndicator;
+      updateSegmentedIndicator(container, indicator, Boolean(animate));
     }
 
     function trackVisit(siteId) {
@@ -838,9 +877,22 @@
       categoryBar.addEventListener("scroll", updateCategoryScrollControls, { passive: true });
       categoryScrollLeft?.addEventListener("click", () => scrollCategories(-1));
       categoryScrollRight?.addEventListener("click", () => scrollCategories(1));
-      window.addEventListener("resize", scheduleCategoryScrollControls);
-      if (window.ResizeObserver) new ResizeObserver(scheduleCategoryScrollControls).observe(categoryBar);
-      document.fonts?.ready.then(scheduleCategoryScrollControls);
+      window.addEventListener("resize", () => {
+        scheduleCategoryScrollControls();
+        scheduleSegmentedIndicators();
+      });
+      if (window.ResizeObserver) {
+        const segmentedResizeObserver = new ResizeObserver(() => {
+          scheduleCategoryScrollControls();
+          scheduleSegmentedIndicators();
+        });
+        segmentedResizeObserver.observe(categoryBar);
+        if (viewSwitcher) segmentedResizeObserver.observe(viewSwitcher);
+      }
+      document.fonts?.ready.then(() => {
+        scheduleCategoryScrollControls();
+        scheduleSegmentedIndicators();
+      });
     }
 
     viewSwitcher?.addEventListener("click", (event) => {
