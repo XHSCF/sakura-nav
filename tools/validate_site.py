@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate SAKURA's static site without third-party packages."""
+"""Validate SAKURA's public site and Cloudflare configuration without third-party packages."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ REQUIRED_FILES = (
     *MAIN_PAGES,
     "assets/css/sakura.css",
     "assets/js/sites-data.js",
+    "assets/js/data-loader.js",
     "assets/js/app-guard.js",
     "assets/js/sakura-core.js",
     "assets/js/sakura-app.js",
@@ -37,6 +38,12 @@ REQUIRED_FILES = (
     "sitemap.xml",
     "_headers",
     "wrangler.jsonc",
+    "worker/index.mjs",
+    "admin/index.html",
+    "admin/admin.css",
+    "admin/admin.js",
+    "migrations/0001_admin_schema.sql",
+    "migrations/0002_seed_navigation_data.sql",
     ".github/workflows/site-validation.yml",
     "tools/test_frontend.js",
 )
@@ -193,7 +200,7 @@ def validate() -> tuple[list[str], list[str]]:
     validation_workflow = ROOT / ".github/workflows/site-validation.yml"
     if validation_workflow.is_file():
         workflow_text = validation_workflow.read_text(encoding="utf-8")
-        for token in ("push:", "pull_request:", "workflow_dispatch:", "node --test tools/test_frontend.js", "python tools/validate_site.py"):
+        for token in ("push:", "pull_request:", "workflow_dispatch:", "node --test tools/test_frontend.js", "node --test tools/test_worker.js", "python tools/validate_site.py", "python tools/validate_admin.py"):
             if token not in workflow_text:
                 errors.append(f"site-validation.yml 缺少配置：{token}")
 
@@ -221,7 +228,10 @@ def validate() -> tuple[list[str], list[str]]:
             "/assets/css/*",
             "/assets/images/*",
             "/assets/fontawesome-5.15.4/*",
+            "/admin/*",
+            "/api/*",
             "max-age=0, must-revalidate",
+            "no-store",
             "max-age=604800",
             "max-age=2592000",
         )
@@ -522,15 +532,27 @@ def validate() -> tuple[list[str], list[str]]:
                     errors.append("wrangler assets.directory 必须保持为 .")
                 if assets.get("not_found_handling") != "404-page":
                     errors.append("wrangler assets.not_found_handling 必须为 404-page")
+                if assets.get("binding") != "ASSETS":
+                    errors.append("wrangler assets.binding 必须为 ASSETS")
             flags = wrangler.get("compatibility_flags", [])
             if not isinstance(flags, list):
                 errors.append("wrangler compatibility_flags 必须为数组")
-            elif {"nodejs_compat", "nodejs_compat_v2"}.intersection(map(str, flags)):
-                errors.append("纯静态站点不应启用 Node.js compatibility flag")
-            if "observability" in wrangler:
-                errors.append("wrangler.jsonc 不应包含 observability 配置")
-            if "main" in wrangler:
-                errors.append("纯静态站点不应配置 Worker main 入口")
+            elif "nodejs_compat" not in set(map(str, flags)):
+                errors.append("Worker 必须启用 nodejs_compat")
+            observability = wrangler.get("observability")
+            if not isinstance(observability, dict) or observability.get("enabled") is not True:
+                errors.append("wrangler.jsonc 必须启用 observability")
+            if wrangler.get("main") != "worker/index.mjs":
+                errors.append("wrangler Worker main 必须为 worker/index.mjs")
+            databases = wrangler.get("d1_databases")
+            if not isinstance(databases, list) or not any(
+                isinstance(database, dict)
+                and database.get("binding") == "DB"
+                and database.get("database_name") == "sakura-nav-db"
+                and database.get("migrations_dir") == "migrations"
+                for database in databases
+            ):
+                errors.append("wrangler.jsonc 缺少 sakura-nav-db 的 DB 绑定")
         except (json.JSONDecodeError, TypeError) as exc:
             errors.append(f"wrangler.jsonc 无效：{exc}")
 

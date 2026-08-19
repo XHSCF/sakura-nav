@@ -10,9 +10,9 @@
 
 ## 项目特点
 
-- 纯静态 HTML、CSS 和原生 JavaScript，无框架、无构建步骤
-- 无后端、数据库、账号系统或服务端接口
-- 分类与网站集中保存在 `assets/js/sites-data.js`
+- 原生 HTML、CSS 和 JavaScript 前台，无前端框架
+- Cloudflare Worker + D1 中文管理后台，可管理卡片、分类、新世界、草稿和备份
+- 前台优先读取 D1，API 不可用时自动回退到 `assets/js/sites-data.js`
 - 搜索支持名称、描述、URL、分类、keywords、英文缩写和多关键词，并在结果中安全高亮命中词、显示涉及板块数
 - 分类与最近收录、最近访问可以组合筛选
 - 分类按钮显示站点数量；最近收录显示收录日期，收录 14 天内的网站带有 `NEW` 标记
@@ -37,11 +37,15 @@ sakura-nav/
 ├── robots.txt                       # 搜索引擎抓取规则
 ├── sitemap.xml                      # 主要页面地图
 ├── _headers                         # Cloudflare 静态安全响应头
-├── wrangler.jsonc                   # Cloudflare Workers 静态资源配置
+├── wrangler.jsonc                   # Cloudflare Worker、静态资源与 D1 配置
+├── admin/                           # 中文管理后台
+├── worker/index.mjs                 # API、鉴权与 D1 业务逻辑
+├── migrations/                      # D1 数据库结构与初始数据
 ├── README.md / README-en.md          # 中英文说明
 ├── assets/
 │   ├── css/sakura.css               # 全站样式
 │   ├── js/sites-data.js             # 分类与网站数据
+│   ├── js/data-loader.js             # D1 数据优先与静态快照回退
 │   ├── js/theme-init.js              # 首屏主题初始化
 │   ├── js/app-guard.js                # 脚本加载失败时的无依赖反馈
 │   ├── js/sakura-core.js              # 可测试的搜索、主题和本地数据纯逻辑
@@ -50,14 +54,16 @@ sakura-nav/
 │   └── fontawesome-5.15.4/           # 本地图标字体及许可证
 ├── .github/workflows/                # 自动验证与手动链接检查
 ├── tools/test_frontend.js             # Node.js 原生前端回归测试
-└── tools/validate_site.py            # 无第三方依赖的站点检查工具
+├── tools/test_worker.js               # Worker、鉴权与 API 回归测试
+├── tools/validate_admin.py            # D1 migration 与后台结构验证
+└── tools/validate_site.py             # 无第三方依赖的站点检查工具
 ```
 
 根目录不再包含 `CNAME`。Cloudflare 的自定义域名与 DNS 绑定在 Cloudflare 控制台中管理，不由 GitHub 仓库文件控制。
 
 ## 网站数据
 
-分类和网站统一位于：
+生产分类和网站保存在 Cloudflare D1，并通过 `/admin/` 管理。以下文件是 API 不可用时的公开页面快照：
 
 ```text
 assets/js/sites-data.js
@@ -153,7 +159,7 @@ python tools/check_links.py --output link-health-report.md
 
 ## Cloudflare 自动部署
 
-当前仓库通过 Cloudflare Workers & Pages 的 Git 集成发布静态内容。`wrangler.jsonc` 将仓库根目录配置为静态资源目录；项目没有 Pages Functions、Worker 业务源码或构建依赖。
+当前仓库通过 Cloudflare Workers & Pages 的 Git 集成发布。`wrangler.jsonc` 同时配置静态资源、`worker/index.mjs` 和 D1 数据库绑定；首次启用后台前还要应用 D1 migration 并设置管理员 Secrets，完整步骤见 [docs/admin-setup.md](docs/admin-setup.md)。
 
 部署链路：
 
@@ -165,7 +171,7 @@ GitHub main 分支
 
 正常发布：
 
-1. 在本地完成修改并运行 `python tools/validate_site.py`。
+1. 在本地完成修改并运行 `python tools/validate_site.py`、`python tools/validate_admin.py` 和 Node 回归测试。
 2. 提交并推送到 GitHub `main`。
 3. Cloudflare 自动收到推送并开始生产部署。
 

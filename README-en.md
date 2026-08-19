@@ -10,9 +10,9 @@ SAKURA Navigation is a lightweight personal start page for frequently used websi
 
 ## Features
 
-- Fully static HTML, CSS, and vanilla JavaScript
-- No backend, database, account system, build step, or package dependency
-- Centralized categories and websites in `assets/js/sites-data.js`
+- Vanilla HTML, CSS, and JavaScript frontend without a client framework
+- Cloudflare Worker + D1 admin dashboard for cards, categories, drafts, hidden content, and backups
+- Database-first public data with an automatic `assets/js/sites-data.js` snapshot fallback
 - Search by name, description, URL, category, keywords, abbreviations, and multiple terms, with safe match highlighting and a matched-category count
 - Combined category filters with recent entries and recent visits
 - Category buttons show site totals; the recent view shows collection dates, and sites added in the last 14 days receive a `NEW` badge
@@ -35,9 +35,13 @@ sakura-icon.png                    Transparent master for the SAKURA brand icon
 robots.txt                         Crawler rules
 sitemap.xml                        Canonical public pages
 _headers                           Cloudflare static security headers
-wrangler.jsonc                     Cloudflare Workers static-assets configuration
+wrangler.jsonc                     Cloudflare Worker, static assets, and D1 configuration
+admin/                             Responsive Chinese admin dashboard
+worker/index.mjs                   Authentication, API, and D1 logic
+migrations/                        D1 schema and initial navigation data
 assets/css/sakura.css              Shared design system
 assets/js/sites-data.js            Categories and websites
+assets/js/data-loader.js           Database-first loading with snapshot fallback
 assets/js/theme-init.js            Initial theme selection before first paint
 assets/js/app-guard.js              Dependency-free script-load failure feedback
 assets/js/sakura-core.js            Testable search, theme, and local-data helpers
@@ -133,7 +137,7 @@ The report never deletes sites, replaces URLs, commits changes, or opens a Pull 
 
 ## Cloudflare deployment
 
-This repository is connected through Cloudflare Workers & Pages Git integration. `wrangler.jsonc` configures the repository root as the static-assets directory; there are no Pages Functions, application Worker source files, or build dependencies.
+This repository is connected through Cloudflare Workers & Pages Git integration. `wrangler.jsonc` configures static assets, `worker/index.mjs`, and the D1 binding. Before enabling `/admin/`, apply the D1 migrations and configure the three administrator secrets described in `docs/admin-setup.md`.
 
 ```text
 GitHub main

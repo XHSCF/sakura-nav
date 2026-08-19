@@ -1,0 +1,13 @@
+.git/
+.github/
+.wrangler/
+admin-data/
+docs/
+migrations/
+tools/
+worker/
+.dev.vars*
+.env*
+AGENTS.md
+README*.md
+wrangler.jsonc

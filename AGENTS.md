@@ -6,10 +6,10 @@
 
 ## 仓库基本规则
 
-- 本项目是纯静态个人导航站，使用 HTML、CSS 和原生 JavaScript，不包含后端或数据库。
-- 普通板块、普通网站和隐藏板块数据集中存放在 `assets/js/sites-data.js`。
-- 普通网站收录或删除原则上只修改 `assets/js/sites-data.js`。
-- 板块新增、删除、改名或修改 ID 通常需要修改 `assets/js/sites-data.js`，并同步检查依赖分类数据的页面逻辑、验证脚本和本文件。
+- 本项目使用原生 HTML、CSS、JavaScript 前台，以及 Cloudflare Worker + D1 管理后台；不引入前端框架。
+- 生产环境导航数据以 D1 为准，通过 `/admin/` 管理；`assets/js/sites-data.js` 是公开页面在 API 不可用时的随仓库快照，也是首次 D1 种子数据的来源。
+- 普通网站或板块的生产内容优先通过管理后台修改。明确要求修改仓库数据时，必须同步快照与对应的增量 migration；不得把已经应用的历史 migration 改写成新的生产状态。
+- 板块新增、删除、改名或修改 ID 还必须检查 Worker 校验、D1 外键、前台逻辑、验证脚本和本文件。
 - 执行任务前先确认仓库为 `XHSCF/sakura-nav`、当前分支为 `main`，并检查工作区状态。
 - 公开页面统一使用品牌名“SAKURA导航”，不得展示 GitHub 仓库地址、仓库链接或“Cloudflare 自动部署”文字；仓库与部署信息只保留在维护文档中。
 - 保留用户或其他任务产生的无关修改；不覆盖、还原、暂存或提交它们。
@@ -32,6 +32,22 @@
 
 旧的 `ppt` 分类参数仅作为 `software` 的 URL 兼容别名保留；新增或修改网站数据时必须使用 `software`，不得继续写入 `ppt`。
 
+## 管理后台与 D1
+
+- 后台固定入口为 `/admin/`；公开页面不得增加明显的后台入口、管理员账号提示或部署信息。
+- Worker 业务源码位于 `worker/index.mjs`，D1 migration 位于 `migrations/`，后台静态页面位于 `admin/`。`wrangler.jsonc` 中的绑定名称固定为 `ASSETS` 和 `DB`。
+- 管理员账号、密码和会话签名密钥只能通过 Cloudflare Secrets 或未跟踪的 `.dev.vars` 提供，变量名分别为 `ADMIN_USERNAME`、`ADMIN_PASSWORD`、`ADMIN_SESSION_SECRET`；禁止把真实值、哈希、Token、Cookie 或数据库备份提交到仓库、日志、截图或回复中。
+- 管理员会话必须使用 HttpOnly、SameSite Cookie 和 HMAC 签名；所有写操作必须校验登录状态、同源 Origin 与 CSRF Token。登录失败必须限速，不得把具体账号是否存在返回给客户端。
+- API 必须限制请求体大小、验证 ID、字段长度、HTTP(S) URL、日期、分类引用、单/双按钮组合以及重复名称和链接；不得因为后台表单存在就放宽本文件的卡片数据规则。
+- 公开接口只返回已发布的可见分类和普通卡片。隐藏板块网站只能在口令通过服务端校验后返回；公开数据接口不得返回隐藏口令、管理员字段、草稿、修改记录或登录信息。
+- 后台支持草稿和发布。草稿不得出现在公开首页、公开搜索、分类数量、最近收录或隐藏板块中。
+- 删除卡片必须二次确认；删除非空分类必须由服务端拒绝。排序更新必须保持 ID 稳定，不得通过删除并重建对象实现。
+- 后台备份导出包含完整生产数据和隐藏设置，视为敏感维护文件，不提交 Git。导入前必须二次确认并完整执行本地字段与重复校验。
+- `migrations/0001_admin_schema.sql` 与 `0002_seed_navigation_data.sql` 一旦用于生产初始化即视为不可变历史。以后修改数据库结构或通过仓库发布内容变更时新增编号 migration，不回写旧 migration。
+- `tools/generate_d1_seed.js` 只用于首次上线前从 `sites-data.js` 重新生成初始种子。生产后台启用后，不得用它覆盖已包含后台修改的数据。
+- 前台通过 `assets/js/data-loader.js` 优先读取 D1；API 返回错误、超时或空数据时必须安全回退到 `sites-data.js`，保留现有搜索、筛选、按钮、最近访问、主题和响应式交互。
+- 修改 Worker、D1、后台页面或数据加载逻辑时，必须运行 `node --test tools/test_worker.js`、`python tools/validate_admin.py`、现有前端测试和站点验证，并进行后台登录、CRUD、备份以及手机、平板、电脑的明暗模式检查。
+
 ## 主题配色系统
 
 - 网站同时支持明暗模式与独立配色选择，两者不得互相替代：明暗模式继续使用 `sakura-theme`，配色使用 `sakura-color-theme` 保存在 localStorage。
@@ -51,7 +67,7 @@
 
 ## 新世界隐藏板块
 
-仓库包含一个搜索口令触发的彩蛋板块，配置位于 `assets/js/sites-data.js` 的 `hiddenSection`：
+仓库包含一个搜索口令触发的彩蛋板块。生产配置位于 D1 的 `settings` 与隐藏卡片记录中，`assets/js/sites-data.js` 的 `hiddenSection` 仅作为随仓库快照：
 
 - ID：`new-world`
 - 名称：新世界
@@ -61,7 +77,7 @@
 
 该板块不是普通 `categories` 项，也不得加入普通分类按钮。只有在搜索框输入与口令完全匹配的内容时才进入；口令不得写入 URL、localStorage 或最近搜索记录。进入后只显示新世界、欢迎词、访问风险提示、隐藏网站和退出按钮；退出按钮与 `Escape` 必须恢复正常页面，刷新页面不得自动保持隐藏状态。
 
-隐藏网站存放在 `hiddenSection.sites`，使用以下格式：
+隐藏网站在生产环境中存放为 D1 的 `is_hidden = 1` 卡片；随仓库快照仍使用 `hiddenSection.sites`，对象格式如下：
 
 ```js
 { id: "example", name: "网站正式名称", url: "https://example.com/", description: "一句简短准确的中文描述。", keywords: ["名称", "用途"] }
@@ -98,7 +114,7 @@
 
 ### 数据格式
 
-遵循 `assets/js/sites-data.js` 当前缩进、顺序和代码风格。基本字段为：
+通过后台录入时遵循相同字段契约；明确修改仓库快照时继续遵循 `assets/js/sites-data.js` 当前缩进、顺序和代码风格。基本字段为：
 
 ```js
 {
@@ -229,6 +245,16 @@ node --check assets/js/app-guard.js
 node --check assets/js/sakura-core.js
 node --check assets/js/sakura-app.js
 node --test tools/test_frontend.js
+```
+
+修改后台、数据库、Worker、Cloudflare 配置或前台数据加载时，还必须运行：
+
+```bash
+node --check assets/js/data-loader.js
+node --check admin/admin.js
+node --check worker/index.mjs
+node --test tools/test_worker.js
+python tools/validate_admin.py
 ```
 
 - `validate_site.py` 必须为 0 个错误；已有 HTTP 提示不等于错误，不顺便修改无关 HTTP 网站。

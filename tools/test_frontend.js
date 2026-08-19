@@ -82,9 +82,9 @@ test("theme initialization applies saved and system preferences before paint", (
   assert.deepEqual(initialize("dark", "invalid", false), { themeMode: "dark", theme: "dark", colorTheme: "miku" });
 });
 
-test("application guard reveals fallback only when initialization is incomplete", () => {
+test("application guard waits for navigation data before revealing an initialization fallback", async () => {
   const source = fs.readFileSync(path.join(repositoryRoot, "assets/js/app-guard.js"), "utf8");
-  function fallbackHidden(appReady) {
+  async function fallbackHidden(appReady) {
     const fallback = { hidden: true };
     let onLoad;
     const documentElement = { dataset: appReady ? { appReady: "true" } : {} };
@@ -94,16 +94,18 @@ test("application guard reveals fallback only when initialization is incomplete"
         querySelectorAll: () => [fallback]
       },
       window: {
+        SAKURA_DATA_READY: Promise.resolve(),
         addEventListener: (_event, callback) => { onLoad = callback; },
         requestAnimationFrame: (callback) => callback()
       }
     });
     onLoad();
+    await new Promise((resolve) => setImmediate(resolve));
     return fallback.hidden;
   }
 
-  assert.equal(fallbackHidden(true), true);
-  assert.equal(fallbackHidden(false), false);
+  assert.equal(await fallbackHidden(true), true);
+  assert.equal(await fallbackHidden(false), false);
 });
 
 test("multi-keyword search normalizes whitespace and matches all terms", () => {

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-CN" data-theme-mode="auto" data-color-theme="miku">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#e4eef4">
+  <title>SAKURA导航 · 管理后台</title>
+  <link rel="icon" href="../assets/images/icons/favicon-32.png" type="image/png">
+  <link rel="stylesheet" href="../assets/fontawesome-5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="./admin.css">
+  <script src="../assets/js/theme-init.js"></script>
+</head>
+<body>
+  <div class="admin-atmosphere" aria-hidden="true"></div>
+
+  <main class="login-page" data-login-page>
+    <section class="login-card" aria-labelledby="login-title">
+      <a class="admin-brand" href="../" aria-label="返回 SAKURA导航">
+        <img src="../assets/images/icons/sakura-icon.png" alt="" width="42" height="42">
+        <span>SAKURA导航</span>
+      </a>
+      <div class="login-copy">
+        <span class="eyebrow">CONTENT MANAGER</span>
+        <h1 id="login-title">管理后台</h1>
+        <p>登录后管理卡片、分类、隐藏板块和数据备份。</p>
+      </div>
+      <form class="admin-form login-form" data-login-form>
+        <label>
+          <span>管理员账号</span>
+          <input name="username" autocomplete="username" maxlength="80" required autofocus>
+        </label>
+        <label>
+          <span>管理员密码</span>
+          <input name="password" type="password" autocomplete="current-password" maxlength="256" required>
+        </label>
+        <p class="form-error" data-login-error role="alert" hidden></p>
+        <button class="primary-button full-button" type="submit"><i class="fas fa-sign-in-alt" aria-hidden="true"></i><span>登录后台</span></button>
+      </form>
+      <a class="quiet-link" href="../"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回网站首页</a>
+    </section>
+  </main>
+
+  <div class="admin-app" data-admin-app hidden>
+    <header class="admin-header">
+      <a class="admin-brand" href="../">
+        <img src="../assets/images/icons/sakura-icon.png" alt="" width="36" height="36">
+        <span>SAKURA管理后台</span>
+      </a>
+      <div class="header-actions">
+        <span class="current-user"><i class="fas fa-user-shield" aria-hidden="true"></i><span data-current-user></span></span>
+        <a class="secondary-button" href="../" target="_blank" rel="noopener"><i class="fas fa-external-link-alt" aria-hidden="true"></i><span>查看前台</span></a>
+        <button class="secondary-button" type="button" data-logout><i class="fas fa-sign-out-alt" aria-hidden="true"></i><span>退出</span></button>
+      </div>
+    </header>
+
+    <div class="admin-layout">
+      <aside class="admin-sidebar" aria-label="后台导航">
+        <button class="sidebar-tab is-active" type="button" data-tab="sites"><i class="fas fa-th-large" aria-hidden="true"></i><span>卡片管理</span></button>
+        <button class="sidebar-tab" type="button" data-tab="categories"><i class="fas fa-layer-group" aria-hidden="true"></i><span>分类管理</span></button>
+        <button class="sidebar-tab" type="button" data-tab="settings"><i class="fas fa-cog" aria-hidden="true"></i><span>设置与备份</span></button>
+        <button class="sidebar-tab" type="button" data-tab="history"><i class="fas fa-history" aria-hidden="true"></i><span>修改记录</span></button>
+      </aside>
+
+      <main class="admin-main">
+        <section class="dashboard-heading">
+          <div>
+            <span class="eyebrow">SAKURA DASHBOARD</span>
+            <h1>内容管理</h1>
+            <p>修改并发布后，前台会直接读取数据库中的最新内容。</p>
+          </div>
+          <button class="primary-button" type="button" data-add-site><i class="fas fa-plus" aria-hidden="true"></i><span>添加卡片</span></button>
+        </section>
+
+        <section class="stats-grid" aria-label="数据概览">
+          <article class="stat-card"><span class="stat-icon"><i class="fas fa-th-large"></i></span><div><strong data-stat-public>0</strong><span>公开卡片</span></div></article>
+          <article class="stat-card"><span class="stat-icon"><i class="fas fa-door-open"></i></span><div><strong data-stat-hidden>0</strong><span>隐藏卡片</span></div></article>
+          <article class="stat-card"><span class="stat-icon"><i class="fas fa-layer-group"></i></span><div><strong data-stat-categories>0</strong><span>分类</span></div></article>
+          <article class="stat-card"><span class="stat-icon"><i class="fas fa-file-alt"></i></span><div><strong data-stat-drafts>0</strong><span>草稿</span></div></article>
+        </section>
+
+        <section class="admin-panel" data-panel="sites">
+          <div class="panel-heading">
+            <div><h2>卡片管理</h2><p>支持单按钮、双按钮、草稿和隐藏卡片。</p></div>
+            <span class="result-count" data-site-result-count>0 张卡片</span>
+          </div>
+          <div class="filter-toolbar">
+            <label class="search-control"><i class="fas fa-search" aria-hidden="true"></i><input type="search" placeholder="搜索名称、ID、网址或关键词" data-site-search></label>
+            <select data-site-category-filter aria-label="按分类筛选"><option value="all">全部分类</option></select>
+            <select data-site-visibility-filter aria-label="按位置筛选"><option value="all">公开与隐藏</option><option value="public">仅公开</option><option value="hidden">仅新世界</option></select>
+            <select data-site-status-filter aria-label="按状态筛选"><option value="all">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option></select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>卡片</th><th>分类</th><th>类型</th><th>状态</th><th class="actions-heading">操作</th></tr></thead>
+              <tbody data-sites-table></tbody>
+            </table>
+          </div>
+          <div class="panel-empty" data-sites-empty hidden><i class="fas fa-search"></i><strong>没有符合条件的卡片</strong><span>可以调整筛选条件或添加新卡片。</span></div>
+        </section>
+
+        <section class="admin-panel" data-panel="categories" hidden>
+          <div class="panel-heading">
+            <div><h2>分类管理</h2><p>分类图标会自动应用到该分类的所有卡片。</p></div>
+            <button class="primary-button" type="button" data-add-category><i class="fas fa-plus"></i><span>添加分类</span></button>
+          </div>
+          <div class="category-admin-list" data-category-list></div>
+        </section>
+
+        <section class="admin-panel settings-grid" data-panel="settings" hidden>
+          <form class="settings-card admin-form" data-hidden-settings-form>
+            <div class="panel-heading compact-heading"><div><h2>新世界设置</h2><p>更改入口信息和搜索口令。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
+            <div class="form-grid two-columns">
+              <label><span>板块名称</span><input name="name" maxlength="30" required></label>
+              <label><span>图标类名</span><input name="icon" maxlength="64" placeholder="fa-door-open" required></label>
+              <label class="wide-field"><span>入口口令</span><input name="passphrase" maxlength="64" autocomplete="off" required><small>只有完全匹配时才会进入隐藏板块。</small></label>
+              <label class="wide-field"><span>欢迎词</span><input name="welcome" maxlength="80" required></label>
+            </div>
+            <button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存新世界设置</span></button>
+          </form>
+
+          <section class="settings-card">
+            <div class="panel-heading compact-heading"><div><h2>数据备份</h2><p>导出全部分类、卡片和隐藏板块设置。</p></div></div>
+            <div class="backup-actions">
+              <button class="secondary-button" type="button" data-export><i class="fas fa-download"></i><span>导出 JSON 备份</span></button>
+              <label class="secondary-button file-button"><i class="fas fa-upload"></i><span>导入 JSON 备份</span><input type="file" accept="application/json,.json" data-import hidden></label>
+            </div>
+            <div class="danger-note"><i class="fas fa-exclamation-triangle"></i><p>导入会替换数据库中的全部分类和卡片。执行前会再次确认，请先导出当前备份。</p></div>
+          </section>
+
+          <section class="settings-card full-settings-card">
+            <div class="panel-heading compact-heading"><div><h2>部署状态</h2><p>后台需要 Cloudflare D1 和三个管理员密钥。</p></div></div>
+            <ul class="status-list">
+              <li><i class="fas fa-database"></i><span>D1 数据库：已连接</span></li>
+              <li><i class="fas fa-user-lock"></i><span>管理员会话：已验证</span></li>
+              <li><i class="fas fa-shield-alt"></i><span>写入保护：CSRF 与同源检查已启用</span></li>
+            </ul>
+          </section>
+        </section>
+
+        <section class="admin-panel" data-panel="history" hidden>
+          <div class="panel-heading"><div><h2>修改记录</h2><p>显示最近 100 次后台操作。</p></div></div>
+          <div class="audit-list" data-audit-list></div>
+          <div class="panel-empty" data-audit-empty hidden><i class="fas fa-history"></i><strong>还没有修改记录</strong></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="admin-dialog site-dialog" data-site-dialog>
+    <form class="dialog-card admin-form" data-site-form>
+      <header class="dialog-header"><div><span class="eyebrow">CARD EDITOR</span><h2 data-site-dialog-title>添加卡片</h2></div><button class="icon-close" type="button" data-close-dialog aria-label="关闭"><i class="fas fa-times"></i></button></header>
+      <div class="dialog-scroll">
+        <div class="form-grid two-columns">
+          <label><span>卡片名称</span><input name="name" maxlength="60" required></label>
+          <label><span>卡片 ID</span><input name="id" maxlength="64" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required><small>自动生成，创建后保持不变。</small></label>
+          <label class="wide-field"><span>卡片描述</span><textarea name="description" maxlength="100" rows="2" required></textarea><small><span data-description-count>0</span>/100，请确保前台两行内能够完整显示。</small></label>
+          <fieldset class="wide-field radio-field"><legend>卡片位置</legend><label><input type="radio" name="location" value="public" checked><span>普通分类</span></label><label><input type="radio" name="location" value="hidden"><span>新世界</span></label></fieldset>
+          <label data-category-field><span>所属分类</span><select name="category" required></select></label>
+          <label data-added-field><span>收录日期</span><input name="addedAt" type="date"></label>
+          <label><span>卡片类型</span><select name="cardType"><option value="single">单按钮卡片</option><option value="dual">双按钮卡片</option></select></label>
+          <label><span>发布状态</span><select name="status"><option value="published">立即发布</option><option value="draft">保存为草稿</option></select></label>
+          <label class="wide-field"><span>第一个按钮链接</span><input name="url" type="url" maxlength="2048" placeholder="https://example.com/" required></label>
+          <div class="wide-field dual-fields" data-dual-fields hidden>
+            <label><span>第一个按钮名称</span><input name="urlLabel" maxlength="20" placeholder="夸克网盘"></label>
+            <label><span>第二个按钮名称</span><input name="secondaryUrlLabel" maxlength="20" placeholder="百度网盘"></label>
+            <label class="wide-field"><span>第二个按钮链接</span><input name="secondaryUrl" type="url" maxlength="2048" placeholder="可留空，前台自动显示“暂无”"></label>
+          </div>
+          <label class="wide-field"><span>搜索关键词</span><textarea name="keywords" rows="2" maxlength="500" placeholder="使用逗号分隔，例如：网站名, 英文名, 主要用途"></textarea></label>
+        </div>
+
+        <section class="card-preview-section" aria-labelledby="preview-title">
+          <div class="preview-heading"><h3 id="preview-title">卡片预览</h3><span>实际颜色跟随前台主题</span></div>
+          <article class="admin-card-preview" data-card-preview>
+            <span class="preview-icon"><i class="fas fa-link" data-preview-icon></i></span>
+            <div class="preview-copy"><strong data-preview-name>卡片名称</strong><p data-preview-description>卡片描述会显示在这里。</p><small data-preview-category>所属分类</small></div>
+            <div class="preview-actions" data-preview-actions><span>点击进入</span></div>
+          </article>
+        </section>
+      </div>
+      <footer class="dialog-footer"><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存卡片</span></button></footer>
+    </form>
+  </dialog>
+
+  <dialog class="admin-dialog" data-category-dialog>
+    <form class="dialog-card small-dialog admin-form" data-category-form>
+      <header class="dialog-header"><div><span class="eyebrow">CATEGORY EDITOR</span><h2 data-category-dialog-title>添加分类</h2></div><button class="icon-close" type="button" data-close-dialog aria-label="关闭"><i class="fas fa-times"></i></button></header>
+      <div class="dialog-scroll form-grid">
+        <label><span>分类名称</span><input name="name" maxlength="30" required></label>
+        <label><span>分类 ID</span><input name="id" maxlength="64" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required><small>只使用英文小写字母、数字和连字符。</small></label>
+        <label><span>Font Awesome 图标</span><input name="icon" maxlength="64" placeholder="fa-link" required></label>
+        <label class="switch-control form-switch"><input type="checkbox" name="isVisible" checked><span>在前台分类栏显示</span></label>
+      </div>
+      <footer class="dialog-footer"><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存分类</span></button></footer>
+    </form>
+  </dialog>
+
+  <dialog class="confirm-dialog" data-confirm-dialog>
+    <form method="dialog" class="confirm-card">
+      <span class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></span>
+      <h2 data-confirm-title>确认操作</h2>
+      <p data-confirm-message></p>
+      <div class="confirm-actions"><button class="secondary-button" value="cancel">取消</button><button class="danger-button" value="confirm">确认</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+  <script src="./admin.js" defer></script>
+</body>
+</html>
