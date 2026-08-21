@@ -28,6 +28,12 @@
   const dialogClosePending = new WeakSet();
   let previewMeasureFrame = 0;
 
+  const root = document.documentElement;
+  const themeCore = window.SAKURA_CORE;
+  const themeKey = "sakura-theme";
+  const colorThemeKey = "sakura-color-theme";
+  const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
+
   function createElement(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -39,6 +45,149 @@
     const node = createElement("i", `fas ${className || "fa-link"}`);
     node.setAttribute("aria-hidden", "true");
     return node;
+  }
+
+  function readTextStorage(key) {
+    try { return window.localStorage.getItem(key); } catch (_) { return null; }
+  }
+
+  function writeTextStorage(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (_) { /* Theme still applies for this page. */ }
+  }
+
+  function removeTextStorage(key) {
+    try { window.localStorage.removeItem(key); } catch (_) { /* Theme still applies for this page. */ }
+  }
+
+  function applyAdminTheme(mode, persist) {
+    if (!themeCore) return;
+    const validMode = themeCore.normalizeThemeMode(mode);
+    const theme = themeCore.resolveTheme(validMode, systemDarkMode.matches);
+    root.dataset.themeMode = validMode;
+    root.dataset.theme = theme;
+    if (persist) {
+      if (validMode === "auto") removeTextStorage(themeKey);
+      else writeTextStorage(themeKey, validMode);
+    }
+
+    const modes = {
+      auto: { current: "跟随系统", next: "浅色模式", icon: "fas fa-adjust" },
+      light: { current: "浅色模式", next: "深色模式", icon: "fas fa-sun" },
+      dark: { current: "深色模式", next: "跟随系统", icon: "fas fa-moon" }
+    };
+    const current = modes[validMode];
+    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+      button.setAttribute("aria-label", `当前主题：${current.current}；点击切换到${current.next}`);
+      button.setAttribute("title", `主题：${current.current}`);
+      const buttonIcon = button.querySelector("i");
+      if (buttonIcon) buttonIcon.className = current.icon;
+    });
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.content = theme === "dark" ? "#171a24" : "#e4eef4";
+  }
+
+  function applyAdminColorTheme(themeId, persist) {
+    if (!themeCore) return;
+    const validThemeId = themeCore.normalizeColorTheme(themeId);
+    const selectedTheme = themeCore.colorThemes.find((theme) => theme.id === validThemeId);
+    root.dataset.colorTheme = validThemeId;
+    if (persist) {
+      if (validThemeId === "miku") removeTextStorage(colorThemeKey);
+      else writeTextStorage(colorThemeKey, validThemeId);
+    }
+
+    document.querySelectorAll("[data-color-theme-toggle]").forEach((button) => {
+      button.setAttribute("aria-label", `当前配色：${selectedTheme.name}；点击选择其他配色`);
+      button.setAttribute("title", `配色：${selectedTheme.name}`);
+    });
+    document.querySelectorAll("[data-color-theme-option]").forEach((button) => {
+      const selected = button.dataset.colorThemeOption === validThemeId;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-checked", String(selected));
+      const check = button.querySelector("i");
+      if (check) check.hidden = !selected;
+    });
+  }
+
+  function setupAdminThemeControls() {
+    if (!themeCore) return;
+    applyAdminTheme(themeCore.normalizeThemeMode(readTextStorage(themeKey)), false);
+    applyAdminColorTheme(themeCore.normalizeColorTheme(readTextStorage(colorThemeKey)), false);
+
+    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+      button.addEventListener("click", () => applyAdminTheme(themeCore.nextThemeMode(root.dataset.themeMode), true));
+    });
+
+    const syncSystemTheme = () => {
+      if (root.dataset.themeMode === "auto") applyAdminTheme("auto", false);
+    };
+    if (systemDarkMode.addEventListener) systemDarkMode.addEventListener("change", syncSystemTheme);
+    else systemDarkMode.addListener?.(syncSystemTheme);
+
+    document.querySelectorAll("[data-color-theme-control]").forEach((control) => {
+      const toggle = control.querySelector("[data-color-theme-toggle]");
+      const panel = control.querySelector("[data-color-theme-panel]");
+      if (!toggle || !panel) return;
+
+      const options = themeCore.colorThemes.map((theme) => {
+        const button = createElement("button", "color-theme-option");
+        button.type = "button";
+        button.dataset.colorThemeOption = theme.id;
+        button.setAttribute("role", "radio");
+        button.setAttribute("aria-checked", "false");
+        const swatch = createElement("span", "color-theme-swatch");
+        swatch.style.setProperty("--swatch", theme.color);
+        swatch.setAttribute("aria-hidden", "true");
+        const label = createElement("span", "", theme.name);
+        const check = icon("fa-check");
+        check.hidden = true;
+        button.append(swatch, label, check);
+        button.addEventListener("click", () => {
+          applyAdminColorTheme(theme.id, true);
+          closePanel();
+          toggle.focus();
+        });
+        return button;
+      });
+      panel.replaceChildren(...options);
+      applyAdminColorTheme(root.dataset.colorTheme, false);
+
+      function closePanel() {
+        panel.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+      }
+
+      toggle.addEventListener("click", () => {
+        const open = panel.hidden;
+        panel.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        if (open) panel.querySelector('[aria-checked="true"]')?.focus();
+      });
+
+      panel.addEventListener("keydown", (event) => {
+        if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) return;
+        const buttons = Array.from(panel.querySelectorAll("[data-color-theme-option]"));
+        const currentIndex = Math.max(0, buttons.indexOf(document.activeElement));
+        let nextIndex = currentIndex;
+        if (event.key === "Home") nextIndex = 0;
+        else if (event.key === "End") nextIndex = buttons.length - 1;
+        else if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (currentIndex + 1) % buttons.length;
+        else nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+        event.preventDefault();
+        const nextButton = buttons[nextIndex];
+        nextButton.focus();
+        applyAdminColorTheme(nextButton.dataset.colorThemeOption, true);
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!control.contains(event.target)) closePanel();
+      });
+      control.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || panel.hidden) return;
+        closePanel();
+        toggle.focus();
+      });
+    });
   }
 
   function actionButton(iconName, label, handler, danger = false) {
@@ -677,6 +826,7 @@
     try { await api("/api/admin/logout", { method: "POST" }); } catch (_) { /* Cookie is cleared by re-login if needed. */ }
     showLogin("已安全退出后台。 ");
   });
+  setupAdminThemeControls();
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => selectTab(button.dataset.tab)));
   document.querySelector("[data-add-site]")?.addEventListener("click", () => openSiteDialog());
   document.querySelector("[data-add-category]")?.addEventListener("click", () => openCategoryDialog());

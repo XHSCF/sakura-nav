@@ -58,6 +58,13 @@
       </a>
       <div class="header-actions">
         <span class="current-user"><i class="fas fa-user-shield" aria-hidden="true"></i><span data-current-user></span></span>
+        <div class="color-theme-control" data-color-theme-control>
+          <button class="secondary-button admin-icon-button" type="button" data-color-theme-toggle aria-label="当前配色：初音绿；点击选择其他配色" title="配色：初音绿" aria-expanded="false" aria-controls="admin-color-theme-panel">
+            <i class="fas fa-palette" aria-hidden="true"></i>
+          </button>
+          <div class="color-theme-panel" id="admin-color-theme-panel" data-color-theme-panel role="radiogroup" aria-label="选择后台主题配色" hidden></div>
+        </div>
+        <button class="secondary-button admin-icon-button" type="button" data-theme-toggle aria-label="当前主题：跟随系统；点击切换到浅色模式" title="主题：跟随系统"><i class="fas fa-adjust" aria-hidden="true"></i></button>
         <a class="secondary-button" href="../" target="_blank" rel="noopener" aria-label="查看前台"><i class="fas fa-external-link-alt" aria-hidden="true"></i><span>查看前台</span></a>
         <button class="secondary-button" type="button" data-logout aria-label="退出后台"><i class="fas fa-sign-out-alt" aria-hidden="true"></i><span>退出</span></button>
       </div>
@@ -214,6 +221,7 @@
   </dialog>
 
   <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+  <script src="../assets/js/sakura-core.js" defer></script>
   <script src="./admin.js" defer></script>
 </body>
 </html>

@@ -104,6 +104,9 @@ def main() -> int:
         admin_js = admin_js_path.read_text(encoding="utf-8")
         interaction_rules = {
             "会话验证加载态": "data-session-loading" in admin_html and 'data-login-page hidden' in admin_html,
+            "明暗模式切换": "data-theme-toggle" in admin_html and "function applyAdminTheme(" in admin_js,
+            "八套配色选择": "data-color-theme-panel" in admin_html and "themeCore.colorThemes.map" in admin_js,
+            "前后台主题设置同步": 'const themeKey = "sakura-theme"' in admin_js and 'const colorThemeKey = "sakura-color-theme"' in admin_js,
             "未保存状态提示": "data-unsaved-indicator" in admin_html and "function formSnapshot(" in admin_js,
             "关闭弹窗前确认": "function requestDialogClose(" in admin_js,
             "离开页面前确认": 'window.addEventListener("beforeunload"' in admin_js,
