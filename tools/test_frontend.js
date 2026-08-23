@@ -270,7 +270,10 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /function pressCardIcon\(event\)[\s\S]*event\.target\.closest\?\.\("\.site-card-link"\)[\s\S]*cardBody\.classList\.add\("is-icon-pressed"\)/);
   assert.match(application, /document\.addEventListener\("pointerdown", pressCardIcon\);[\s\S]*document\.addEventListener\("pointerup", clearPressedCardIcon\);[\s\S]*document\.addEventListener\("pointercancel", clearPressedCardIcon\);/);
   assert.match(application, /document\.addEventListener\("touchstart", pressCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchend", clearPressedCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchcancel", clearPressedCardIcon, \{ passive: true \}\);/);
-  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 22%, var\(--glass-border\)\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg-strong\)\);[^}]*box-shadow:\s*inset 0 1px 0/s);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 22%, var\(--glass-border\)\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg-strong\)[^}]*box-shadow:\s*0 0 9px/s);
+  assert.doesNotMatch(stylesheet, /\.site-card-action\s*\{[^}]*box-shadow:[^}]*inset 0 [1-9]px 0/s);
+  assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-action:hover\s*\{[^}]*0 0 13px/s);
+  assert.doesNotMatch(stylesheet, /\.site-card-action:hover\s*,\s*\.site-card-action:focus-visible/);
   assert.doesNotMatch(stylesheet, /\.site-card-link:hover\s*\{/);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*102px;[\s\S]*?\.site-card-title\s*\{[^}]*font-size:\s*17px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*14px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
@@ -360,7 +363,7 @@ test("segmented controls use one sliding indicator without bounce", () => {
   assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*width:\s*var\(--segmented-indicator-width, 0px\);[^}]*transform:\s*translate3d\(var\(--segmented-indicator-x, 0px\), 0, 0\);[^}]*width 240ms[^}]*transform 240ms/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*0 0 9px color-mix\(in srgb, var\(--primary\) 7%, transparent\);/s);
-  assert.match(stylesheet, /\.site-card-action:hover,[\s\S]*?\.site-card-action:focus-visible\s*\{[^}]*0 0 13px color-mix\(in srgb, var\(--primary\) 16%, transparent\);/s);
+  assert.match(stylesheet, /\.site-card-action:focus-visible\s*\{[^}]*0 0 13px color-mix\(in srgb, var\(--primary\) 16%, transparent\);/s);
   assert.match(application, /function ensureSegmentedIndicator\(container\)[\s\S]*container\.prepend\(indicator\)/);
   assert.match(application, /indicator\.style\.setProperty\("--segmented-indicator-x", `\$\{active\.offsetLeft\}px`\)/);
   assert.match(application, /const shouldAnimate = animate && !reducedMotion/);
