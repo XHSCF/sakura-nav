@@ -377,10 +377,17 @@ test("homepage moves recent visits into navigation and removes obsolete views", 
 
   assert.match(homepage, /href="\.\/\?view=history" data-history-nav[^>]*>[\s\S]*?最近访问<\/a>/);
   assert.match(aboutPage, /href="\.\.\/\?view=history"[^>]*>[\s\S]*?最近访问<\/a>/);
+  assert.match(homepage, /data-return-home hidden>[\s\S]*?返回首页<\/span>/);
+  assert.match(homepage, /data-clear-recent hidden>[\s\S]*?清空最近访问<\/span>/);
   assert.doesNotMatch(homepage, /data-view-switcher|data-view=|>\s*全部站点\s*<|>\s*最近收录\s*</);
   assert.doesNotMatch(stylesheet, /view-switcher|site-card-date/);
   assert.match(application, /state\.view = view === "history" \? "history" : "all";/);
   assert.match(application, /function updateViewNavigation\(\)[\s\S]*historyNavLink\.setAttribute\("aria-current", "page"\)/);
+  assert.match(application, /function navigateToPrimaryView\(nextView, historyMode = "push"\)[\s\S]*updateUrlState\(routeChanged \? historyMode : "replace"\);[\s\S]*scheduleResultScroll\(\);/);
+  assert.match(application, /historyNavLink\?\.addEventListener\("click",[\s\S]*handlePrimaryNavigation\(event, "history"\)/);
+  assert.match(application, /returnHome\?\.addEventListener\("click", \(\) => navigateToPrimaryView\("all"\)\)/);
+  assert.match(application, /window\.history\.pushState\([\s\S]*window\.addEventListener\("popstate"/);
+  assert.match(stylesheet, /\.utility-button\[hidden\]\s*\{[^}]*display:\s*none;/s);
   assert.match(application, /state\.view === "history" && sites\.length[\s\S]*name: "最近访问"/);
   assert.doesNotMatch(application, /viewSwitcher|viewIndicator|validViews|state\.view === "recent"|formatAddedDate|site-card-date/);
   assert.doesNotMatch(siteData, /\b(?:featured|popular)\s*:/);

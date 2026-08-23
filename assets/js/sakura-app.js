@@ -279,7 +279,8 @@
     const categoryScrollLeft = document.querySelector("[data-category-scroll=\"left\"]");
     const categoryScrollRight = document.querySelector("[data-category-scroll=\"right\"]");
     const clearRecent = document.querySelector("[data-clear-recent]");
-    const contentSection = gridRoot.closest(".content-section");
+    const returnHome = document.querySelector("[data-return-home]");
+    const contentUtilities = document.querySelector(".content-utilities");
     const shortcut = document.querySelector(".search-shortcut");
     const siteHeader = document.querySelector(".site-header");
     const homeNavLink = document.querySelector("[data-home-nav]");
@@ -344,7 +345,7 @@
       state.view = view === "history" ? "history" : "all";
     }
 
-    function updateUrlState() {
+    function updateUrlState(historyMode = "replace") {
       const url = new URL(window.location.href);
       const query = state.hidden ? "" : (search?.value.trim() || "");
       if (query) url.searchParams.set("q", query);
@@ -353,7 +354,9 @@
       else url.searchParams.delete("category");
       if (state.view !== "all") url.searchParams.set("view", state.view);
       else url.searchParams.delete("view");
-      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+      if (historyMode === "push") window.history.pushState(window.history.state, "", nextUrl);
+      else window.history.replaceState(window.history.state, "", nextUrl);
     }
 
     await restoreUrlState();
@@ -704,9 +707,9 @@
       gridRoot.appendChild(fragment);
       refreshContentReveals();
       updateEmptyState(sites.length);
-      const showClearRecent = state.view === "history" && recentVisits.length > 0;
-      if (clearRecent) clearRecent.hidden = !showClearRecent;
-      contentSection?.classList.toggle("has-history-action", showClearRecent);
+      const showHistoryControls = state.view === "history";
+      if (returnHome) returnHome.hidden = !showHistoryControls;
+      if (clearRecent) clearRecent.hidden = !showHistoryControls || recentVisits.length === 0;
       if (result) {
         const matchedCategories = new Set(sites.map((site) => site.category)).size;
         result.textContent = state.terms.length || state.category !== "all" || state.view !== "all"
@@ -830,6 +833,7 @@
     }
 
     function activeResultTarget() {
+      if (state.view === "history" && contentUtilities) return contentUtilities;
       if (accessNotice) return accessNotice;
       if (empty?.classList.contains("is-visible")) return empty;
       const headings = Array.from(gridRoot.querySelectorAll("[data-result-scroll-target]"));
@@ -901,6 +905,40 @@
           });
         });
       });
+    }
+
+    function leaveHiddenSectionForNavigation() {
+      if (!state.hidden) return;
+      state.hidden = false;
+      hiddenTransitionToken += 1;
+      root.classList.remove("is-hidden-world");
+      if (hiddenPanel) hiddenPanel.hidden = true;
+      if (search) {
+        search.readOnly = false;
+        search.placeholder = normalSearchPlaceholder;
+      }
+    }
+
+    function navigateToPrimaryView(nextView, historyMode = "push") {
+      const view = nextView === "history" ? "history" : "all";
+      const routeChanged = state.hidden || state.view !== view || state.category !== "all" || state.terms.length > 0 || Boolean(search?.value.trim());
+      leaveHiddenSectionForNavigation();
+      state.view = view;
+      state.category = "all";
+      state.terms = [];
+      if (search) search.value = "";
+      clear?.classList.remove("is-visible");
+      if (shortcut) shortcut.hidden = false;
+      updatePressed(categoryBar, "category", state.category, true);
+      updateUrlState(routeChanged ? historyMode : "replace");
+      render();
+      scheduleResultScroll();
+    }
+
+    function handlePrimaryNavigation(event, view) {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      navigateToPrimaryView(view);
     }
 
     function fallbackCopyText(value) {
@@ -997,6 +1035,20 @@
         scheduleSegmentedIndicators();
       });
     }
+
+    historyNavLink?.addEventListener("click", (event) => handlePrimaryNavigation(event, "history"));
+    homeNavLink?.addEventListener("click", (event) => handlePrimaryNavigation(event, "all"));
+    returnHome?.addEventListener("click", () => navigateToPrimaryView("all"));
+
+    window.addEventListener("popstate", async () => {
+      leaveHiddenSectionForNavigation();
+      await restoreUrlState();
+      clear?.classList.toggle("is-visible", Boolean(state.terms.length));
+      if (shortcut) shortcut.hidden = Boolean(state.terms.length);
+      updatePressed(categoryBar, "category", state.category);
+      render();
+      scheduleResultScroll();
+    });
 
     clearRecent?.addEventListener("click", () => {
       recentVisits = [];

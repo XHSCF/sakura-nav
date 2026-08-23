@@ -146,9 +146,6 @@
           <div>
             <h2 id="collection-title">我的收藏</h2>
           </div>
-          <div class="content-actions">
-            <button class="clear-history-button" type="button" data-clear-recent hidden><i class="fas fa-trash-alt" aria-hidden="true"></i> 清空最近访问</button>
-          </div>
         </div>
       </div>
 
@@ -184,6 +181,14 @@
           </div>
         </div>
         <div class="content-utilities" role="group" aria-label="页面工具">
+          <button class="utility-button" type="button" data-return-home hidden>
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>返回首页</span>
+          </button>
+          <button class="utility-button history-clear-button" type="button" data-clear-recent hidden>
+            <i class="fas fa-trash-alt" aria-hidden="true"></i>
+            <span>清空最近访问</span>
+          </button>
           <button class="utility-button" type="button" data-copy-view>
             <i class="fas fa-link" aria-hidden="true"></i>
             <span data-copy-view-label>复制当前板块链接</span>

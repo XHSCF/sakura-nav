@@ -728,36 +728,6 @@ select {
   border: 0;
 }
 
-.content-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.clear-history-button {
-  display: inline-flex;
-  min-height: 34px;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--muted);
-  background: var(--surface);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.clear-history-button[hidden] {
-  display: none;
-}
-
-.clear-history-button:hover {
-  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
-  color: var(--danger);
-}
-
 .category-shell {
   position: sticky;
   z-index: 20;
@@ -1111,6 +1081,15 @@ select {
   color: var(--primary-strong);
   background: var(--surface-solid);
   transform: translateY(-1px);
+}
+
+.utility-button[hidden] {
+  display: none;
+}
+
+.history-clear-button:hover {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+  color: var(--danger);
 }
 
 .utility-status {
@@ -1700,24 +1679,6 @@ select {
     white-space: nowrap;
   }
 
-  .content-actions {
-    position: absolute;
-    right: 0;
-  }
-
-  .content-section.has-history-action .content-heading {
-    height: 38px;
-    align-items: center;
-    flex-direction: column;
-    margin-bottom: 4px;
-  }
-
-  .content-section.has-history-action .content-actions {
-    position: static;
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
-  }
 }
 
 @media (min-width: 1200px) {
@@ -1733,17 +1694,6 @@ select {
     position: relative;
     height: 0;
     margin: 0;
-  }
-
-  .content-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
-  }
-
-  .content-section.has-history-action .content-heading {
-    height: 38px;
-    margin-bottom: 4px;
   }
 
   .category-shell {
@@ -1926,11 +1876,6 @@ select {
 
   .category-scroll-button {
     display: none !important;
-  }
-
-  .content-actions {
-    width: auto;
-    margin-left: auto;
   }
 
   .content-section .access-notice {
@@ -2475,7 +2420,7 @@ select {
     box-shadow: var(--shadow-md);
   }
 
-  .clear-history-button:hover {
+  .history-clear-button:hover {
     border-color: var(--danger);
   }
 
