@@ -255,6 +255,8 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
   assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*136px;[^}]*align-items:\s*center;[^}]*padding:\s*16px;/s);
+  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--line\);[^}]*box-shadow:\s*none;/s);
+  assert.doesNotMatch(stylesheet, /\.site-card-link\s*\{[^}]*box-shadow:\s*0 1px 0/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*136px;/);
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*108px;/s);
   assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*50%;[^}]*right:\s*16px;[^}]*width:\s*92px;[^}]*flex-direction:\s*column;[^}]*gap:\s*7px;[^}]*transform:\s*translateY\(-50%\);/s);

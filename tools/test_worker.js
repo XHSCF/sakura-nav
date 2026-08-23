@@ -167,7 +167,9 @@ test("admin page is script-src self compatible and exposes required management f
   assert.match(html, /class="login-page" data-login-page hidden/);
   ["/api/admin/login", "/api/admin/sites", "/api/admin/categories", "/api/admin/hidden-settings", "/api/admin/analytics", "/api/admin/export", "/api/admin/import"].forEach((endpoint) => assert.ok(application.includes(endpoint)));
   assert.match(html, /name="passphrase" type="password"/);
-  ["卡片管理", "分类管理", "设置与备份", "修改记录", "查看前台", "退出后台"].forEach((label) => assert.ok(html.includes(`aria-label="${label}"`)));
+  ["卡片管理", "分类管理", "访问统计", "修改记录", "设置与备份", "查看前台", "退出后台"].forEach((label) => assert.ok(html.includes(`aria-label="${label}"`)));
+  const sidebarOrder = Array.from(html.matchAll(/class="sidebar-tab[^"]*"[^>]*data-tab="([^"]+)"/g), (match) => match[1]);
+  assert.deepEqual(sidebarOrder, ["sites", "categories", "analytics", "history", "settings"]);
   assert.match(application, /function localDateValue\(/);
   assert.match(application, /confirmDialog\.returnValue = ""/);
   ["data-unsaved-indicator", "data-preview-fit-status"].forEach((token) => assert.match(html, new RegExp(token)));
