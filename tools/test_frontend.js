@@ -396,6 +396,7 @@ test("homepage moves recent visits into navigation and removes obsolete views", 
 test("search and categories use a compact Telegram-style hierarchy", () => {
   const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
   const searchIndex = homepage.indexOf("data-search-form");
   const categoryIndex = homepage.indexOf("data-category-bar");
   const summaryIndex = homepage.indexOf("data-search-result");
@@ -407,8 +408,10 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*var\(--surface-solid\);[^}]*background:\s*color-mix\([^}]*box-shadow:\s*inset 0 0 0 1px/s);
   assert.match(stylesheet, /\.category-slider\s*\{[^}]*width:\s*min\(100%, 1040px\);/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*padding:\s*2px;/s);
+  assert.match(stylesheet, /@media \(min-width:\s*769px\)\s*\{\s*\.category-bar \.filter-chip\s*\{[^}]*padding-inline:\s*14px;/s);
   assert.match(stylesheet, /\.category-bar\s*\{\s*--segmented-indicator-inset:\s*3px;/s);
   assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 24px;[^}]*text-align:\s*center;/s);
+  assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length\)/);
 });
 
 test("restoring all sites does not focus the search input", () => {
