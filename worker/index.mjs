@@ -7,6 +7,9 @@ const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ICON_PATTERN = /^fa-[a-z0-9-]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SITE_STATUSES = new Set(["draft", "published"]);
+const ANALYTICS_RANGES = new Set([1, 7, 30, 90]);
+const ANALYTICS_RETENTION_DAYS = 90;
+const VISITOR_ID_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 const encoder = new TextEncoder();
 
 function apiHeaders(extra = {}) {
@@ -25,6 +28,10 @@ function json(data, status = 200, extraHeaders = {}) {
 
 function errorResponse(message, status = 400, code = "BAD_REQUEST") {
   return json({ ok: false, error: message, code }, status);
+}
+
+function noContent() {
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 }
 
 function cleanText(value) {
@@ -138,6 +145,144 @@ function validateKeywords(value) {
   if (keywords.length > 24) throw new ApiError("关键词最多填写 24 个。");
   if (keywords.some((keyword) => keyword.length > 40)) throw new ApiError("单个关键词不能超过 40 个字符。");
   return keywords;
+}
+
+function validateVisitPath(value) {
+  const path = String(value ?? "").trim().split(/[?#]/, 1)[0];
+  if (!path || path.length > 160 || !/^\/(?!\/)/.test(path) || /[\u0000-\u001f\u007f]/.test(path)) {
+    throw new ApiError("访问页面格式不正确。", 400, "INVALID_VISIT");
+  }
+  if (path === "/admin" || path.startsWith("/admin/") || path.startsWith("/api/")) {
+    throw new ApiError("该页面不参与访问统计。", 400, "INVALID_VISIT");
+  }
+  return path;
+}
+
+function validateReferrerHost(value) {
+  const text = cleanText(value).toLowerCase();
+  if (!text) return null;
+  if (text.length > 255) throw new ApiError("访问来源格式不正确。", 400, "INVALID_VISIT");
+  try {
+    const hostname = new URL(`https://${text}`).hostname.toLowerCase();
+    if (!hostname || hostname.length > 255) throw new Error("invalid hostname");
+    return hostname;
+  } catch (_) {
+    throw new ApiError("访问来源格式不正确。", 400, "INVALID_VISIT");
+  }
+}
+
+export function validateVisitPayload(payload) {
+  const visitorId = cleanText(payload?.visitorId);
+  if (!VISITOR_ID_PATTERN.test(visitorId)) throw new ApiError("匿名访客编号格式不正确。", 400, "INVALID_VISIT");
+  return {
+    visitorId,
+    path: validateVisitPath(payload?.path),
+    referrerHost: validateReferrerHost(payload?.referrerHost)
+  };
+}
+
+export function classifyClient(userAgent, mobileHint = "") {
+  const agent = String(userAgent || "");
+  const tablet = /iPad|Tablet|PlayBook|Silk|Kindle|Android(?!.*Mobile)/i.test(agent);
+  const mobile = mobileHint === "?1" || /Mobi|iPhone|iPod|Android/i.test(agent);
+  const deviceType = tablet ? "tablet" : mobile ? "mobile" : agent ? "desktop" : "other";
+
+  let browser = "其他浏览器";
+  if (/MicroMessenger/i.test(agent)) browser = "微信内置浏览器";
+  else if (/EdgA|EdgiOS|Edg\//i.test(agent)) browser = "Microsoft Edge";
+  else if (/OPR\/|Opera/i.test(agent)) browser = "Opera";
+  else if (/SamsungBrowser/i.test(agent)) browser = "Samsung Internet";
+  else if (/CriOS|Chrome\//i.test(agent)) browser = "Chrome";
+  else if (/FxiOS|Firefox\//i.test(agent)) browser = "Firefox";
+  else if (/Safari\//i.test(agent)) browser = "Safari";
+
+  let operatingSystem = "其他系统";
+  if (/iPad|iPhone|iPod/i.test(agent)) operatingSystem = "iOS / iPadOS";
+  else if (/Android/i.test(agent)) operatingSystem = "Android";
+  else if (/Windows NT/i.test(agent)) operatingSystem = "Windows";
+  else if (/CrOS/i.test(agent)) operatingSystem = "ChromeOS";
+  else if (/Mac OS X|Macintosh/i.test(agent)) operatingSystem = "macOS";
+  else if (/Linux/i.test(agent)) operatingSystem = "Linux";
+
+  return { deviceType, browser, operatingSystem };
+}
+
+function isLikelyBot(userAgent) {
+  return !userAgent || /bot\b|crawler|spider|slurp|bingpreview|headlesschrome|lighthouse|pagespeed|facebookexternalhit|telegrambot|whatsapp/i.test(userAgent);
+}
+
+function geographyFromRequest(request) {
+  const cf = request.cf || {};
+  const country = cleanText(cf.country).toUpperCase();
+  return {
+    countryCode: /^[A-Z]{2}$/.test(country) ? country : null,
+    region: optionalString(cf.region || cf.regionCode, 80),
+    city: optionalString(cf.city, 80)
+  };
+}
+
+async function recordVisit(request, env, visit) {
+  const userAgent = request.headers.get("User-Agent") || "";
+  if (isLikelyBot(userAgent)) return;
+  const visitorHash = await sha256Hex(`sakura-anonymous-visitor|${visit.visitorId}`);
+  const client = classifyClient(userAgent, request.headers.get("Sec-CH-UA-Mobile"));
+  const geography = geographyFromRequest(request);
+  const minuteBucket = new Date().toISOString().slice(0, 16);
+  await env.DB.prepare("INSERT OR IGNORE INTO visitor_events(visitor_hash, path, referrer_host, device_type, browser, operating_system, country_code, region, city, minute_bucket) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE COALESCE((SELECT value FROM settings WHERE key='analytics_enabled'), '1')='1'")
+    .bind(visitorHash, visit.path, visit.referrerHost, client.deviceType, client.browser, client.operatingSystem, geography.countryCode, geography.region, geography.city, minuteBucket).run();
+}
+
+function sqliteTimestamp(value) {
+  return new Date(value).toISOString().slice(0, 19).replace("T", " ");
+}
+
+export function analyticsStartTimestamp(days, now = Date.now()) {
+  const shifted = new Date(now + 8 * 60 * 60 * 1000);
+  const start = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate() - (days - 1)) - 8 * 60 * 60 * 1000;
+  return sqliteTimestamp(start);
+}
+
+function analyticsRows(result) {
+  return result?.results || [];
+}
+
+async function analyticsData(env, requestedDays) {
+  const days = ANALYTICS_RANGES.has(Number(requestedDays)) ? Number(requestedDays) : 7;
+  const start = analyticsStartTimestamp(days);
+  const results = await env.DB.batch([
+    env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('analytics_enabled', 'analytics_retention_days')"),
+    env.DB.prepare("SELECT COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors, COUNT(DISTINCT path) AS pages, COUNT(DISTINCT CASE WHEN country_code IS NOT NULL THEN country_code END) AS countries FROM visitor_events WHERE occurred_at>=?").bind(start),
+    env.DB.prepare("SELECT strftime('%Y-%m-%d', occurred_at, '+8 hours') AS day, COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors FROM visitor_events WHERE occurred_at>=? GROUP BY day ORDER BY day").bind(start),
+    env.DB.prepare("SELECT device_type AS label, COUNT(*) AS page_views FROM visitor_events WHERE occurred_at>=? GROUP BY device_type ORDER BY page_views DESC").bind(start),
+    env.DB.prepare("SELECT browser AS label, COUNT(*) AS page_views FROM visitor_events WHERE occurred_at>=? GROUP BY browser ORDER BY page_views DESC LIMIT 8").bind(start),
+    env.DB.prepare("SELECT operating_system AS label, COUNT(*) AS page_views FROM visitor_events WHERE occurred_at>=? GROUP BY operating_system ORDER BY page_views DESC LIMIT 8").bind(start),
+    env.DB.prepare("SELECT path AS label, COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors FROM visitor_events WHERE occurred_at>=? GROUP BY path ORDER BY page_views DESC LIMIT 12").bind(start),
+    env.DB.prepare("SELECT COALESCE(referrer_host, '') AS label, COUNT(*) AS page_views FROM visitor_events WHERE occurred_at>=? GROUP BY referrer_host ORDER BY page_views DESC LIMIT 12").bind(start),
+    env.DB.prepare("SELECT country_code, region, city, COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors FROM visitor_events WHERE occurred_at>=? GROUP BY country_code, region, city ORDER BY page_views DESC LIMIT 50").bind(start),
+    env.DB.prepare("SELECT id, path, referrer_host, device_type, browser, operating_system, country_code, region, city, occurred_at FROM visitor_events WHERE occurred_at>=? ORDER BY id DESC LIMIT 50").bind(start)
+  ]);
+  const settings = Object.fromEntries(analyticsRows(results[0]).map((row) => [row.key, row.value]));
+  return {
+    days,
+    enabled: settings.analytics_enabled !== "0",
+    retentionDays: Number(settings.analytics_retention_days) || ANALYTICS_RETENTION_DAYS,
+    summary: analyticsRows(results[1])[0] || { page_views: 0, visitors: 0, pages: 0, countries: 0 },
+    daily: analyticsRows(results[2]),
+    devices: analyticsRows(results[3]),
+    browsers: analyticsRows(results[4]),
+    operatingSystems: analyticsRows(results[5]),
+    pages: analyticsRows(results[6]),
+    sources: analyticsRows(results[7]),
+    locations: analyticsRows(results[8]),
+    recent: analyticsRows(results[9])
+  };
+}
+
+async function deleteExpiredVisits(env) {
+  const configured = Number(await env.DB.prepare("SELECT value FROM settings WHERE key='analytics_retention_days'").first("value"));
+  const retentionDays = Number.isInteger(configured) && configured >= 30 && configured <= 365 ? configured : ANALYTICS_RETENTION_DAYS;
+  const cutoff = sqliteTimestamp(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  await env.DB.prepare("DELETE FROM visitor_events WHERE occurred_at<?").bind(cutoff).run();
 }
 
 export function validateCategoryPayload(payload) {
@@ -589,8 +734,21 @@ async function handleImport(request, env) {
   return json({ ok: true, categories: categories.length, sites: sites.length });
 }
 
-async function handlePublic(request, env, pathname) {
+async function handlePublic(request, env, pathname, ctx) {
   if (request.method === "GET" && pathname === "/api/public/data") return json({ ok: true, data: await publicData(env) });
+  if (request.method === "POST" && pathname === "/api/public/visit") {
+    requireSameOrigin(request);
+    const visit = validateVisitPayload(await readJson(request, 4096));
+    const task = recordVisit(request, env, visit);
+    if (typeof ctx?.waitUntil === "function") {
+      ctx.waitUntil(task.catch((error) => {
+        console.error(JSON.stringify({ message: "anonymous visit write failed", error: error instanceof Error ? error.message : String(error) }));
+      }));
+      return noContent();
+    }
+    await task;
+    return noContent();
+  }
   if (request.method === "POST" && pathname === "/api/public/hidden") {
     const settings = hiddenSettingsForAdmin(await readSettings(env));
     if (!settings.enabled) return errorResponse("隐藏板块当前未开放。", 404, "NOT_FOUND");
@@ -602,6 +760,23 @@ async function handlePublic(request, env, pathname) {
     return json({ ok: true, data: { id: settings.id, name: settings.name, icon: settings.icon, welcome: settings.welcome, sites } });
   }
   return errorResponse("接口不存在。", 404, "NOT_FOUND");
+}
+
+async function handleAnalyticsSettings(request, env) {
+  await requireAdmin(env, request, true);
+  const payload = await readJson(request, 4096);
+  if (typeof payload?.enabled !== "boolean") throw new ApiError("统计开关状态不正确。", 400, "INVALID_ANALYTICS_SETTINGS");
+  await env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES ('analytics_enabled', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP")
+    .bind(payload.enabled ? "1" : "0").run();
+  await insertAudit(env, "update", "analytics", "tracking", { enabled: payload.enabled });
+  return json({ ok: true, enabled: payload.enabled });
+}
+
+async function clearAnalytics(request, env) {
+  await requireAdmin(env, request, true);
+  const result = await env.DB.prepare("DELETE FROM visitor_events").run();
+  await insertAudit(env, "clear", "analytics", "visitor-events", { count: Number(result.meta?.changes || 0) });
+  return json({ ok: true, deleted: Number(result.meta?.changes || 0) });
 }
 
 async function handleAdmin(request, env, pathname) {
@@ -618,6 +793,12 @@ async function handleAdmin(request, env, pathname) {
     await requireAdmin(env, request);
     return json({ ok: true, data: await adminData(env) });
   }
+  if (request.method === "GET" && pathname === "/api/admin/analytics") {
+    await requireAdmin(env, request);
+    return json({ ok: true, data: await analyticsData(env, new URL(request.url).searchParams.get("days")) });
+  }
+  if (request.method === "PUT" && pathname === "/api/admin/analytics/settings") return handleAnalyticsSettings(request, env);
+  if (request.method === "DELETE" && pathname === "/api/admin/analytics") return clearAnalytics(request, env);
   if (request.method === "GET" && pathname === "/api/admin/export") {
     await requireAdmin(env, request);
     const backup = backupFromAdminData(await adminData(env));
@@ -631,25 +812,32 @@ async function handleAdmin(request, env, pathname) {
   return errorResponse("接口不存在。", 404, "NOT_FOUND");
 }
 
-async function handleRequest(request, env) {
+async function handleRequest(request, env, ctx) {
   const url = new URL(request.url);
   if (url.pathname === "/admin") return Response.redirect(`${url.origin}/admin/`, 308);
   if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
   if (!env.DB) return errorResponse("数据库尚未绑定。", 503, "DATABASE_NOT_CONFIGURED");
-  if (url.pathname.startsWith("/api/public/")) return handlePublic(request, env, url.pathname);
+  if (url.pathname.startsWith("/api/public/")) return handlePublic(request, env, url.pathname, ctx);
   if (url.pathname.startsWith("/api/admin/")) return handleAdmin(request, env, url.pathname);
   return errorResponse("接口不存在。", 404, "NOT_FOUND");
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
-      return await handleRequest(request, env);
+      return await handleRequest(request, env, ctx);
     } catch (error) {
       if (error instanceof ApiError) return errorResponse(error.message, error.status, error.code);
       const message = error instanceof Error ? error.message : String(error);
       console.error(JSON.stringify({ message: "request failed", error: message, path: new URL(request.url).pathname }));
       return errorResponse("服务器暂时无法处理请求。", 500, "INTERNAL_ERROR");
     }
+  },
+  async scheduled(_controller, env, ctx) {
+    const task = deleteExpiredVisits(env).catch((error) => {
+      console.error(JSON.stringify({ message: "analytics cleanup failed", error: error instanceof Error ? error.message : String(error) }));
+    });
+    if (typeof ctx?.waitUntil === "function") ctx.waitUntil(task);
+    else await task;
   }
 };

@@ -31,6 +31,12 @@ npx wrangler@latest deploy
 
 通过 Cloudflare Git 集成部署时，也可以在 Cloudflare Dashboard 中创建 D1 数据库并将其绑定为 `DB`，然后在 Worker 的 Variables and Secrets 页面设置三个 Secret。D1 migration 仍必须在首次启用后台前应用一次。
 
+以后仓库新增 migration 时，Git 自动部署不会代替数据库升级。推送新版代码前后，需要再运行一次以下命令；Wrangler 只会应用尚未执行的新 migration：
+
+```bash
+npx wrangler@latest d1 migrations apply sakura-nav-db --remote
+```
+
 ## 本地开发
 
 复制 `.dev.vars.example` 为 `.dev.vars`，仅在未被 Git 跟踪的 `.dev.vars` 中填写本地测试值：
@@ -51,6 +57,10 @@ npx wrangler@latest dev
 - 新世界：名称、图标、口令、欢迎词和启用状态
 - 备份：导出或导入完整 JSON 数据
 - 修改记录：保留最近的后台操作日志
+- 访问统计：按今天、近 7 天、近 30 天或近 90 天查看匿名访客、访问次数、页面、来源、设备、浏览器、系统，以及 Cloudflare 提供的国家、省/州和城市
+- 统计控制：可以暂停记录或二次确认后清空全部访问记录；Cloudflare Cron 每天自动删除超过 90 天的数据
+
+访问统计不会保存原始 IP、完整 User-Agent、经纬度、搜索内容或隐藏口令，也不会混入站内跳转来源和常见机器人。前台仅保存一个随机匿名编号，Worker 入库前会将其哈希；启用 Global Privacy Control 或 Do Not Track 的浏览器不会上报访问。访问统计不包含在内容 JSON 备份中，清空后无法从内容备份恢复。
 
 ## 数据与回退
 

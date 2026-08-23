@@ -11,7 +11,7 @@
 ## 项目特点
 
 - 原生 HTML、CSS 和 JavaScript 前台，无前端框架
-- Cloudflare Worker + D1 中文管理后台，可管理卡片、分类、新世界、草稿和备份
+- Cloudflare Worker + D1 中文管理后台，可管理卡片、分类、新世界、草稿、备份和隐私友好的匿名访问统计
 - 前台优先读取 D1，API 不可用时自动回退到 `assets/js/sites-data.js`
 - 搜索支持名称、描述、URL、分类、keywords、英文缩写和多关键词，并在结果中安全高亮命中词、显示涉及板块数
 - 分类与最近收录、最近访问可以组合筛选
@@ -46,6 +46,7 @@ sakura-nav/
 │   ├── css/sakura.css               # 全站样式
 │   ├── js/sites-data.js             # 分类与网站数据
 │   ├── js/data-loader.js             # D1 数据优先与静态快照回退
+│   ├── js/analytics.js               # 匿名访问上报（尊重 GPC 与 DNT）
 │   ├── js/theme-init.js              # 首屏主题初始化
 │   ├── js/app-guard.js                # 脚本加载失败时的无依赖反馈
 │   ├── js/sakura-core.js              # 可测试的搜索、主题和本地数据纯逻辑

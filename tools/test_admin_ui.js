@@ -29,3 +29,15 @@ test("card editor keeps clear sections and a single explicit scroll region", () 
   assert.match(css, /html\.has-open-dialog, body\.has-open-dialog/);
   assert.match(css, /\.admin-dialog, \.confirm-dialog[^}]*overflow: visible;/s);
 });
+
+test("admin analytics UI exposes responsive privacy, location and history views", () => {
+  const html = fs.readFileSync(path.join(root, "admin", "index.html"), "utf8");
+  const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");
+  const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
+  ["data-tab=\"analytics\"", "data-analytics-enabled", "data-analytics-locations", "data-analytics-recent"].forEach((token) => assert.ok(html.includes(token)));
+  assert.match(application, /function loadAnalytics\(/);
+  assert.match(application, /function locationText\(/);
+  assert.match(application, /\/api\/admin\/analytics/);
+  assert.match(css, /\.analytics-dashboard-grid/);
+  assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.analytics-dashboard-grid \{ grid-template-columns: 1fr;/);
+});

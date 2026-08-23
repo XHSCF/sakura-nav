@@ -5,6 +5,8 @@
     csrf: "",
     user: "",
     data: { categories: [], sites: [], hiddenSection: {}, auditLogs: [] },
+    analytics: null,
+    analyticsLoading: false,
     editingSiteId: null,
     editingCategoryId: null,
     idTouched: false,
@@ -34,6 +36,9 @@
   const themeKey = "sakura-theme";
   const colorThemeKey = "sakura-color-theme";
   const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
+  const numberFormatter = new Intl.NumberFormat("zh-CN");
+  let countryFormatter = null;
+  try { countryFormatter = new Intl.DisplayNames(["zh-CN"], { type: "region" }); } catch (_) { countryFormatter = null; }
 
   function createElement(tag, className, text) {
     const node = document.createElement(tag);
@@ -427,8 +432,8 @@
   }
 
   function auditDescription(log) {
-    const actions = { create: "新增", update: "修改", delete: "删除", import: "导入", seed: "初始化" };
-    const types = { site: "卡片", category: "分类", settings: "设置", backup: "备份", navigation: "导航数据" };
+    const actions = { create: "新增", update: "修改", delete: "删除", clear: "清空", import: "导入", seed: "初始化" };
+    const types = { site: "卡片", category: "分类", settings: "设置", analytics: "访问统计", backup: "备份", navigation: "导航数据" };
     const name = log.details?.name ? `“${log.details.name}”` : log.entityId;
     return `${actions[log.action] || log.action}${types[log.entityType] || log.entityType} ${name}`;
   }
@@ -448,6 +453,204 @@
       item.append(iconWrap, copy, time);
       list.appendChild(item);
     });
+  }
+
+  function formattedNumber(value) {
+    return numberFormatter.format(Number(value) || 0);
+  }
+
+  function countryName(code) {
+    const normalized = String(code || "").toUpperCase();
+    if (!normalized) return "未知国家或地区";
+    try { return countryFormatter?.of(normalized) || normalized; } catch (_) { return normalized; }
+  }
+
+  function pageLabel(path) {
+    const labels = { "/": "首页", "/index.html": "首页", "/about": "关于", "/about/": "关于" };
+    return labels[path] || path || "未知页面";
+  }
+
+  function deviceLabel(type) {
+    return { mobile: "手机", tablet: "平板", desktop: "电脑", other: "其他设备" }[type] || "其他设备";
+  }
+
+  function locationText(row) {
+    const details = [row.region, row.city].filter(Boolean).filter((value, index, values) => values.indexOf(value) === index);
+    return details.length ? `${countryName(row.country_code)} · ${details.join(" · ")}` : countryName(row.country_code);
+  }
+
+  function renderBreakdown(selector, rows, labelForRow = (row) => row.label || "未知") {
+    const container = document.querySelector(selector);
+    container.replaceChildren();
+    const values = (rows || []).slice(0, 12);
+    if (!values.length) {
+      container.appendChild(createElement("div", "analytics-empty-copy", "当前范围暂无数据"));
+      return;
+    }
+    const maximum = Math.max(...values.map((row) => Number(row.page_views) || 0), 1);
+    values.forEach((row) => {
+      const count = Number(row.page_views) || 0;
+      const item = createElement("div", "analytics-breakdown-row");
+      const label = createElement("span", "analytics-breakdown-label", labelForRow(row));
+      label.title = label.textContent;
+      const track = createElement("span", "analytics-breakdown-track");
+      const fill = createElement("span", "analytics-breakdown-fill");
+      fill.style.width = `${Math.max(2, count / maximum * 100)}%`;
+      track.appendChild(fill);
+      item.append(label, track, createElement("span", "analytics-breakdown-value", formattedNumber(count)));
+      container.appendChild(item);
+    });
+  }
+
+  function analyticsDateKeys(days) {
+    const current = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    return Array.from({ length: days }, (_, index) => {
+      const date = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), current.getUTCDate() - (days - 1 - index)));
+      return date.toISOString().slice(0, 10);
+    });
+  }
+
+  function renderAnalyticsTrend(data) {
+    const container = document.querySelector("[data-analytics-trend]");
+    container.replaceChildren();
+    const values = new Map((data.daily || []).map((row) => [row.day, row]));
+    const days = analyticsDateKeys(data.days || 7).map((day) => ({ day, ...(values.get(day) || { page_views: 0, visitors: 0 }) }));
+    const maximum = Math.max(...days.map((row) => Number(row.page_views) || 0), 1);
+    const labelStep = days.length <= 7 ? 1 : days.length <= 30 ? 5 : 15;
+    container.style.minWidth = days.length > 30 ? `${days.length * 16}px` : "100%";
+    days.forEach((row, index) => {
+      const pageViews = Number(row.page_views) || 0;
+      const visitors = Number(row.visitors) || 0;
+      const column = createElement("div", "analytics-trend-column");
+      column.title = `${row.day}：${formattedNumber(pageViews)} 次访问，${formattedNumber(visitors)} 位访客`;
+      const wrap = createElement("div", "analytics-trend-bar-wrap");
+      const bar = createElement("span", "analytics-trend-bar");
+      bar.style.height = `${Math.max(2, pageViews / maximum * 100)}%`;
+      wrap.appendChild(bar);
+      const showLabel = index === 0 || index === days.length - 1 || index % labelStep === 0;
+      column.append(wrap, createElement("span", "analytics-trend-label", showLabel ? row.day.slice(5) : ""));
+      container.appendChild(column);
+    });
+  }
+
+  function renderAnalyticsLocations(rows) {
+    const container = document.querySelector("[data-analytics-locations]");
+    container.replaceChildren();
+    if (!rows?.length) {
+      container.appendChild(createElement("div", "analytics-empty-copy", "当前范围暂无位置数据"));
+      return;
+    }
+    rows.forEach((row) => {
+      const item = createElement("div", "analytics-location-row");
+      const copy = createElement("div", "analytics-location-copy");
+      copy.append(createElement("strong", "", locationText(row)), createElement("span", "", `${formattedNumber(row.visitors)} 位匿名访客`));
+      item.append(copy, createElement("span", "analytics-location-count", `${formattedNumber(row.page_views)} 次`));
+      container.appendChild(item);
+    });
+  }
+
+  function renderAnalyticsRecent(rows) {
+    const body = document.querySelector("[data-analytics-recent]");
+    const empty = document.querySelector("[data-analytics-recent-empty]");
+    body.replaceChildren();
+    empty.hidden = Boolean(rows?.length);
+    (rows || []).forEach((row) => {
+      const tableRow = document.createElement("tr");
+      const timeCell = document.createElement("td");
+      timeCell.dataset.label = "访问";
+      const visitCopy = createElement("div", "analytics-visit-copy");
+      visitCopy.append(createElement("strong", "", pageLabel(row.path)), createElement("span", "", formatDateTime(row.occurred_at)));
+      timeCell.appendChild(visitCopy);
+      const locationCell = createElement("td", "", locationText(row));
+      locationCell.dataset.label = "地区";
+      const deviceCell = createElement("td", "", `${deviceLabel(row.device_type)} · ${row.browser} · ${row.operating_system}`);
+      deviceCell.dataset.label = "设备";
+      const sourceCell = createElement("td", "", row.referrer_host || "直接访问");
+      sourceCell.dataset.label = "来源";
+      tableRow.append(timeCell, locationCell, deviceCell, sourceCell);
+      body.appendChild(tableRow);
+    });
+  }
+
+  function renderAnalytics() {
+    const data = state.analytics;
+    if (!data) return;
+    const summary = data.summary || {};
+    document.querySelector("[data-analytics-page-views]").textContent = formattedNumber(summary.page_views);
+    document.querySelector("[data-analytics-visitors]").textContent = formattedNumber(summary.visitors);
+    document.querySelector("[data-analytics-pages]").textContent = formattedNumber(summary.pages);
+    document.querySelector("[data-analytics-countries]").textContent = formattedNumber(summary.countries);
+    const enabled = document.querySelector("[data-analytics-enabled]");
+    enabled.checked = data.enabled !== false;
+    document.querySelector("[data-analytics-status-text]").textContent = data.enabled === false ? "匿名统计已暂停" : "匿名统计已启用";
+    renderAnalyticsTrend(data);
+    renderBreakdown("[data-analytics-devices]", data.devices, (row) => deviceLabel(row.label));
+    renderBreakdown("[data-analytics-browsers]", data.browsers);
+    renderBreakdown("[data-analytics-systems]", data.operatingSystems);
+    renderBreakdown("[data-analytics-pages-list]", data.pages, (row) => pageLabel(row.label));
+    renderBreakdown("[data-analytics-sources]", data.sources, (row) => row.label || "直接访问");
+    renderAnalyticsLocations(data.locations);
+    renderAnalyticsRecent(data.recent);
+    document.querySelector("[data-analytics-loading]").hidden = true;
+    document.querySelector("[data-analytics-error]").hidden = true;
+    document.querySelector("[data-analytics-content]").hidden = false;
+  }
+
+  async function loadAnalytics() {
+    if (state.analyticsLoading) return;
+    state.analyticsLoading = true;
+    const refresh = document.querySelector("[data-analytics-refresh]");
+    refresh.disabled = true;
+    document.querySelector("[data-analytics-error]").hidden = true;
+    if (!state.analytics) document.querySelector("[data-analytics-loading]").hidden = false;
+    try {
+      const days = Number(document.querySelector("[data-analytics-range]").value) || 7;
+      const { payload } = await api(`/api/admin/analytics?days=${days}`);
+      state.analytics = payload.data;
+      renderAnalytics();
+    } catch (error) {
+      document.querySelector("[data-analytics-loading]").hidden = true;
+      document.querySelector("[data-analytics-content]").hidden = true;
+      document.querySelector("[data-analytics-error]").hidden = false;
+      document.querySelector("[data-analytics-error-message]").textContent = error.message;
+    } finally {
+      state.analyticsLoading = false;
+      refresh.disabled = false;
+    }
+  }
+
+  async function saveAnalyticsEnabled(event) {
+    const control = event.currentTarget;
+    const enabled = control.checked;
+    control.disabled = true;
+    try {
+      await api("/api/admin/analytics/settings", { method: "PUT", body: { enabled } });
+      if (state.analytics) state.analytics.enabled = enabled;
+      document.querySelector("[data-analytics-status-text]").textContent = enabled ? "匿名统计已启用" : "匿名统计已暂停";
+      showToast(enabled ? "已开始记录新的匿名访问。" : "已暂停记录新的匿名访问。");
+      await loadData();
+    } catch (error) {
+      control.checked = !enabled;
+      showToast(error.message, true);
+    } finally {
+      control.disabled = false;
+    }
+  }
+
+  async function clearAnalytics() {
+    if (!(await confirmAction("清空访问记录", "这会永久删除全部匿名访问统计，且无法恢复。确定继续吗？"))) return;
+    const button = document.querySelector("[data-analytics-clear]");
+    button.disabled = true;
+    try {
+      const { payload } = await api("/api/admin/analytics", { method: "DELETE" });
+      state.analytics = null;
+      showToast(`已清空 ${formattedNumber(payload.deleted)} 条访问记录。`);
+      await Promise.all([loadAnalytics(), loadData()]);
+    } catch (error) {
+      showToast(error.message, true);
+    } finally {
+      button.disabled = false;
+    }
   }
 
   function renderSettings() {
@@ -499,6 +702,18 @@
     document.querySelectorAll("[data-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.tab === tabId));
     document.querySelectorAll("[data-panel]").forEach((panel) => { panel.hidden = panel.dataset.panel !== tabId; });
     document.querySelector("[data-add-site]").hidden = tabId !== "sites";
+    document.querySelector("[data-content-stats]").hidden = tabId === "analytics";
+    const copy = {
+      sites: ["SAKURA 控制台", "内容管理", "修改并发布后，前台会直接读取数据库中的最新内容。"],
+      analytics: ["匿名访问数据", "访问统计", "查看访问趋势、设备、来源，以及国家和大致地区。"],
+      categories: ["分类结构", "分类管理", "维护前台分类名称、图标、显示状态和排列顺序。"],
+      settings: ["数据与安全", "设置与备份", "管理新世界入口、数据库备份和部署状态。"],
+      history: ["后台审计", "修改记录", "查看最近的内容管理和访问统计设置操作。"]
+    }[tabId] || ["SAKURA 控制台", "内容管理", "管理网站内容。"];
+    document.querySelector("[data-dashboard-eyebrow]").textContent = copy[0];
+    document.querySelector("[data-dashboard-title]").textContent = copy[1];
+    document.querySelector("[data-dashboard-description]").textContent = copy[2];
+    if (tabId === "analytics") await loadAnalytics();
   }
 
   function nextUniqueId(base, ignoredId = null) {
@@ -840,6 +1055,10 @@
   hiddenSettingsForm?.addEventListener("submit", saveHiddenSettings);
   document.querySelector("[data-export]")?.addEventListener("click", exportBackup);
   document.querySelector("[data-import]")?.addEventListener("change", importBackup);
+  document.querySelector("[data-analytics-range]")?.addEventListener("change", loadAnalytics);
+  document.querySelector("[data-analytics-refresh]")?.addEventListener("click", loadAnalytics);
+  document.querySelector("[data-analytics-enabled]")?.addEventListener("change", saveAnalyticsEnabled);
+  document.querySelector("[data-analytics-clear]")?.addEventListener("click", clearAnalytics);
 
   siteForm?.addEventListener("input", (event) => {
     const fields = siteForm.elements;

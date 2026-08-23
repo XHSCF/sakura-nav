@@ -25,6 +25,9 @@ class TestD1Statement {
   }
   async run() { return this.runSync(); }
   runSync() {
+    if (/^\s*(?:SELECT|WITH|PRAGMA|EXPLAIN)\b/i.test(this.sql)) {
+      return { success: true, results: this.database.prepare(this.sql).all(...this.values) };
+    }
     const result = this.database.prepare(this.sql).run(...this.values);
     return { success: true, meta: { changes: Number(result.changes) } };
   }
@@ -53,12 +56,15 @@ class TestD1Database {
   }
 }
 
-function request(pathname, { method = "GET", body, cookie, csrf } = {}) {
+function request(pathname, { method = "GET", body, cookie, csrf, userAgent, cf } = {}) {
   const headers = { Accept: "application/json", Origin: "https://example.com" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (cookie) headers.Cookie = cookie;
   if (csrf) headers["X-Sakura-CSRF"] = csrf;
-  return new Request(`https://example.com${pathname}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  if (userAgent) headers["User-Agent"] = userAgent;
+  const result = new Request(`https://example.com${pathname}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  if (cf) Object.defineProperty(result, "cf", { configurable: true, value: cf });
+  return result;
 }
 
 test("worker validates public single-button and hidden dual-button cards", async () => {
@@ -119,12 +125,32 @@ test("worker secret comparison and hidden unlock hash normalize safely", async (
   assert.match(await sha256Hex("开门"), /^[a-f0-9]{64}$/);
 });
 
+test("worker validates anonymous visit data and derives coarse client details", async () => {
+  const { analyticsStartTimestamp, classifyClient, validateVisitPayload } = await workerPromise;
+  assert.deepEqual(validateVisitPayload({ visitorId: "anonymous-visitor-1234", path: "/about/?from=test", referrerHost: "Search.Example" }), {
+    visitorId: "anonymous-visitor-1234",
+    path: "/about/",
+    referrerHost: "search.example"
+  });
+  assert.throws(() => validateVisitPayload({ visitorId: "short", path: "/" }), /匿名访客编号/);
+  assert.throws(() => validateVisitPayload({ visitorId: "anonymous-visitor-1234", path: "/admin/" }), /不参与访问统计/);
+  assert.deepEqual(classifyClient("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"), {
+    deviceType: "mobile", browser: "Safari", operatingSystem: "iOS / iPadOS"
+  });
+  assert.deepEqual(classifyClient("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36"), {
+    deviceType: "desktop", browser: "Chrome", operatingSystem: "Windows"
+  });
+  assert.equal(analyticsStartTimestamp(1, Date.UTC(2026, 7, 23, 10, 30)), "2026-08-22 16:00:00");
+  assert.equal(analyticsStartTimestamp(7, Date.UTC(2026, 7, 23, 10, 30)), "2026-08-16 16:00:00");
+});
+
 test("Cloudflare configuration binds static assets and D1 without hardcoded secrets", () => {
   const config = JSON.parse(fs.readFileSync(path.join(root, "wrangler.jsonc"), "utf8"));
   assert.equal(config.main, "worker/index.mjs");
   assert.equal(config.assets.binding, "ASSETS");
   assert.equal(config.d1_databases[0].binding, "DB");
   assert.ok(config.compatibility_flags.includes("nodejs_compat"));
+  assert.ok(config.triggers.crons.length > 0);
   const worker = fs.readFileSync(path.join(root, "worker/index.mjs"), "utf8");
   assert.match(worker, /env\.ADMIN_USERNAME/);
   assert.match(worker, /env\.ADMIN_PASSWORD/);
@@ -136,10 +162,10 @@ test("admin page is script-src self compatible and exposes required management f
   const html = fs.readFileSync(path.join(root, "admin/index.html"), "utf8");
   const application = fs.readFileSync(path.join(root, "admin/admin.js"), "utf8");
   assert.doesNotMatch(html, /<script(?![^>]*\bsrc=)[^>]*>/i);
-  ["data-login-form", "data-add-site", "data-add-category", "data-hidden-settings-form", "data-export", "data-import"].forEach((token) => assert.match(html, new RegExp(token)));
+  ["data-login-form", "data-add-site", "data-add-category", "data-hidden-settings-form", "data-export", "data-import", "data-analytics-content", "data-analytics-locations"].forEach((token) => assert.match(html, new RegExp(token)));
   assert.match(html, /data-session-loading/);
   assert.match(html, /class="login-page" data-login-page hidden/);
-  ["/api/admin/login", "/api/admin/sites", "/api/admin/categories", "/api/admin/hidden-settings", "/api/admin/export", "/api/admin/import"].forEach((endpoint) => assert.ok(application.includes(endpoint)));
+  ["/api/admin/login", "/api/admin/sites", "/api/admin/categories", "/api/admin/hidden-settings", "/api/admin/analytics", "/api/admin/export", "/api/admin/import"].forEach((endpoint) => assert.ok(application.includes(endpoint)));
   assert.match(html, /name="passphrase" type="password"/);
   ["卡片管理", "分类管理", "设置与备份", "修改记录", "查看前台", "退出后台"].forEach((label) => assert.ok(html.includes(`aria-label="${label}"`)));
   assert.match(application, /function localDateValue\(/);
@@ -159,6 +185,11 @@ test("frontend loads database data with a bundled snapshot fallback", () => {
   assert.ok(html.indexOf("data-loader.js") < html.indexOf("sakura-app.js"));
   assert.match(loader, /fetch\("\.\/api\/public\/data"/);
   assert.match(loader, /return fallback/);
+  const analytics = fs.readFileSync(path.join(root, "assets", "js", "analytics.js"), "utf8");
+  assert.ok(html.indexOf("sakura-app.js") < html.indexOf("analytics.js"));
+  assert.match(analytics, /\/api\/public\/visit/);
+  assert.match(analytics, /navigator\.globalPrivacyControl/);
+  assert.doesNotMatch(analytics, /CF-Connecting-IP|User-Agent/);
 });
 
 test("worker login, CRUD, public data and hidden unlock work against migrated D1 data", async () => {
@@ -249,6 +280,60 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const validUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: " 开门 " } }), env);
   assert.equal(validUnlock.status, 200);
   assert.ok((await validUnlock.json()).data.sites.length > 0);
+
+  const firstVisit = {
+    method: "POST",
+    body: { visitorId: "anonymous-visitor-one", path: "/", referrerHost: "search.example" },
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1",
+    cf: { country: "CN", region: "广东省", city: "深圳市" }
+  };
+  assert.equal((await module.default.fetch(request("/api/public/visit", firstVisit), env)).status, 204);
+  assert.equal((await module.default.fetch(request("/api/public/visit", firstVisit), env)).status, 204);
+  assert.equal((await module.default.fetch(request("/api/public/visit", {
+    method: "POST",
+    body: { visitorId: "anonymous-visitor-two", path: "/about/", referrerHost: "" },
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36",
+    cf: { country: "US", region: "California", city: "San Francisco" }
+  }), env)).status, 204);
+  assert.equal((await module.default.fetch(request("/api/public/visit", {
+    method: "POST",
+    body: { visitorId: "anonymous-search-robot", path: "/", referrerHost: "search.example" },
+    userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    cf: { country: "US", region: "California", city: "Mountain View" }
+  }), env)).status, 204);
+  const invalidVisit = await module.default.fetch(request("/api/public/visit", {
+    method: "POST", body: { visitorId: "anonymous-visitor-three", path: "/admin/" }
+  }), env);
+  assert.equal(invalidVisit.status, 400);
+
+  const analyticsResponse = await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env);
+  assert.equal(analyticsResponse.status, 200);
+  const analytics = (await analyticsResponse.json()).data;
+  assert.equal(Number(analytics.summary.page_views), 2);
+  assert.equal(Number(analytics.summary.visitors), 2);
+  assert.equal(Number(analytics.summary.countries), 2);
+  assert.ok(analytics.locations.some((location) => location.country_code === "CN" && location.region === "广东省"));
+  assert.deepEqual(new Set(analytics.devices.map((device) => device.label)), new Set(["mobile", "desktop"]));
+  assert.equal(analytics.recent.some((visit) => Object.hasOwn(visit, "visitor_hash")), false);
+
+  const disableAnalytics = await module.default.fetch(request("/api/admin/analytics/settings", {
+    method: "PUT", body: { enabled: false }, cookie, csrf: login.csrf
+  }), env);
+  assert.equal(disableAnalytics.status, 200);
+  assert.equal((await module.default.fetch(request("/api/public/visit", {
+    method: "POST",
+    body: { visitorId: "anonymous-visitor-four", path: "/" },
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36"
+  }), env)).status, 204);
+  const analyticsAfterDisable = (await (await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env)).json()).data;
+  assert.equal(analyticsAfterDisable.enabled, false);
+  assert.equal(Number(analyticsAfterDisable.summary.page_views), 2);
+
+  const clearAnalytics = await module.default.fetch(request("/api/admin/analytics", { method: "DELETE", cookie, csrf: login.csrf }), env);
+  assert.equal(clearAnalytics.status, 200);
+  assert.equal((await clearAnalytics.json()).deleted, 2);
+  const analyticsAfterClear = (await (await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env)).json()).data;
+  assert.equal(Number(analyticsAfterClear.summary.page_views), 0);
 
   const deleteResponse = await module.default.fetch(request(`/api/admin/sites/${newSite.id}`, { method: "DELETE", cookie, csrf: login.csrf }), env);
   assert.equal(deleteResponse.status, 200);

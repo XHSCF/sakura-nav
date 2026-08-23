@@ -11,7 +11,7 @@ SAKURA Navigation is a lightweight personal start page for frequently used websi
 ## Features
 
 - Vanilla HTML, CSS, and JavaScript frontend without a client framework
-- Cloudflare Worker + D1 admin dashboard for cards, categories, drafts, hidden content, and backups
+- Cloudflare Worker + D1 admin dashboard for cards, categories, drafts, hidden content, backups, and privacy-friendly anonymous visit analytics
 - Database-first public data with an automatic `assets/js/sites-data.js` snapshot fallback
 - Search by name, description, URL, category, keywords, abbreviations, and multiple terms, with safe match highlighting and a matched-category count
 - Combined category filters with recent entries and recent visits
@@ -42,6 +42,7 @@ migrations/                        D1 schema and initial navigation data
 assets/css/sakura.css              Shared design system
 assets/js/sites-data.js            Categories and websites
 assets/js/data-loader.js           Database-first loading with snapshot fallback
+assets/js/analytics.js             Anonymous page-view reporting with GPC and DNT opt-out
 assets/js/theme-init.js            Initial theme selection before first paint
 assets/js/app-guard.js              Dependency-free script-load failure feedback
 assets/js/sakura-core.js            Testable search, theme, and local-data helpers

@@ -27,7 +27,7 @@ def main() -> int:
             break
 
     if not errors:
-        required_tables = {"categories", "sites", "settings", "audit_logs", "login_attempts"}
+        required_tables = {"categories", "sites", "settings", "audit_logs", "login_attempts", "visitor_events"}
         tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         missing = sorted(required_tables - tables)
         if missing:
@@ -50,10 +50,17 @@ def main() -> int:
         if foreign_key_errors:
             errors.append("D1 种子数据存在无效分类引用")
 
-        required_settings = {"hidden_id", "hidden_name", "hidden_icon", "hidden_passphrase", "hidden_welcome", "hidden_enabled"}
+        required_settings = {"hidden_id", "hidden_name", "hidden_icon", "hidden_passphrase", "hidden_welcome", "hidden_enabled", "analytics_enabled", "analytics_retention_days"}
         settings = {row[0] for row in connection.execute("SELECT key FROM settings")}
         if required_settings - settings:
-            errors.append("D1 缺少新世界设置")
+            errors.append("D1 缺少新世界或访问统计设置")
+
+        visitor_columns = {row[1] for row in connection.execute("PRAGMA table_info(visitor_events)")}
+        required_visitor_columns = {"visitor_hash", "path", "referrer_host", "device_type", "browser", "operating_system", "country_code", "region", "city", "minute_bucket", "occurred_at"}
+        if required_visitor_columns - visitor_columns:
+            errors.append("D1 访问统计表缺少匿名访问字段")
+        if {"ip", "ip_address", "user_agent"} & visitor_columns:
+            errors.append("D1 访问统计表不得保存原始 IP 或完整 User-Agent")
 
         for row in connection.execute("SELECT keywords_json FROM sites"):
             try:
@@ -70,6 +77,7 @@ def main() -> int:
         "admin/admin.css",
         "admin/admin-core.js",
         "admin/admin.js",
+        "assets/js/analytics.js",
         "assets/js/data-loader.js",
         ".dev.vars.example",
         ".assetsignore",
@@ -113,6 +121,9 @@ def main() -> int:
             "卡片编辑器内容分区": admin_html.count('class="form-section"') >= 4 and "site-basic-heading" in admin_html,
             "卡片位置标题独立间距": 'class="wide-field radio-field" role="group"' in admin_html and '<fieldset class="wide-field radio-field"' not in admin_html,
             "短ID优先使用网址域名": "adminCore?.preferredSiteId" in admin_js,
+            "访问统计管理页面": "data-analytics-content" in admin_html and "function loadAnalytics(" in admin_js,
+            "国家与大致地区展示": "data-analytics-locations" in admin_html and "function locationText(" in admin_js,
+            "访问统计开关与清空": "data-analytics-enabled" in admin_html and "function clearAnalytics(" in admin_js,
             "弹窗关闭后恢复背景滚动": 'addEventListener("close", syncDialogScrollLock)' in admin_js,
             "未保存状态提示": "data-unsaved-indicator" in admin_html and "function formSnapshot(" in admin_js,
             "关闭弹窗前确认": "function requestDialogClose(" in admin_js,
@@ -123,6 +134,34 @@ def main() -> int:
         for label, present in interaction_rules.items():
             if not present:
                 errors.append(f"后台缺少{label}")
+
+    worker_path = ROOT / "worker/index.mjs"
+    analytics_path = ROOT / "assets/js/analytics.js"
+    if worker_path.is_file() and analytics_path.is_file():
+        worker = worker_path.read_text(encoding="utf-8")
+        analytics = analytics_path.read_text(encoding="utf-8")
+        analytics_rules = {
+            "前台匿名访问接口": "/api/public/visit" in worker and "/api/public/visit" in analytics,
+            "访问统计后台接口": "/api/admin/analytics" in worker,
+            "匿名访客哈希": "sakura-anonymous-visitor|" in worker and "visitor_hash" in worker,
+            "Cloudflare 大致位置": "request.cf" in worker and all(field in worker for field in ("countryCode", "region", "city")),
+            "不保存原始 IP": "CF-Connecting-IP" not in analytics and "user_agent" not in worker,
+            "隐私偏好退出": "navigator.globalPrivacyControl" in analytics and "navigator.doNotTrack" in analytics,
+            "过滤常见机器人": "isLikelyBot" in worker,
+            "访问记录自动清理": "async scheduled(" in worker and "deleteExpiredVisits" in worker,
+        }
+        for label, present in analytics_rules.items():
+            if not present:
+                errors.append(f"访问统计缺少{label}")
+
+    wrangler_path = ROOT / "wrangler.jsonc"
+    if wrangler_path.is_file():
+        try:
+            wrangler = json.loads(wrangler_path.read_text(encoding="utf-8"))
+            if not wrangler.get("triggers", {}).get("crons"):
+                errors.append("Cloudflare 配置缺少访问记录定时清理触发器")
+        except json.JSONDecodeError as error:
+            errors.append(f"wrangler.jsonc 不是有效 JSON：{error}")
 
     if errors:
         for error in errors:

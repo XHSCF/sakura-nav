@@ -33,13 +33,15 @@ jobs:
         run: python -m py_compile tools/validate_site.py tools/validate_admin.py tools/check_links.py
 
       - name: Check JavaScript syntax
-        run: node --check assets/js/theme-init.js && node --check assets/js/data-loader.js && node --check assets/js/app-guard.js && node --check assets/js/sakura-core.js && node --check assets/js/sakura-app.js && node --check admin/admin.js && node --check worker/index.mjs
+        run: node --check assets/js/theme-init.js && node --check assets/js/data-loader.js && node --check assets/js/analytics.js && node --check assets/js/app-guard.js && node --check assets/js/sakura-core.js && node --check assets/js/sakura-app.js && node --check admin/admin-core.js && node --check admin/admin.js && node --check worker/index.mjs
 
       - name: Run frontend regression tests
         run: node --test tools/test_frontend.js
 
       - name: Run backend regression tests
-        run: node --test tools/test_worker.js
+        run: |
+          node --test tools/test_admin_ui.js
+          node --test tools/test_worker.js
 
       - name: Validate site structure and data
         run: python tools/validate_site.py

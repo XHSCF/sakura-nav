@@ -20,6 +20,7 @@ REQUIRED_FILES = (
     "assets/css/sakura.css",
     "assets/js/sites-data.js",
     "assets/js/data-loader.js",
+    "assets/js/analytics.js",
     "assets/js/app-guard.js",
     "assets/js/sakura-core.js",
     "assets/js/sakura-app.js",
@@ -146,6 +147,10 @@ def validate() -> tuple[list[str], list[str]]:
         for tag in re.findall(r"<(?:script|img|link)\b[^>]+>", html, re.I):
             if re.search(r'(?:src|href)=["\']http://', tag, re.I):
                 errors.append(f"{relative} 存在可能导致 Mixed Content 的资源：{tag[:100]}")
+        if relative in {"index.html", "about/index.html"} and "analytics.js" not in html:
+            errors.append(f"{relative} 缺少匿名访问统计脚本")
+        if relative == "404.html" and "analytics.js" in html:
+            errors.append("404.html 不应记录访问，避免把机器人探测计入统计")
 
     index_path = ROOT / "index.html"
     index_html = ""
@@ -182,6 +187,23 @@ def validate() -> tuple[list[str], list[str]]:
         for label, token in app_features.items():
             if token not in app_text:
                 errors.append(f"sakura-app.js 缺少{label}")
+
+    analytics_path = ROOT / "assets/js/analytics.js"
+    if analytics_path.is_file():
+        analytics_text = analytics_path.read_text(encoding="utf-8")
+        analytics_features = {
+            "匿名访问接口": "/api/public/visit",
+            "匿名访客本地编号": "sakura-anonymous-visitor",
+            "页面加载后异步上报": 'window.addEventListener("load"',
+            "隐私控制退出": "navigator.globalPrivacyControl",
+            "忽略站内来源": "referrer.origin === location.origin",
+            "不阻塞页面请求": "keepalive: true",
+        }
+        for label, token in analytics_features.items():
+            if token not in analytics_text:
+                errors.append(f"analytics.js 缺少{label}")
+        if re.search(r"CF-Connecting-IP|latitude|longitude|userAgent\s*:", analytics_text):
+            errors.append("analytics.js 不得采集原始 IP、经纬度或完整 User-Agent")
         removed_tools = (
             "data-export-favorites",
             "data-import-favorites",
