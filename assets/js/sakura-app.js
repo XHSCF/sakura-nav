@@ -963,7 +963,7 @@
     }
 
     if (categoryBar) {
-      categoryBar.appendChild(createButton("全部", "all", "category", data.sites.length));
+      categoryBar.appendChild(createButton("全部站点", "all", "category", data.sites.length));
       data.categories.forEach((category) => {
         const count = data.sites.filter((site) => site.category === category.id).length;
         categoryBar.appendChild(createButton(category.name, category.id, "category", count));
