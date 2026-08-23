@@ -1479,35 +1479,32 @@ select {
   background: var(--primary);
 }
 
-@keyframes site-card-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.content-reveal {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+  transition:
+    opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--content-reveal-delay, 0ms);
+}
+
+.content-reveal.is-content-revealed {
+  opacity: 1;
+  transform: none;
 }
 
 @media (min-width: 769px) and (hover: hover) and (pointer: fine) {
-  .site-card {
-    animation: site-card-enter 0.32s ease both;
+  .content-reveal {
+    filter: blur(1.5px);
+    transition:
+      opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 620ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--content-reveal-delay, 0ms);
   }
 
-  .site-card:nth-child(2),
-  .site-card:nth-child(6) {
-    animation-delay: 0.025s;
-  }
-
-  .site-card:nth-child(3),
-  .site-card:nth-child(7) {
-    animation-delay: 0.05s;
-  }
-
-  .site-card:nth-child(4),
-  .site-card:nth-child(8) {
-    animation-delay: 0.075s;
+  .content-reveal.is-content-revealed {
+    filter: blur(0);
   }
 }
 
@@ -2638,7 +2635,11 @@ select {
     transition-duration: 0.01ms;
   }
 
-  .site-card {
-    animation: none;
+  .content-reveal,
+  .content-reveal.is-content-revealed {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
   }
 }

@@ -309,6 +309,8 @@
     let selectedCardIndex = -1;
     let utilityResetTimer = 0;
     let hiddenUnlockToken = 0;
+    let contentRevealObserver = null;
+    const revealedContentKeys = new Set();
     const now = new Date();
     const currentDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
     const normalSearchPlaceholder = search?.getAttribute("placeholder") || "";
@@ -480,6 +482,37 @@
       return `${Number(month)}月${Number(day)}日`;
     }
 
+    function markContentReveal(element, key, delay = 0) {
+      element.classList.add("content-reveal");
+      element.dataset.contentRevealKey = key;
+      element.style.setProperty("--content-reveal-delay", `${delay}ms`);
+      if (reducedMotion || revealedContentKeys.has(key)) {
+        element.classList.add("is-content-revealed");
+      }
+    }
+
+    function refreshContentReveals() {
+      contentRevealObserver?.disconnect();
+      contentRevealObserver = null;
+      const targets = Array.from(document.querySelectorAll(".content-reveal:not(.is-content-revealed)"));
+      if (!targets.length) return;
+      if (reducedMotion || typeof window.IntersectionObserver !== "function") {
+        targets.forEach((target) => target.classList.add("is-content-revealed"));
+        return;
+      }
+
+      contentRevealObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const target = entry.target;
+          observer.unobserve(target);
+          revealedContentKeys.add(target.dataset.contentRevealKey);
+          window.requestAnimationFrame(() => target.classList.add("is-content-revealed"));
+        });
+      }, { threshold: 0.08, rootMargin: "0px 0px -4% 0px" });
+      targets.forEach((target) => contentRevealObserver.observe(target));
+    }
+
     function createSiteCard(site, options = {}) {
       const hiddenCard = options.hidden === true;
       const cardActions = core.siteActions(site);
@@ -491,6 +524,11 @@
       article.classList.toggle("has-card-actions", hasCardActions);
       article.classList.toggle("has-single-action", cardActions.length === 1);
       article.classList.toggle("has-dual-links", dualLinkCard);
+      markContentReveal(
+        article,
+        `card:${hiddenCard ? "hidden" : "normal"}:${site.id}`,
+        Math.min(Number(options.revealIndex) || 0, 2) * 50
+      );
 
       const cardBody = document.createElement("div");
       cardBody.className = "site-card-link";
@@ -601,6 +639,7 @@
       const heading = document.createElement("h3");
       heading.className = "group-heading";
       heading.dataset.resultScrollTarget = category.id;
+      markContentReveal(heading, `heading:${category.id}`);
       const icon = document.createElement("i");
       icon.className = `fas ${category.icon}`;
       icon.setAttribute("aria-hidden", "true");
@@ -611,7 +650,7 @@
       count.textContent = String(sites.length);
       const grid = document.createElement("div");
       grid.className = "site-grid";
-      sites.forEach((site) => grid.appendChild(createSiteCard(site)));
+      sites.forEach((site, index) => grid.appendChild(createSiteCard(site, { revealIndex: index })));
       heading.append(icon, label, count);
       section.append(heading, grid);
       return section;
@@ -653,6 +692,7 @@
       }
 
       gridRoot.appendChild(fragment);
+      refreshContentReveals();
       updateEmptyState(sites.length);
       const showClearRecent = state.view === "history" && recentVisits.length > 0;
       if (clearRecent) clearRecent.hidden = !showClearRecent;
@@ -670,10 +710,11 @@
       if (!hiddenConfig || !hiddenSitesRoot) return;
       const sites = Array.isArray(hiddenConfig.sites) ? hiddenConfig.sites : [];
       const fragment = document.createDocumentFragment();
-      sites.forEach((site) => {
-        fragment.appendChild(createSiteCard(site, { hidden: true, category: hiddenConfig }));
+      sites.forEach((site, index) => {
+        fragment.appendChild(createSiteCard(site, { hidden: true, category: hiddenConfig, revealIndex: index }));
       });
       hiddenSitesRoot.replaceChildren(fragment);
+      refreshContentReveals();
       if (hiddenEmpty) hiddenEmpty.hidden = sites.length > 0;
       if (hiddenCount) hiddenCount.textContent = String(sites.length);
       if (hiddenName) hiddenName.textContent = hiddenConfig.name;

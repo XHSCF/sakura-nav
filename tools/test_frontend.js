@@ -304,6 +304,25 @@ test("public styles keep a complete Android baseline without modern color mixing
   assert.match(fallback, /--category-icon-bg:\s*var\(--surface-solid\);[^}]*--category-icon-border:\s*var\(--primary\);/s);
 });
 
+test("content cards reveal once on scroll with accessible motion fallbacks", () => {
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+
+  assert.match(application, /const revealedContentKeys = new Set\(\);/);
+  assert.match(application, /function markContentReveal\(element, key, delay = 0\)/);
+  assert.match(application, /function refreshContentReveals\(\)[\s\S]*contentRevealObserver\?\.disconnect\(\);/);
+  assert.match(application, /typeof window\.IntersectionObserver !== "function"/);
+  assert.match(application, /new IntersectionObserver\([\s\S]*observer\.unobserve\(target\);[\s\S]*revealedContentKeys\.add/);
+  assert.match(application, /threshold: 0\.08, rootMargin: "0px 0px -4% 0px"/);
+  assert.match(application, /`card:\$\{hiddenCard \? "hidden" : "normal"\}:\$\{site\.id\}`/);
+  assert.match(application, /markContentReveal\(heading, `heading:\$\{category\.id\}`\)/);
+  assert.match(stylesheet, /\.content-reveal\s*\{[^}]*opacity:\s*0;[^}]*transform:\s*translate3d\(0, 16px, 0\);[^}]*620ms cubic-bezier\(0\.22, 1, 0\.36, 1\)/s);
+  assert.match(stylesheet, /\.content-reveal\.is-content-revealed\s*\{[^}]*opacity:\s*1;[^}]*transform:\s*none;/s);
+  assert.match(stylesheet, /@media \(min-width: 769px\) and \(hover: hover\) and \(pointer: fine\)[\s\S]*?\.content-reveal\s*\{[^}]*filter:\s*blur\(1\.5px\);/);
+  assert.match(stylesheet, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.content-reveal,[\s\S]*?opacity:\s*1;[\s\S]*?transition:\s*none;/);
+  assert.doesNotMatch(stylesheet, /site-card-enter|\.site-card:nth-child\([^)]*\)[^{]*\{[^}]*animation-delay/s);
+});
+
 test("cards and square controls use responsive Apple-style continuous corners", () => {
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
 
