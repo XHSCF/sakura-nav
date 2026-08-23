@@ -30,6 +30,7 @@
 
   const root = document.documentElement;
   const themeCore = window.SAKURA_CORE;
+  const adminCore = window.SAKURA_ADMIN_CORE;
   const themeKey = "sakura-theme";
   const colorThemeKey = "sakura-color-theme";
   const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
@@ -241,6 +242,12 @@
 
   function hasUnsavedChanges() {
     return trackedForms.some((form) => isFormDirty(form));
+  }
+
+  function syncDialogScrollLock() {
+    const hasOpenDialog = [siteDialog, categoryDialog, confirmDialog].some((dialog) => Boolean(dialog?.open));
+    root.classList.toggle("has-open-dialog", hasOpenDialog);
+    document.body.classList.toggle("has-open-dialog", hasOpenDialog);
   }
 
   async function requestDialogClose(dialog) {
@@ -494,18 +501,6 @@
     document.querySelector("[data-add-site]").hidden = tabId !== "sites";
   }
 
-  function slugify(value) {
-    return String(value || "").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 58);
-  }
-
-  function idFromUrl(value) {
-    try {
-      return slugify(new URL(value).hostname.replace(/^www\./, "").split(".").slice(0, -1).join("-"));
-    } catch (_) {
-      return "";
-    }
-  }
-
   function nextUniqueId(base, ignoredId = null) {
     const seed = base || "site";
     let id = seed;
@@ -522,6 +517,8 @@
     document.querySelector("[data-site-dialog-title]").textContent = duplicate ? "复制卡片" : site ? "编辑卡片" : "添加卡片";
     const fields = siteForm.elements;
     fields.id.disabled = Boolean(site && !duplicate);
+    const idHelp = siteForm.querySelector("[data-id-help]");
+    if (idHelp) idHelp.textContent = site && !duplicate ? "卡片 ID 创建后保持不变，不能修改。" : "根据名称或网址自动生成，可在保存前修改。";
     fields.status.value = site?.status || "published";
     fields.location.value = site?.isHidden ? "hidden" : "public";
     fields.cardType.value = site?.urlLabel ? "dual" : "single";
@@ -542,6 +539,7 @@
     updateSiteFormVisibility();
     siteForm.querySelector(".dialog-scroll").scrollTop = 0;
     siteDialog.showModal();
+    syncDialogScrollLock();
     setFormBaseline(siteForm);
     updateCardPreview();
     window.setTimeout(() => fields.name.focus(), 0);
@@ -686,6 +684,7 @@
     }
     categoryForm.querySelector(".dialog-scroll").scrollTop = 0;
     categoryDialog.showModal();
+    syncDialogScrollLock();
     setFormBaseline(categoryForm);
     window.setTimeout(() => fields.name.focus(), 0);
   }
@@ -743,6 +742,7 @@
     document.querySelector("[data-confirm-message]").textContent = message;
     confirmDialog.returnValue = "";
     confirmDialog.showModal();
+    syncDialogScrollLock();
     return new Promise((resolve) => {
       confirmDialog.addEventListener("close", () => resolve(confirmDialog.returnValue === "confirm"), { once: true });
     });
@@ -843,10 +843,16 @@
 
   siteForm?.addEventListener("input", (event) => {
     const fields = siteForm.elements;
-    if (event.target === fields.id) state.idTouched = true;
+    if (event.target === fields.id) {
+      state.idTouched = true;
+      const idHelp = siteForm.querySelector("[data-id-help]");
+      if (idHelp) idHelp.textContent = "已手动修改，创建后将保持不变。";
+    }
     if (!state.editingSiteId && !state.idTouched && (event.target === fields.name || event.target === fields.url)) {
-      const generated = slugify(fields.name.value) || idFromUrl(fields.url.value);
+      const generated = adminCore?.preferredSiteId(fields.name.value, fields.url.value) || "";
       fields.id.value = nextUniqueId(generated);
+      const idHelp = siteForm.querySelector("[data-id-help]");
+      if (idHelp) idHelp.textContent = generated ? "已自动生成，可在保存前修改；创建后保持不变。" : "填写名称和网址后将自动生成。";
     }
     if ([fields.cardType, ...siteForm.elements.location].includes(event.target)) updateSiteFormVisibility();
     if (event.target === fields.secondaryUrl && !fields.secondaryUrl.value) fields.secondaryUrlLabel.value = "";
@@ -855,7 +861,7 @@
   siteForm?.addEventListener("change", () => { updateSiteFormVisibility(); updateCardPreview(); });
   categoryForm?.elements.name.addEventListener("input", () => {
     if (state.editingCategoryId || categoryForm.elements.id.value) return;
-    categoryForm.elements.id.value = nextCategoryId(slugify(categoryForm.elements.name.value));
+    categoryForm.elements.id.value = nextCategoryId(adminCore?.slugify(categoryForm.elements.name.value) || "");
   });
 
   trackedForms.forEach((form) => {
@@ -869,6 +875,7 @@
     event.preventDefault();
     requestDialogClose(dialog);
   }));
+  [siteDialog, categoryDialog, confirmDialog].forEach((dialog) => dialog?.addEventListener("close", syncDialogScrollLock));
   window.addEventListener("resize", schedulePreviewFitCheck);
   window.addEventListener("beforeunload", (event) => {
     if (!hasUnsavedChanges()) return;

@@ -68,6 +68,7 @@ def main() -> int:
         "worker/index.mjs",
         "admin/index.html",
         "admin/admin.css",
+        "admin/admin-core.js",
         "admin/admin.js",
         "assets/js/data-loader.js",
         ".dev.vars.example",
@@ -92,6 +93,8 @@ def main() -> int:
             "日期控件内部宽度约束": '.admin-form .date-control input[type="date"]',
             "弹窗细窄滚动条": "scrollbar-width: thin;",
             "背景页面滚动锁定": "body:has(.admin-dialog[open])",
+            "显式背景滚动锁定": "html.has-open-dialog, body.has-open-dialog",
+            "弹窗只保留内部滚动": ".admin-dialog, .confirm-dialog { max-width: none; overflow: visible;",
         }
         for label, rule in dialog_layout_rules.items():
             if rule not in admin_css:
@@ -107,6 +110,10 @@ def main() -> int:
             "明暗模式切换": "data-theme-toggle" in admin_html and "function applyAdminTheme(" in admin_js,
             "八套配色选择": "data-color-theme-panel" in admin_html and "themeCore.colorThemes.map" in admin_js,
             "前后台主题设置同步": 'const themeKey = "sakura-theme"' in admin_js and 'const colorThemeKey = "sakura-color-theme"' in admin_js,
+            "卡片编辑器内容分区": admin_html.count('class="form-section"') >= 4 and "site-basic-heading" in admin_html,
+            "卡片位置标题独立间距": 'class="wide-field radio-field" role="group"' in admin_html and '<fieldset class="wide-field radio-field"' not in admin_html,
+            "短ID优先使用网址域名": "adminCore?.preferredSiteId" in admin_js,
+            "弹窗关闭后恢复背景滚动": 'addEventListener("close", syncDialogScrollLock)' in admin_js,
             "未保存状态提示": "data-unsaved-indicator" in admin_html and "function formSnapshot(" in admin_js,
             "关闭弹窗前确认": "function requestDialogClose(" in admin_js,
             "离开页面前确认": 'window.addEventListener("beforeunload"' in admin_js,
