@@ -35,6 +35,8 @@ test("admin analytics UI exposes responsive privacy, location and history views"
   const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");
   const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
   ["data-tab=\"analytics\"", "data-analytics-enabled", "data-analytics-locations", "data-analytics-recent"].forEach((token) => assert.ok(html.includes(token)));
+  assert.ok(html.indexOf('data-tab="categories"') < html.indexOf('data-tab="analytics"'));
+  assert.ok(html.indexOf('data-tab="analytics"') < html.indexOf('data-tab="settings"'));
   assert.match(application, /function loadAnalytics\(/);
   assert.match(application, /function locationText\(/);
   assert.match(application, /\/api\/admin\/analytics/);
