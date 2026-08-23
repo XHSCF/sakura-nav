@@ -285,7 +285,6 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
   assert.match(stylesheet, /\.site-nav\s*\{[^}]*color-mix\(in srgb, var\(--surface-solid\) 94%, var\(--glass-bg-strong\)\);/s);
   assert.match(stylesheet, /\.nav-link\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface-solid\) 90%, var\(--glass-bg-strong\)\);/s);
   assert.match(stylesheet, /\.icon-button\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\)/s);
-  assert.match(stylesheet, /\.view-switcher\s*\{[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-header,[\s\S]*?\.category-bar\s*\{[^}]*backdrop-filter:\s*blur\(14px\) saturate\(135%\);/);
   assert.match(stylesheet, /@supports not \(\(backdrop-filter:\s*blur\(1px\)\) or \(-webkit-backdrop-filter:\s*blur\(1px\)\)\)[\s\S]*?background:\s*var\(--glass-bg-fallback\);/);
@@ -337,7 +336,6 @@ test("cards and square controls use responsive Apple-style continuous corners", 
   assert.match(stylesheet, /@media \(max-width:\s*768px\)\s*\{[\s\S]*?:root\s*\{[^}]*--apple-corner-card:\s*22px;[^}]*--apple-corner-panel:\s*22px;[^}]*--apple-corner-control:\s*13px;[^}]*--apple-corner-icon:\s*17px;/);
   assert.match(stylesheet, /@supports \(corner-shape:\s*squircle\)\s*\{[\s\S]*?\.site-card-link,[\s\S]*?\.site-icon,[\s\S]*?\.prose-card,[\s\S]*?\.button\s*\{\s*corner-shape:\s*squircle;/);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border-radius:\s*999px;/s);
-  assert.match(stylesheet, /\.view-switcher\s*\{[^}]*border-radius:\s*999px;/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border-radius:\s*999px;/s);
 });
 
@@ -347,14 +345,14 @@ test("segmented controls use one sliding indicator without bounce", () => {
 
   assert.doesNotMatch(stylesheet, /\.hero::before\s*\{/);
   assert.match(stylesheet, /body\s*\{[\s\S]*radial-gradient\(circle at 50% 12rem,[^;]+var\(--bg\);/);
-  assert.match(stylesheet, /\.view-switcher,\s*\.category-bar\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\);/s);
-  assert.doesNotMatch(stylesheet, /\.view-switcher,\s*\.category-bar\s*\{[^}]*0 8px 24px/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\);/s);
+  assert.doesNotMatch(stylesheet, /\.category-bar\s*\{[^}]*0 8px 24px/s);
   assert.match(stylesheet, /\.filter-chip-count,\s*\.group-count\s*\{[^}]*min-width:\s*22px;[^}]*height:\s*22px;[^}]*font-variant-numeric:\s*tabular-nums;/s);
   assert.match(stylesheet, /\.filter-chip-count\s*\{[^}]*margin-left:\s*6px;/s);
   assert.match(stylesheet, /\.group-count\s*\{[^}]*min-width:\s*24px;[^}]*margin-left:\s*-4px;/s);
-  assert.match(stylesheet, /\.view-switcher \.filter-chip,\s*\.category-bar \.filter-chip\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*width:\s*var\(--segmented-indicator-width, 0px\);[^}]*transform:\s*translate3d\(var\(--segmented-indicator-x, 0px\), 0, 0\);[^}]*width 240ms[^}]*transform 240ms/s);
-  assert.match(stylesheet, /\.view-switcher \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.category-bar \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*0 0 9px color-mix\(in srgb, var\(--primary\) 7%, transparent\);/s);
   assert.match(stylesheet, /\.site-card-action:hover,[\s\S]*?\.site-card-action:focus-visible\s*\{[^}]*0 0 13px color-mix\(in srgb, var\(--primary\) 16%, transparent\);/s);
   assert.match(application, /function ensureSegmentedIndicator\(container\)[\s\S]*container\.prepend\(indicator\)/);
@@ -364,17 +362,22 @@ test("segmented controls use one sliding indicator without bounce", () => {
   assert.doesNotMatch(application, /is-bouncing|animationend/);
 });
 
-test("homepage keeps the three fixed views and retires curated flags", () => {
+test("homepage moves recent visits into navigation and removes obsolete views", () => {
   const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
+  const aboutPage = fs.readFileSync(path.join(repositoryRoot, "about/index.html"), "utf8");
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
   const siteData = fs.readFileSync(path.join(repositoryRoot, "assets/js/sites-data.js"), "utf8");
-  const viewIds = Array.from(homepage.matchAll(/data-view="([^"]+)"/g), (match) => match[1]);
 
-  assert.deepEqual(viewIds, ["all", "recent", "history"]);
+  assert.match(homepage, /href="\.\/\?view=history" data-history-nav[^>]*>[\s\S]*?最近访问<\/a>/);
+  assert.match(aboutPage, /href="\.\.\/\?view=history"[^>]*>[\s\S]*?最近访问<\/a>/);
+  assert.doesNotMatch(homepage, /data-view-switcher|data-view=|>\s*全部站点\s*<|>\s*最近收录\s*</);
+  assert.doesNotMatch(stylesheet, /view-switcher|site-card-date/);
+  assert.match(application, /state\.view = view === "history" \? "history" : "all";/);
+  assert.match(application, /function updateViewNavigation\(\)[\s\S]*historyNavLink\.setAttribute\("aria-current", "page"\)/);
+  assert.match(application, /state\.view === "history" && sites\.length[\s\S]*name: "最近访问"/);
+  assert.doesNotMatch(application, /viewSwitcher|viewIndicator|validViews|state\.view === "recent"|formatAddedDate|site-card-date/);
   assert.doesNotMatch(siteData, /\b(?:featured|popular)\s*:/);
-  assert.doesNotMatch(homepage, /data-view="favorites"/);
-  assert.match(stylesheet, /\.view-switcher\s*\{[^}]*overflow:\s*hidden;/s);
-  assert.match(stylesheet, /@media \(max-width: 768px\)[\s\S]*?\.view-switcher\s*\{[^}]*grid-template-columns:\s*repeat\(3,/);
 });
 
 test("restoring all sites does not focus the search input", () => {

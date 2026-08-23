@@ -278,11 +278,12 @@
     const categoryShell = categoryBar?.closest(".category-shell");
     const categoryScrollLeft = document.querySelector("[data-category-scroll=\"left\"]");
     const categoryScrollRight = document.querySelector("[data-category-scroll=\"right\"]");
-    const viewSwitcher = document.querySelector("[data-view-switcher]");
     const clearRecent = document.querySelector("[data-clear-recent]");
     const contentSection = gridRoot.closest(".content-section");
     const shortcut = document.querySelector(".search-shortcut");
     const siteHeader = document.querySelector(".site-header");
+    const homeNavLink = document.querySelector("[data-home-nav]");
+    const historyNavLink = document.querySelector("[data-history-nav]");
     const accessNotice = document.querySelector("[data-access-notice]");
     const copyView = document.querySelector("[data-copy-view]");
     const copyViewLabel = document.querySelector("[data-copy-view-label]");
@@ -299,7 +300,6 @@
     const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
-    const validViews = new Set(Array.from(viewSwitcher?.querySelectorAll("[data-view]") || [], (button) => button.dataset.view));
     const state = { terms: [], category: "all", view: "all", hidden: false };
     let scrollRequestToken = 0;
     let hiddenTransitionToken = 0;
@@ -341,7 +341,7 @@
       if (search) search.value = query;
       state.terms = core.queryTerms(query);
       state.category = category === "all" || categoryMap.has(category) ? category : "all";
-      state.view = validViews.has(view) ? view : "all";
+      state.view = view === "history" ? "history" : "all";
     }
 
     function updateUrlState() {
@@ -357,6 +357,18 @@
     }
 
     await restoreUrlState();
+
+    function updateViewNavigation() {
+      const historyActive = state.view === "history";
+      if (homeNavLink) {
+        if (historyActive) homeNavLink.removeAttribute("aria-current");
+        else homeNavLink.setAttribute("aria-current", "page");
+      }
+      if (historyNavLink) {
+        if (historyActive) historyNavLink.setAttribute("aria-current", "page");
+        else historyNavLink.removeAttribute("aria-current");
+      }
+    }
 
     let recentVisits = core.cleanRecentVisits(readJsonStorage(recentVisitsKey, []), validIds, 12);
     writeJsonStorage(recentVisitsKey, recentVisits);
@@ -374,7 +386,6 @@
     }
 
     const categoryIndicator = ensureSegmentedIndicator(categoryBar);
-    const viewIndicator = ensureSegmentedIndicator(viewSwitcher);
 
     function updateSegmentedIndicator(container, indicator, animate = false) {
       if (!container || !indicator) return;
@@ -399,7 +410,6 @@
       window.cancelAnimationFrame(segmentedIndicatorFrame);
       segmentedIndicatorFrame = window.requestAnimationFrame(() => {
         updateSegmentedIndicator(categoryBar, categoryIndicator);
-        updateSegmentedIndicator(viewSwitcher, viewIndicator);
       });
     }
 
@@ -429,8 +439,7 @@
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", String(active));
       });
-      const indicator = container === categoryBar ? categoryIndicator : viewIndicator;
-      updateSegmentedIndicator(container, indicator, Boolean(animate));
+      updateSegmentedIndicator(container, categoryIndicator, Boolean(animate));
     }
 
     function trackVisit(siteId) {
@@ -442,7 +451,6 @@
     }
 
     function matchesView(site) {
-      if (state.view === "recent") return Boolean(site.addedAt);
       if (state.view === "history") return recentVisits.some((entry) => entry.id === site.id);
       return true;
     }
@@ -458,9 +466,6 @@
       if (state.view === "history") {
         const order = new Map(recentVisits.map((entry, index) => [entry.id, index]));
         sites.sort((a, b) => order.get(a.id) - order.get(b.id));
-      } else if (state.view === "recent") {
-        sites.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-        return sites.slice(0, 12);
       }
       return sites;
     }
@@ -476,11 +481,6 @@
         mark.textContent = segment.text;
         node.appendChild(mark);
       });
-    }
-
-    function formatAddedDate(value) {
-      const [, month, day] = String(value).split("-");
-      return `${Number(month)}月${Number(day)}日`;
     }
 
     function markContentReveal(element, key, delay = 0) {
@@ -565,14 +565,6 @@
         newBadge.setAttribute("aria-label", "最近收录");
         meta.appendChild(newBadge);
       }
-      if (!hiddenCard && state.view === "recent" && site.addedAt) {
-        const addedDate = document.createElement("time");
-        addedDate.className = "site-card-date";
-        addedDate.dateTime = site.addedAt;
-        addedDate.textContent = `收录于 ${formatAddedDate(site.addedAt)}`;
-        meta.appendChild(addedDate);
-      }
-
       copy.append(title, description);
       if (meta.childElementCount) copy.appendChild(meta);
       if (hasCardActions) {
@@ -673,18 +665,14 @@
     function render() {
       scrollRequestToken += 1;
       resetKeyboardSelection();
+      updateViewNavigation();
       const sites = filteredSites();
       const fragment = document.createDocumentFragment();
       gridRoot.replaceChildren();
       gridRoot.classList.toggle("hide-card-categories", state.view === "all" && !state.terms.length);
 
-      if ((state.view === "history" || state.view === "recent") && sites.length) {
-        const groups = {
-          history: { id: "history", name: "最近访问", icon: "fa-history" },
-          recent: { id: "recent", name: "最近收录", icon: "fa-clock" }
-        };
-        const group = groups[state.view];
-        fragment.appendChild(createGroup(group, sites));
+      if (state.view === "history" && sites.length) {
+        fragment.appendChild(createGroup({ id: "history", name: "最近访问", icon: "fa-history" }, sites));
       } else {
         data.categories.forEach((category) => {
           const categorySites = sites.filter((site) => site.category === category.id);
@@ -807,7 +795,7 @@
         window.requestAnimationFrame(() => {
           if (state.hidden || token !== hiddenTransitionToken) return;
           window.scrollTo({ top: Math.max(0, normalScrollY), behavior: reducedMotion ? "auto" : "smooth" });
-          viewSwitcher?.querySelector(`[data-view="${state.view}"]`)?.focus({ preventScroll: true });
+          categoryBar?.querySelector(`[data-category="${state.category}"]`)?.focus({ preventScroll: true });
         });
       });
     }
@@ -982,23 +970,12 @@
           scheduleSegmentedIndicators();
         });
         segmentedResizeObserver.observe(categoryBar);
-        if (viewSwitcher) segmentedResizeObserver.observe(viewSwitcher);
       }
       document.fonts?.ready.then(() => {
         scheduleCategoryScrollControls();
         scheduleSegmentedIndicators();
       });
     }
-
-    viewSwitcher?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-view]");
-      if (!button) return;
-      state.view = button.dataset.view;
-      updatePressed(viewSwitcher, "view", state.view, true);
-      updateUrlState();
-      render();
-      scheduleResultScroll();
-    });
 
     clearRecent?.addEventListener("click", () => {
       recentVisits = [];
@@ -1024,7 +1001,6 @@
       clear?.classList.remove("is-visible");
       if (shortcut) shortcut.hidden = false;
       updatePressed(categoryBar, "category", state.category);
-      updatePressed(viewSwitcher, "view", state.view);
       updateUrlState();
       render();
       scheduleResultScroll();
@@ -1091,7 +1067,6 @@
     }
 
     updatePressed(categoryBar, "category", state.category);
-    updatePressed(viewSwitcher, "view", state.view);
     clear?.classList.toggle("is-visible", Boolean(state.terms.length));
     if (shortcut) shortcut.hidden = Boolean(state.terms.length);
     updateUrlState();

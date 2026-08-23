@@ -611,7 +611,6 @@ select {
   font-weight: 700;
 }
 
-.view-switcher,
 .category-bar {
   display: flex;
   align-items: center;
@@ -626,25 +625,6 @@ select {
 
 .category-bar::-webkit-scrollbar {
   display: none;
-}
-
-.view-switcher {
-  justify-content: flex-start;
-  width: fit-content;
-  max-width: 100%;
-  gap: 3px;
-  margin: 24px auto 0;
-  overflow: hidden;
-  padding: 4px;
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 32%, transparent), transparent 60%),
-    var(--glass-bg);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  overscroll-behavior-inline: contain;
 }
 
 .filter-chip {
@@ -708,33 +688,6 @@ select {
   color: var(--accent-foreground);
   border-color: color-mix(in srgb, var(--primary) 20%, transparent);
   background: color-mix(in srgb, var(--surface-solid) 22%, transparent);
-}
-
-.view-switcher .filter-chip {
-  min-height: 36px;
-  padding: 6px 13px;
-  border: 1px solid transparent;
-  background: color-mix(in srgb, var(--glass-bg-strong) 42%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 38%, transparent);
-  white-space: nowrap;
-  transform: none;
-}
-
-.view-switcher .filter-chip:hover {
-  border-color: color-mix(in srgb, var(--glass-border) 74%, transparent);
-  background: color-mix(in srgb, var(--glass-bg-strong) 72%, transparent);
-  transform: none;
-}
-
-.view-switcher .filter-chip.is-active,
-.view-switcher .filter-chip[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--glass-highlight) 42%, var(--primary));
-  color: var(--accent-foreground);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 34%, transparent), transparent 58%),
-    linear-gradient(135deg, color-mix(in srgb, var(--primary-fill-strong) 88%, transparent), color-mix(in srgb, var(--primary) 78%, transparent));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 76%, transparent), 0 5px 15px color-mix(in srgb, var(--primary) 20%, transparent);
-  transform: none;
 }
 
 .content-section {
@@ -969,7 +922,6 @@ select {
 
 .is-hidden-world .hero-copy,
 .is-hidden-world .search-meta,
-.is-hidden-world .view-switcher,
 .is-hidden-world .content-section {
   display: none;
 }
@@ -1435,12 +1387,6 @@ select {
   line-height: 1.2;
 }
 
-.site-card-date {
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 650;
-}
-
 .hide-card-categories .site-card-category {
   display: none;
 }
@@ -1818,7 +1764,6 @@ select {
   .site-header,
   .site-nav,
   .color-theme-panel,
-  .view-switcher,
   .category-bar {
     backdrop-filter: blur(14px) saturate(135%);
     -webkit-backdrop-filter: blur(14px) saturate(135%);
@@ -1949,58 +1894,6 @@ select {
     justify-content: center;
     padding: 4px 0 0;
     font-size: 11px;
-  }
-
-  .view-switcher {
-    display: grid;
-    width: 100%;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 3px;
-    margin-top: 10px;
-    margin-right: 0;
-    margin-left: 0;
-    overflow: hidden;
-    padding: 4px;
-    border: 1px solid var(--glass-border);
-    border-radius: 999px;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 32%, transparent), transparent 60%),
-      var(--glass-bg);
-    box-shadow: var(--glass-shadow);
-    touch-action: pan-y;
-  }
-
-  .view-switcher .filter-chip {
-    width: 100%;
-    min-width: 0;
-    min-height: 34px;
-    justify-content: center;
-    gap: 4px;
-    padding: 5px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--glass-bg-strong) 42%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 38%, transparent);
-    font-size: 11px;
-    white-space: nowrap;
-    transform: none;
-    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .view-switcher .filter-chip:hover {
-    color: var(--primary-strong);
-    transform: none;
-  }
-
-  .view-switcher .filter-chip.is-active,
-  .view-switcher .filter-chip[aria-pressed="true"] {
-    border-color: color-mix(in srgb, var(--glass-highlight) 42%, var(--primary));
-    color: var(--accent-foreground);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 34%, transparent), transparent 58%),
-      linear-gradient(135deg, color-mix(in srgb, var(--primary-fill-strong) 88%, transparent), color-mix(in srgb, var(--primary) 78%, transparent));
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 76%, transparent), 0 5px 15px color-mix(in srgb, var(--primary) 20%, transparent);
-    transform: none;
   }
 
   .content-section {
@@ -2285,8 +2178,7 @@ select {
   }
 }
 
-/* iOS-style segmented controls: one glass indicator slides beneath stable labels. */
-.view-switcher,
+/* iOS-style category control: one glass indicator slides beneath stable labels. */
 .category-bar {
   position: relative;
   isolation: isolate;
@@ -2294,10 +2186,6 @@ select {
     linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 34%, transparent), transparent 62%),
     color-mix(in srgb, var(--surface-solid) 38%, var(--glass-bg));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glass-highlight) 48%, transparent);
-}
-
-.view-switcher {
-  --segmented-indicator-inset: 4px;
 }
 
 .category-bar {
@@ -2337,7 +2225,6 @@ select {
   transition: none;
 }
 
-.view-switcher .filter-chip,
 .category-bar .filter-chip {
   position: relative;
   z-index: 1;
@@ -2347,7 +2234,6 @@ select {
   box-shadow: none;
 }
 
-.view-switcher .filter-chip:hover,
 .category-bar .filter-chip:hover {
   border-color: transparent;
   color: var(--primary-strong);
@@ -2355,8 +2241,6 @@ select {
   box-shadow: none;
 }
 
-.view-switcher .filter-chip.is-active,
-.view-switcher .filter-chip[aria-pressed="true"],
 .category-bar .filter-chip.is-active,
 .category-bar .filter-chip[aria-pressed="true"] {
   border-color: transparent;
@@ -2366,8 +2250,6 @@ select {
   transform: none;
 }
 
-.view-switcher .filter-chip.is-active .filter-chip-count,
-.view-switcher .filter-chip[aria-pressed="true"] .filter-chip-count,
 .category-bar .filter-chip.is-active .filter-chip-count,
 .category-bar .filter-chip[aria-pressed="true"] .filter-chip-count {
   color: var(--primary-strong);
@@ -2379,7 +2261,6 @@ select {
   .site-header,
   .site-nav,
   .color-theme-panel,
-  .view-switcher,
   .category-bar,
   .icon-button,
   .category-scroll-button {
@@ -2407,7 +2288,6 @@ select {
   .site-header,
   .site-nav,
   .color-theme-panel,
-  .view-switcher,
   .category-bar,
   .icon-button,
   .category-scroll-button {
@@ -2436,7 +2316,6 @@ select {
   .search-input::placeholder,
   .site-card-description,
   .site-card-link::after,
-  .view-switcher .filter-chip,
   .category-bar .filter-chip {
     color: var(--muted);
   }
@@ -2453,7 +2332,6 @@ select {
   }
 
   .filter-chip:hover,
-  .view-switcher .filter-chip:hover,
   .category-bar .filter-chip:hover {
     border-color: var(--primary);
     color: var(--primary-strong);
@@ -2482,7 +2360,6 @@ select {
     background: transparent;
   }
 
-  .view-switcher,
   .category-bar {
     background: var(--glass-bg-fallback);
     box-shadow: inset 0 0 0 1px var(--line);
@@ -2494,10 +2371,7 @@ select {
     box-shadow: var(--shadow-sm);
   }
 
-  .view-switcher .filter-chip,
   .category-bar .filter-chip,
-  .view-switcher .filter-chip.is-active,
-  .view-switcher .filter-chip[aria-pressed="true"],
   .category-bar .filter-chip.is-active,
   .category-bar .filter-chip[aria-pressed="true"] {
     border-color: transparent;
@@ -2505,15 +2379,11 @@ select {
     box-shadow: none;
   }
 
-  .view-switcher .filter-chip.is-active,
-  .view-switcher .filter-chip[aria-pressed="true"],
   .category-bar .filter-chip.is-active,
   .category-bar .filter-chip[aria-pressed="true"] {
     color: var(--primary-strong);
   }
 
-  .view-switcher .filter-chip.is-active .filter-chip-count,
-  .view-switcher .filter-chip[aria-pressed="true"] .filter-chip-count,
   .category-bar .filter-chip.is-active .filter-chip-count,
   .category-bar .filter-chip[aria-pressed="true"] .filter-chip-count {
     border-color: var(--line);
@@ -2615,7 +2485,6 @@ select {
   .site-header,
   .site-nav,
   .color-theme-panel,
-  .view-switcher,
   .category-bar,
   .icon-button,
   .category-scroll-button {
