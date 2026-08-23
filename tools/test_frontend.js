@@ -395,7 +395,8 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(stylesheet, /\.search-wrap\s*\{[^}]*max-width:\s*1040px;/s);
   assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*var\(--surface-solid\);[^}]*background:\s*color-mix\([^}]*box-shadow:\s*inset 0 0 0 1px/s);
   assert.match(stylesheet, /\.category-slider\s*\{[^}]*width:\s*min\(100%, 1040px\);/s);
-  assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*padding:\s*2px;/s);
+  assert.match(stylesheet, /\.category-bar\s*\{\s*--segmented-indicator-inset:\s*3px;/s);
   assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 24px;[^}]*text-align:\s*center;/s);
 });
 

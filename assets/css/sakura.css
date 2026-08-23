@@ -785,7 +785,7 @@ select {
   min-width: 0;
   max-width: 100%;
   gap: 4px;
-  padding: 5px;
+  padding: 2px;
   border: 1px solid var(--glass-border);
   border-radius: 999px;
   background:
@@ -1947,7 +1947,7 @@ select {
     gap: 4px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 5px;
+    padding: 2px;
     border: 1px solid var(--glass-border);
     border-radius: 999px;
     background:
@@ -2188,7 +2188,7 @@ select {
 }
 
 .category-bar {
-  --segmented-indicator-inset: 5px;
+  --segmented-indicator-inset: 3px;
 }
 
 .segmented-indicator {
