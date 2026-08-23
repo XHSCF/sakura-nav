@@ -1348,6 +1348,9 @@ select {
   color: var(--category-icon-color);
   background: var(--category-icon-bg);
   box-shadow: var(--category-icon-shadow);
+  transform: translate3d(0, 0, 0) rotate(0) scale(1);
+  transform-origin: center;
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-icon i {
@@ -1369,8 +1372,8 @@ select {
   display: block;
   overflow: hidden;
   color: var(--text);
-  font-size: 17px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 760;
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1390,12 +1393,24 @@ select {
   min-height: 2.84em;
   margin: 5px 0 0;
   overflow: hidden;
-  color: color-mix(in srgb, var(--text) 72%, var(--muted));
-  font-size: 14px;
-  font-weight: 520;
+  color: color-mix(in srgb, var(--text) 76%, var(--muted));
+  font-size: 15px;
+  font-weight: 480;
   line-height: 1.42;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .site-card-link:hover .site-icon {
+    transform: translate3d(0, -2px, 0) rotate(-4deg) scale(1.07);
+  }
+}
+
+.site-card-link.is-icon-pressed .site-icon,
+.site-card-link:active .site-icon {
+  transform: translate3d(0, -1px, 0) rotate(-4deg) scale(1.07);
+  transition-duration: 120ms;
 }
 
 .site-card-meta {
@@ -2121,11 +2136,11 @@ select {
   }
 
   .site-card-title {
-    font-size: 16.5px;
+    font-size: 17px;
   }
 
   .site-card-description {
-    font-size: 13.5px;
+    font-size: 14px;
   }
 
   .site-icon {
@@ -2639,6 +2654,14 @@ select {
   .content-reveal.is-content-revealed {
     opacity: 1;
     filter: none;
+    transform: none;
+    transition: none;
+  }
+
+  .site-icon,
+  .site-card-link:hover .site-icon,
+  .site-card-link.is-icon-pressed .site-icon,
+  .site-card-link:active .site-icon {
     transform: none;
     transition: none;
   }

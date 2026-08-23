@@ -310,6 +310,7 @@
     let utilityResetTimer = 0;
     let hiddenUnlockToken = 0;
     let contentRevealObserver = null;
+    let pressedCardBody = null;
     const revealedContentKeys = new Set();
     const now = new Date();
     const currentDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
@@ -939,6 +940,19 @@
       }, 3200);
     }
 
+    function clearPressedCardIcon() {
+      pressedCardBody?.classList.remove("is-icon-pressed");
+      pressedCardBody = null;
+    }
+
+    function pressCardIcon(event) {
+      const cardBody = event.target.closest?.(".site-card-link");
+      if (!cardBody) return;
+      clearPressedCardIcon();
+      pressedCardBody = cardBody;
+      cardBody.classList.add("is-icon-pressed");
+    }
+
     if (categoryBar) {
       categoryBar.appendChild(createButton("全部", "all", "category", data.sites.length));
       data.categories.forEach((category) => {
@@ -993,6 +1007,13 @@
     });
 
     searchForm?.addEventListener("submit", (event) => event.preventDefault());
+    document.addEventListener("pointerdown", pressCardIcon);
+    document.addEventListener("pointerup", clearPressedCardIcon);
+    document.addEventListener("pointercancel", clearPressedCardIcon);
+    document.addEventListener("touchstart", pressCardIcon, { passive: true });
+    document.addEventListener("touchend", clearPressedCardIcon, { passive: true });
+    document.addEventListener("touchcancel", clearPressedCardIcon, { passive: true });
+    window.addEventListener("blur", clearPressedCardIcon);
     hiddenExit?.addEventListener("click", exitHiddenSection);
     copyView?.addEventListener("click", copyCurrentView);
     resetFilters?.addEventListener("click", () => {
