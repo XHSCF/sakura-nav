@@ -269,7 +269,7 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /document\.addEventListener\("pointerdown", pressCardIcon\);[\s\S]*document\.addEventListener\("pointerup", clearPressedCardIcon\);[\s\S]*document\.addEventListener\("pointercancel", clearPressedCardIcon\);/);
   assert.match(application, /document\.addEventListener\("touchstart", pressCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchend", clearPressedCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchcancel", clearPressedCardIcon, \{ passive: true \}\);/);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 22%, var\(--glass-border\)\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg-strong\)\);[^}]*box-shadow:\s*inset 0 1px 0/s);
-  assert.match(stylesheet, /\.site-card-link:hover\s*\{[^}]*transform:\s*none;/s);
+  assert.doesNotMatch(stylesheet, /\.site-card-link:hover\s*\{/);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*102px;[\s\S]*?\.site-card-title\s*\{[^}]*font-size:\s*17px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*14px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
   assert.doesNotMatch(application, /sakura-favorites|favorite-button|favorite-order|scheduleFavoriteFocus|toggleFavorite|moveFavorite/);
