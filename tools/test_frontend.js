@@ -287,6 +287,23 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
   assert.match(stylesheet, /@media \(prefers-reduced-transparency:\s*reduce\)[\s\S]*?backdrop-filter:\s*none;/);
 });
 
+test("public styles keep a complete Android baseline without modern color mixing", () => {
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  const fallbackStart = stylesheet.indexOf("@supports not (color: color-mix(in srgb, #000 50%, #fff))");
+  const reducedTransparencyStart = stylesheet.indexOf("@media (prefers-reduced-transparency: reduce)", fallbackStart);
+  const fallback = stylesheet.slice(fallbackStart, reducedTransparencyStart);
+
+  assert.match(stylesheet, /html\s*\{[^}]*-webkit-text-size-adjust:\s*100%;[^}]*text-size-adjust:\s*100%;/s);
+  assert.notEqual(fallbackStart, -1);
+  assert.notEqual(reducedTransparencyStart, -1);
+  assert.match(fallback, /body\s*\{[^}]*background:\s*var\(--bg\);/s);
+  assert.match(fallback, /\.site-header,[\s\S]*?\.category-scroll-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
+  assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*var\(--primary\);[^}]*background:\s*var\(--surface-solid\);/s);
+  assert.match(fallback, /\.site-card-action\s*\{[^}]*border-color:\s*var\(--primary\);[^}]*background:\s*var\(--surface-solid\);/s);
+  assert.match(fallback, /\.site-card-description,[\s\S]*?\.category-bar \.filter-chip\s*\{[^}]*color:\s*var\(--muted\);/s);
+  assert.match(fallback, /--category-icon-bg:\s*var\(--surface-solid\);[^}]*--category-icon-border:\s*var\(--primary\);/s);
+});
+
 test("cards and square controls use responsive Apple-style continuous corners", () => {
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
 
