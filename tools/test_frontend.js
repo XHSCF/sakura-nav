@@ -318,12 +318,16 @@ test("content cards reveal once on scroll with accessible motion fallbacks", () 
   assert.match(application, /function markContentReveal\(element, key, delay = 0\)/);
   assert.match(application, /function refreshContentReveals\(\)[\s\S]*contentRevealObserver\?\.disconnect\(\);/);
   assert.match(application, /typeof window\.IntersectionObserver !== "function"/);
-  assert.match(application, /new IntersectionObserver\([\s\S]*observer\.unobserve\(target\);[\s\S]*revealedContentKeys\.add/);
+  assert.match(application, /function isContentTargetInitiallyVisible\(target\)[\s\S]*target\.getBoundingClientRect\(\)[\s\S]*window\.innerHeight \* 0\.96[\s\S]*visibleHeight >= rect\.height \* 0\.08/);
+  assert.match(application, /function revealContentTarget\(target, immediate = false\)[\s\S]*is-content-reveal-immediate[\s\S]*requestAnimationFrame/);
+  assert.match(application, /const initiallyVisibleTargets = targets\.filter\(isContentTargetInitiallyVisible\);[\s\S]*revealContentTarget\(target, true\)/);
+  assert.match(application, /new IntersectionObserver\([\s\S]*observer\.unobserve\(target\);[\s\S]*revealContentTarget\(target\)/);
   assert.match(application, /threshold: 0\.08, rootMargin: "0px 0px -4% 0px"/);
   assert.match(application, /`card:\$\{hiddenCard \? "hidden" : "normal"\}:\$\{site\.id\}`/);
   assert.match(application, /markContentReveal\(heading, `heading:\$\{category\.id\}`\)/);
   assert.match(stylesheet, /\.content-reveal\s*\{[^}]*opacity:\s*0;[^}]*transform:\s*translate3d\(0, 16px, 0\);[^}]*620ms cubic-bezier\(0\.22, 1, 0\.36, 1\)/s);
   assert.match(stylesheet, /\.content-reveal\.is-content-revealed\s*\{[^}]*opacity:\s*1;[^}]*transform:\s*none;/s);
+  assert.match(stylesheet, /\.content-reveal\.is-content-reveal-immediate\s*\{[^}]*transition:\s*none;/s);
   assert.match(stylesheet, /@media \(min-width: 769px\) and \(hover: hover\) and \(pointer: fine\)[\s\S]*?\.content-reveal\s*\{[^}]*filter:\s*blur\(1\.5px\);/);
   assert.match(stylesheet, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.content-reveal,[\s\S]*?opacity:\s*1;[\s\S]*?transition:\s*none;/);
   assert.doesNotMatch(stylesheet, /site-card-enter|\.site-card:nth-child\([^)]*\)[^{]*\{[^}]*animation-delay/s);

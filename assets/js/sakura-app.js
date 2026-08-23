@@ -492,26 +492,47 @@
       }
     }
 
+    function revealContentTarget(target, immediate = false) {
+      revealedContentKeys.add(target.dataset.contentRevealKey);
+      if (immediate) target.classList.add("is-content-reveal-immediate");
+      target.classList.add("is-content-revealed");
+      if (immediate) {
+        window.requestAnimationFrame(() => target.classList.remove("is-content-reveal-immediate"));
+      }
+    }
+
+    function isContentTargetInitiallyVisible(target) {
+      const rect = target.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return false;
+      const viewportBottom = window.innerHeight * 0.96;
+      const visibleHeight = Math.min(rect.bottom, viewportBottom) - Math.max(rect.top, 0);
+      return visibleHeight >= rect.height * 0.08;
+    }
+
     function refreshContentReveals() {
       contentRevealObserver?.disconnect();
       contentRevealObserver = null;
       const targets = Array.from(document.querySelectorAll(".content-reveal:not(.is-content-revealed)"));
       if (!targets.length) return;
       if (reducedMotion || typeof window.IntersectionObserver !== "function") {
-        targets.forEach((target) => target.classList.add("is-content-revealed"));
+        targets.forEach((target) => revealContentTarget(target, true));
         return;
       }
+
+      const initiallyVisibleTargets = targets.filter(isContentTargetInitiallyVisible);
+      initiallyVisibleTargets.forEach((target) => revealContentTarget(target, true));
+      const observedTargets = targets.filter((target) => !target.classList.contains("is-content-revealed"));
+      if (!observedTargets.length) return;
 
       contentRevealObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
           const target = entry.target;
           observer.unobserve(target);
-          revealedContentKeys.add(target.dataset.contentRevealKey);
-          window.requestAnimationFrame(() => target.classList.add("is-content-revealed"));
+          window.requestAnimationFrame(() => revealContentTarget(target));
         });
       }, { threshold: 0.08, rootMargin: "0px 0px -4% 0px" });
-      targets.forEach((target) => contentRevealObserver.observe(target));
+      observedTargets.forEach((target) => contentRevealObserver.observe(target));
     }
 
     function createSiteCard(site, options = {}) {
