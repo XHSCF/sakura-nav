@@ -9,10 +9,10 @@
   --surface-solid: #ffffff;
   --surface-soft: #efedf6;
   --text: #252338;
-  --muted: #716e82;
+  --muted: #6d697d;
   --line: rgba(62, 54, 92, 0.11);
   --primary: #39c5bb;
-  --primary-strong: #17867f;
+  --primary-strong: #14756f;
   --primary-fill-strong: #30afa6;
   --accent-foreground: #0e3c38;
   --pink: #e985a7;
@@ -766,6 +766,7 @@ select {
 .category-bar {
   justify-content: flex-start;
   width: 100%;
+  min-height: 46px;
   min-width: 0;
   max-width: 100%;
   gap: 4px;

@@ -8,7 +8,7 @@
   --muted: #6e7387;
   --line: rgba(53, 67, 91, 0.13);
   --primary: #39c5bb;
-  --primary-strong: #168f87;
+  --primary-strong: #14756f;
   --primary-soft: color-mix(in srgb, var(--primary) 12%, transparent);
   --accent-foreground: #0e3c38;
   --danger: #e34b65;

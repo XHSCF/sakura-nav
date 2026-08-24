@@ -60,6 +60,17 @@ test("expired admin sessions preserve non-sensitive unsaved form drafts in the c
   assert.match(application, /passphraseOmitted[\s\S]*?elements\.passphrase\.value = ""/);
 });
 
+test("admin API requests time out with clear network recovery messages", () => {
+  const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
+  assert.match(application, /const adminRequestTimeout = 18000/);
+  assert.match(application, /const controller = new AbortController\(\);[\s\S]*window\.setTimeout\(\(\) => controller\.abort\(\), adminRequestTimeout\)/);
+  assert.match(application, /fetch\(path, \{[\s\S]*signal: controller\.signal[\s\S]*\}\)/);
+  assert.match(application, /error\?\.name === "AbortError"[\s\S]*后台响应超时，请检查网络后重试。[\s\S]*REQUEST_TIMEOUT/);
+  assert.match(application, /error instanceof TypeError[\s\S]*无法连接后台，请检查网络后重试。[\s\S]*NETWORK_ERROR/);
+  assert.match(application, /finally \{\s*window\.clearTimeout\(timeoutTimer\);\s*\}/);
+  assert.match(application, /visibleInitializationErrors = new Set\(\["ADMIN_NOT_CONFIGURED", "REQUEST_TIMEOUT", "NETWORK_ERROR"\]\)/);
+});
+
 test("admin content writes carry a revision and import first downloads a current backup", () => {
   const html = fs.readFileSync(path.join(root, "admin", "index.html"), "utf8");
   const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
@@ -81,6 +92,7 @@ test("admin styles remain usable without color-mix or backdrop-filter", () => {
   const fallback = css.slice(fallbackStart);
 
   assert.match(css, /html\s*\{[^}]*-webkit-text-size-adjust:\s*100%;[^}]*text-size-adjust:\s*100%;/s);
+  assert.match(css, /:root\s*\{[^}]*--primary-strong:\s*#14756f;/s);
   assert.match(css, /@supports not \(\(backdrop-filter: blur\(1px\)\) or \(-webkit-backdrop-filter: blur\(1px\)\)\)[\s\S]*?background:\s*var\(--surface-solid\);/);
   assert.notEqual(fallbackStart, -1);
   assert.match(fallback, /\.admin-header,[\s\S]*?\.color-theme-panel\s*\{[^}]*background:\s*var\(--surface-solid\);/s);

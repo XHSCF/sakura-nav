@@ -425,8 +425,11 @@
         const countLabel = document.createElement("span");
         countLabel.className = "filter-chip-count";
         countLabel.textContent = String(count);
+        const countDescription = document.createElement("span");
+        countDescription.className = "sr-only";
+        countDescription.textContent = " 个网站";
+        countLabel.appendChild(countDescription);
         button.appendChild(countLabel);
-        button.setAttribute("aria-label", `${label}，${count} 个网站`);
       }
       button.dataset[type] = value;
       button.setAttribute("aria-pressed", String(value === "all"));

@@ -37,6 +37,7 @@
   const colorThemeKey = "sakura-color-theme";
   const sessionDraftKey = "sakura-admin-session-draft-v1";
   const sessionDraftMaximumAge = 24 * 60 * 60 * 1000;
+  const adminRequestTimeout = 18000;
   const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
   const numberFormatter = new Intl.NumberFormat("zh-CN");
   let countryFormatter = null;
@@ -393,20 +394,38 @@
       headers["Content-Type"] = "application/json";
       options.body = JSON.stringify(options.body);
     }
-    const response = await fetch(path, { ...options, method, headers, credentials: "same-origin" });
-    const type = response.headers.get("Content-Type") || "";
-    const payload = type.includes("application/json") ? await response.json() : null;
-    if (!response.ok) {
-      if (response.status === 401 && path !== "/api/admin/login") {
-        const preserved = captureSessionDraft();
-        showLogin(preserved ? "登录已失效。重新登录后会恢复未保存的内容。" : "");
+    const controller = new AbortController();
+    const timeoutTimer = window.setTimeout(() => controller.abort(), adminRequestTimeout);
+    try {
+      const response = await fetch(path, { ...options, method, headers, credentials: "same-origin", signal: controller.signal });
+      const type = response.headers.get("Content-Type") || "";
+      const payload = type.includes("application/json") ? await response.json() : null;
+      if (!response.ok) {
+        if (response.status === 401 && path !== "/api/admin/login") {
+          const preserved = captureSessionDraft();
+          showLogin(preserved ? "登录已失效。重新登录后会恢复未保存的内容。" : "");
+        }
+        const error = new Error(payload?.error || `请求失败（${response.status}）`);
+        error.code = payload?.code;
+        error.status = response.status;
+        throw error;
       }
-      const error = new Error(payload?.error || `请求失败（${response.status}）`);
-      error.code = payload?.code;
-      error.status = response.status;
+      return { payload, response };
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        const timeoutError = new Error("后台响应超时，请检查网络后重试。");
+        timeoutError.code = "REQUEST_TIMEOUT";
+        throw timeoutError;
+      }
+      if (error instanceof TypeError) {
+        const networkError = new Error("无法连接后台，请检查网络后重试。");
+        networkError.code = "NETWORK_ERROR";
+        throw networkError;
+      }
       throw error;
+    } finally {
+      window.clearTimeout(timeoutTimer);
     }
-    return { payload, response };
   }
 
   function captureConflictDraft(type) {
@@ -1317,7 +1336,8 @@
       const restored = restoreSessionDraft();
       if (restored) showToast(restored.passphraseOmitted ? "未保存内容已恢复；为安全起见，新的入口口令需要重新填写。" : "未保存内容已恢复，请确认后继续保存。");
     } catch (error) {
-      showLogin(error.code === "ADMIN_NOT_CONFIGURED" ? error.message : "");
+      const visibleInitializationErrors = new Set(["ADMIN_NOT_CONFIGURED", "REQUEST_TIMEOUT", "NETWORK_ERROR"]);
+      showLogin(visibleInitializationErrors.has(error.code) ? error.message : "");
     }
   })();
 })();

@@ -355,6 +355,7 @@ test("public styles keep a complete Android baseline without modern color mixing
   const fallback = stylesheet.slice(fallbackStart, reducedTransparencyStart);
 
   assert.match(stylesheet, /html\s*\{[^}]*-webkit-text-size-adjust:\s*100%;[^}]*text-size-adjust:\s*100%;/s);
+  assert.match(stylesheet, /:root\s*\{[^}]*--muted:\s*#6d697d;[^}]*--primary-strong:\s*#14756f;/s);
   assert.notEqual(fallbackStart, -1);
   assert.notEqual(reducedTransparencyStart, -1);
   assert.match(fallback, /body\s*\{[^}]*background:\s*var\(--bg\);/s);
@@ -470,10 +471,11 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.ok(searchIndex !== -1 && categoryIndex > searchIndex && summaryIndex > categoryIndex);
   assert.doesNotMatch(homepage, /search-meta|支持名称、描述、分类、缩写与多关键词搜索/);
   assert.match(homepage, /class="container category-summary"[\s\S]*data-search-result/);
+  assert.match(homepage, /<h2 id="collection-title">网站分类<\/h2>/);
   assert.match(stylesheet, /\.search-wrap\s*\{[^}]*max-width:\s*1040px;/s);
   assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*var\(--surface-solid\);[^}]*background:\s*color-mix\([^}]*box-shadow:\s*inset 0 0 0 1px/s);
   assert.match(stylesheet, /\.category-slider\s*\{[^}]*width:\s*min\(100%, 1040px\);/s);
-  assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*padding:\s*2px;/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*min-height:\s*46px;[^}]*padding:\s*2px;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*font-size:\s*14px;[^}]*font-weight:\s*720;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip-count\s*\{[^}]*font-size:\s*12px;/s);
   assert.match(stylesheet, /@media \(min-width:\s*1024px\)\s*\{\s*\.category-bar\s*\{[^}]*overflow-x:\s*hidden;[^}]*\}\s*\.category-bar \.filter-chip\s*\{[^}]*flex:\s*1 1 0;[^}]*min-width:\s*0;[^}]*padding-inline:\s*6px;/s);
@@ -483,6 +485,8 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(application, /function activeResultTarget\(\)\s*\{[\s\S]*?if \(state\.view === "history" && contentUtilities\) return contentUtilities;[\s\S]*?if \(categorySummary\) return categorySummary;[\s\S]*?if \(accessNotice\) return accessNotice;/s);
   assert.match(application, /const visualGap = 10;[\s\S]*?visibleStickyHeight\(siteHeader\) \+ visibleStickyHeight\(categoryShell\) \+ visualGap;/s);
   assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length\)/);
+  assert.match(application, /countDescription\.className = "sr-only";[\s\S]*countDescription\.textContent = " 个网站";[\s\S]*countLabel\.appendChild\(countDescription\)/);
+  assert.doesNotMatch(application, /setAttribute\("aria-label", `\$\{label\}，\$\{count\} 个网站`\)/);
   assert.doesNotMatch(homepage, /data-category-scroll|category-scroll-button/);
   assert.doesNotMatch(stylesheet, /category-scroll-button/);
   assert.doesNotMatch(application, /categoryScroll|scrollCategories|updateCategoryScrollControls|scheduleCategoryScrollControls/);
