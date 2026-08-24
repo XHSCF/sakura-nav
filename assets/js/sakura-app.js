@@ -244,7 +244,7 @@
     const elapsed = Math.floor((todayDay - startDay) / 86400000) + 1;
     const runtimeDays = Number.isFinite(elapsed) ? Math.max(1, elapsed) : 1;
     document.querySelectorAll("[data-runtime-days]").forEach((node) => {
-      node.textContent = `本站已运行 ${runtimeDays} 天`;
+      node.textContent = `已运行 ${runtimeDays} 天`;
     });
 
     const latestDate = core.latestAddedDate(window.SAKURA_DATA?.sites);
@@ -255,7 +255,7 @@
       }
       const [, year, month, day] = latestDate.match(/^(\d{4})-(\d{2})-(\d{2})$/) || [];
       const value = item.querySelector("[data-data-updated-value]");
-      if (value) value.textContent = `导航数据更新于 ${year}年${Number(month)}月${Number(day)}日`;
+      if (value) value.textContent = `数据更新于 ${year}年${Number(month)}月${Number(day)}日`;
       item.hidden = false;
     });
   }

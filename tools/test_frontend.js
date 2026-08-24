@@ -440,6 +440,25 @@ test("the public access notice stays compact and responds to available width", (
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.content-section \.access-notice\s*\{[^}]*font-size:\s*12px;[^}]*line-height:\s*1\.55;/s);
 });
 
+test("public pages share a compact non-repeating footer", () => {
+  const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
+  const aboutPage = fs.readFileSync(path.join(repositoryRoot, "about/index.html"), "utf8");
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+
+  [homepage, aboutPage].forEach((page) => {
+    assert.match(page, /<footer class="site-footer">[\s\S]*?个人维护的纯静态导航，无广告、无第三方统计。[\s\S]*?data-runtime-days>[\s\S]*?data-data-updated[\s\S]*?data-current-year/);
+    assert.doesNotMatch(page, /footer-project-links|>skrto\.top<|>www\.skrto\.top<|纯静态 · 无广告 · 无第三方统计脚本/);
+  });
+  assert.match(application, /node\.textContent = `已运行 \$\{runtimeDays\} 天`/);
+  assert.match(application, /value\.textContent = `数据更新于 \$\{year\}年\$\{Number\(month\)\}月\$\{Number\(day\)\}日`/);
+  assert.match(stylesheet, /\.footer-compact\s*\{[^}]*max-width:\s*760px;/s);
+  assert.match(stylesheet, /\.site-runtime\s*\{[^}]*min-height:\s*30px;[^}]*padding:\s*6px 10px;[^}]*border-radius:\s*999px;/s);
+  assert.match(stylesheet, /\.footer-bottom\s*\{[^}]*width:\s*min\(100%, 640px\);[^}]*margin-top:\s*14px;[^}]*padding-top:\s*12px;/s);
+  assert.match(stylesheet, /\.back-to-top\s*\{[^}]*width:\s*38px;[^}]*height:\s*38px;/s);
+  assert.match(application, /backToTop\.classList\.toggle\("is-visible", window\.scrollY > 520\)/);
+});
+
 test("restoring all sites does not focus the search input", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8").replace(/\r\n?/g, "\n");
   const handlerStart = application.indexOf('resetFilters?.addEventListener("click"');
