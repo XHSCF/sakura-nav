@@ -56,12 +56,13 @@ class TestD1Database {
   }
 }
 
-function request(pathname, { method = "GET", body, cookie, csrf, userAgent, cf, origin = "https://example.com" } = {}) {
+function request(pathname, { method = "GET", body, cookie, csrf, revision, userAgent, cf, origin = "https://example.com" } = {}) {
   const headers = { Accept: "application/json" };
   if (origin) headers.Origin = origin;
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (cookie) headers.Cookie = cookie;
   if (csrf) headers["X-Sakura-CSRF"] = csrf;
+  if (revision !== undefined) headers["X-Sakura-Revision"] = String(revision);
   if (userAgent) headers["User-Agent"] = userAgent;
   const result = new Request(`https://example.com${pathname}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   if (cf) Object.defineProperty(result, "cf", { configurable: true, value: cf });
@@ -179,6 +180,8 @@ test("admin page is script-src self compatible and exposes required management f
   assert.match(application, /sessionLoading\.hidden = true/);
   assert.match(application, /await loadData\(\);\s*showApp\(\);/);
   ["function formSnapshot(", "function requestDialogClose(", "function schedulePreviewFitCheck(", 'window.addEventListener("beforeunload"'].forEach((token) => assert.ok(application.includes(token)));
+  assert.match(application, /headers\["X-Sakura-Revision"\]/);
+  assert.match(application, /exportBackup\("导入前的当前数据已自动备份。"\)/);
 });
 
 test("frontend loads database data with a bundled snapshot fallback", () => {
@@ -221,6 +224,7 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const initialData = (await dataResponse.json()).data;
   assert.ok(initialData.categories.length > 0);
   assert.ok(initialData.sites.length > 0);
+  assert.equal(initialData.revision, 0);
 
   const duplicateCategoryBackup = {
     version: 1,
@@ -269,8 +273,59 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     method: "POST", body: { id: "invalid-route", name: "伪接口分类", icon: "fa-link" }, cookie, csrf: login.csrf
   }), env);
   assert.equal(invalidCategoryRouteResponse.status, 404);
-  const createResponse = await module.default.fetch(request("/api/admin/sites", { method: "POST", body: newSite, cookie, csrf: login.csrf }), env);
+  const createResponse = await module.default.fetch(request("/api/admin/sites", { method: "POST", body: newSite, cookie, csrf: login.csrf, revision: initialData.revision }), env);
   assert.equal(createResponse.status, 201);
+  assert.equal((await createResponse.clone().json()).revision, 1);
+
+  const staleSite = { ...newSite, id: "stale-admin-site", name: "过期标签页卡片", url: "https://example.test/stale-card" };
+  const staleResponse = await module.default.fetch(request("/api/admin/sites", {
+    method: "POST", body: staleSite, cookie, csrf: login.csrf, revision: initialData.revision
+  }), env);
+  assert.equal(staleResponse.status, 409);
+  assert.equal((await staleResponse.json()).code, "CONTENT_CONFLICT");
+
+  const currentAdminData = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
+  assert.equal(currentAdminData.revision, 1);
+  assert.ok(!currentAdminData.sites.some((site) => site.id === staleSite.id));
+
+  const missingRevisionResponse = await module.default.fetch(request("/api/admin/sites", {
+    method: "POST",
+    body: { ...newSite, id: "missing-revision-site", name: "缺少版本卡片", url: "https://example.test/missing-revision" },
+    cookie,
+    csrf: login.csrf
+  }), env);
+  assert.equal(missingRevisionResponse.status, 428);
+  assert.equal((await missingRevisionResponse.json()).code, "CONTENT_REVISION_REQUIRED");
+
+  const hiddenSettingsResponse = await module.default.fetch(request("/api/admin/hidden-settings", {
+    method: "PUT",
+    body: currentAdminData.hiddenSection,
+    cookie,
+    csrf: login.csrf,
+    revision: currentAdminData.revision
+  }), env);
+  assert.equal(hiddenSettingsResponse.status, 200);
+  assert.equal((await hiddenSettingsResponse.json()).revision, 2);
+
+  const categoryIds = [...currentAdminData.categories].sort((left, right) => left.sortOrder - right.sortOrder).map((category) => category.id);
+  const reorderResponse = await module.default.fetch(request("/api/admin/reorder", {
+    method: "POST",
+    body: { entity: "categories", ids: categoryIds },
+    cookie,
+    csrf: login.csrf,
+    revision: 2
+  }), env);
+  assert.equal(reorderResponse.status, 200);
+  assert.equal((await reorderResponse.json()).revision, 3);
+
+  const exportedBackupResponse = await module.default.fetch(request("/api/admin/export", { cookie }), env);
+  assert.equal(exportedBackupResponse.status, 200);
+  const exportedBackup = await exportedBackupResponse.json();
+  const importResponse = await module.default.fetch(request("/api/admin/import", {
+    method: "POST", body: exportedBackup, cookie, csrf: login.csrf, revision: 3
+  }), env);
+  assert.equal(importResponse.status, 200);
+  assert.equal((await importResponse.json()).revision, 4);
 
   const publicResponse = await module.default.fetch(request("/api/public/data"), env);
   assert.equal(publicResponse.status, 200);
@@ -356,8 +411,27 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const analyticsAfterClear = (await (await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env)).json()).data;
   assert.equal(Number(analyticsAfterClear.summary.page_views), 0);
 
-  const deleteResponse = await module.default.fetch(request(`/api/admin/sites/${newSite.id}`, { method: "DELETE", cookie, csrf: login.csrf }), env);
+  const deleteResponse = await module.default.fetch(request(`/api/admin/sites/${newSite.id}`, {
+    method: "DELETE", cookie, csrf: login.csrf, revision: 4
+  }), env);
   assert.equal(deleteResponse.status, 200);
   const publicAfterDelete = (await (await module.default.fetch(request("/api/public/data"), env)).json()).data;
   assert.ok(!publicAfterDelete.sites.some((site) => site.id === newSite.id));
+});
+
+test("scheduled maintenance removes expired operational rows without touching recent records", async () => {
+  const module = await workerPromise;
+  const env = { DB: new TestD1Database() };
+  await env.DB.prepare("INSERT INTO visitor_events(visitor_hash, path, device_type, browser, operating_system, minute_bucket, occurred_at) VALUES (?, '/', 'desktop', 'Chrome', 'Windows', '2020-01-01T00:00', '2020-01-01 00:00:00')")
+    .bind("a".repeat(64)).run();
+  await env.DB.prepare("INSERT INTO audit_logs(action, entity_type, entity_id, details_json, created_at) VALUES ('update', 'site', 'expired', '{}', '2020-01-01 00:00:00')").run();
+  await env.DB.prepare("INSERT INTO audit_logs(action, entity_type, entity_id, details_json) VALUES ('update', 'site', 'recent', '{}')").run();
+  await env.DB.prepare("INSERT INTO login_attempts(key, attempts, window_started) VALUES ('expired-login', 5, 1)").run();
+
+  await module.default.scheduled({}, env, {});
+
+  assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM visitor_events WHERE occurred_at='2020-01-01 00:00:00'").first("count"), 0);
+  assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM audit_logs WHERE entity_id='expired'").first("count"), 0);
+  assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM audit_logs WHERE entity_id='recent'").first("count"), 1);
+  assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM login_attempts WHERE key='expired-login'").first("count"), 0);
 });

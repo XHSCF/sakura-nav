@@ -9,3 +9,6 @@ __pycache__/
 !.dev.vars.example
 .env*
 !.env.example
+
+# Local D1 exports contain production data and must never be committed.
+.d1-backups/

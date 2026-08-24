@@ -54,6 +54,12 @@
 - `input[type="date"]` 必须放在负责边框、圆角和宽度约束的 `.date-control` 外壳中，外壳裁切 iOS/iPadOS Safari 原生日期控件的固有宽度，确保手机、平板和电脑均不越过表单或弹窗右边界。
 - 后台首屏必须先显示独立的会话验证加载态，登录页和后台主体均保持隐藏；只有 `/api/admin/session` 明确失败后才显示登录页，会话有效且后台数据加载完成后才显示后台主体，避免刷新时闪现登录表单或空后台。
 - `migrations/0001_admin_schema.sql` 与 `0002_seed_navigation_data.sql` 一旦用于生产初始化即视为不可变历史。以后修改数据库结构或通过仓库发布内容变更时新增编号 migration，不回写旧 migration。
+- 所有 migration 都必须保持连续编号并登记到 `migrations/checksums.json`；新增后运行 `python tools/validate_migrations.py`，确认全新数据库可初始化、后台自定义卡片可通过增量升级保留。`0002` 之后的增量 migration 禁止删除 `sites`、`categories` 或这两张表。
+- 新 migration 若修改卡片、分类、新世界设置或排序，必须在同一 migration 末尾递增 `settings.content_revision`，确保已经打开的旧后台页面不能覆盖 migration 结果。
+- 远程 D1 日常检查、备份、migration 与紧急恢复统一使用 `tools/maintain_d1.ps1`。执行 migration 前必须自动导出完整 SQL 备份；检测到生产库已有卡片而 `0001` 或 `0002` 待执行时必须拒绝，不得自动补跑或补记历史 migration。SQL 与后台 JSON 备份都属于敏感文件，不得提交 Git。
+- 卡片、分类、新世界设置、排序和备份导入必须使用数据库内容修订号做乐观并发保护。后台加载数据时保存修订号，所有内容写入必须携带预期修订号；服务端在同一 D1 batch 内验证并递增，冲突时返回 HTTP 409，旧标签页的表单不得被静默清空或覆盖新数据。
+- 后台修改记录页面只读取最近 100 条，数据库默认保留 180 天；每日 Cron 必须同时清理过期访问记录和修改记录，不得清理卡片、分类或设置。
+- 后台单独新增与备份导入统一限制为最多 500 张卡片和 50 个分类，避免两条入口的数据量规则不一致；每日 Cron 同时清理已经超过登录限速窗口的 `login_attempts`。
 - `tools/generate_d1_seed.js` 只用于首次上线前从 `sites-data.js` 重新生成初始种子。生产后台启用后，不得用它覆盖已包含后台修改的数据。
 - 前台通过 `assets/js/data-loader.js` 优先读取 D1；API 返回错误、超过约 2 秒或响应结构损坏时安全回退到 `sites-data.js`，保留现有搜索、筛选、按钮、最近访问、主题和响应式交互。合法的空分类或空卡片数组属于有效数据库状态，不得恢复旧快照；仓库快照回退时只能使用普通分类和普通卡片，必须禁用隐藏入口且不得把快照中的隐藏口令或隐藏卡片交给页面运行逻辑。
 - 前台匿名访问统计只在首页和关于页加载完成后异步上报，不统计后台和 404 页面，不得阻塞首屏、导航数据或卡片交互。前端使用随机匿名编号，Worker 只保存其 SHA-256 哈希、访问时间、页面路径、来源域名、派生的设备/浏览器/系统，以及 Cloudflare 提供的国家、省/州和城市；禁止保存原始 IP、完整 User-Agent、经纬度、搜索内容、隐藏口令或其他可识别个人的信息。
@@ -284,6 +290,7 @@ node --check admin/admin.js
 node --check worker/index.mjs
 node --test tools/test_worker.js
 python tools/validate_admin.py
+python tools/validate_migrations.py
 ```
 
 - `validate_site.py` 必须为 0 个错误；已有 HTTP 提示不等于错误，不顺便修改无关 HTTP 网站。

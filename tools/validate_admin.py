@@ -27,7 +27,7 @@ def main() -> int:
             break
 
     if not errors:
-        required_tables = {"categories", "sites", "settings", "audit_logs", "login_attempts", "visitor_events"}
+        required_tables = {"categories", "sites", "settings", "audit_logs", "login_attempts", "visitor_events", "content_revision_guard"}
         tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         missing = sorted(required_tables - tables)
         if missing:
@@ -56,7 +56,7 @@ def main() -> int:
         if foreign_key_errors:
             errors.append("D1 种子数据存在无效分类引用")
 
-        required_settings = {"hidden_id", "hidden_name", "hidden_icon", "hidden_passphrase", "hidden_welcome", "hidden_enabled", "analytics_enabled", "analytics_retention_days"}
+        required_settings = {"hidden_id", "hidden_name", "hidden_icon", "hidden_passphrase", "hidden_welcome", "hidden_enabled", "analytics_enabled", "analytics_retention_days", "content_revision", "audit_retention_days"}
         settings = {row[0] for row in connection.execute("SELECT key FROM settings")}
         if required_settings - settings:
             errors.append("D1 缺少新世界或访问统计设置")
@@ -136,6 +136,8 @@ def main() -> int:
             "离开页面前确认": 'window.addEventListener("beforeunload"' in admin_js,
             "卡片显示完整性提示": "data-preview-fit-status" in admin_html and "function schedulePreviewFitCheck(" in admin_js,
             "验证完成后再显示后台": "sessionLoading.hidden = true" in admin_js and "await loadData();\n      showApp();" in admin_js,
+            "多标签页内容冲突保护": 'headers["X-Sakura-Revision"]' in admin_js,
+            "导入前自动备份": 'exportBackup("导入前的当前数据已自动备份。")' in admin_js,
         }
         for label, present in interaction_rules.items():
             if not present:
@@ -154,7 +156,9 @@ def main() -> int:
             "不保存原始 IP": "CF-Connecting-IP" not in analytics and "user_agent" not in worker,
             "隐私偏好退出": "navigator.globalPrivacyControl" in analytics and "navigator.doNotTrack" in analytics,
             "过滤常见机器人": "isLikelyBot" in worker,
-            "访问记录自动清理": "async scheduled(" in worker and "deleteExpiredVisits" in worker,
+            "访问与修改记录自动清理": "async scheduled(" in worker and "deleteExpiredOperationalData" in worker,
+            "服务端内容版本冲突保护": "CONTENT_REVISION_HEADER" in worker and "CONTENT_CONFLICT" in worker and "content_revision_guard" in worker,
+            "卡片与分类数量上限": "MAX_SITE_COUNT" in worker and "MAX_CATEGORY_COUNT" in worker,
         }
         for label, present in analytics_rules.items():
             if not present:

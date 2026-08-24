@@ -1,0 +1,8 @@
+{
+  "0001_admin_schema.sql": "c94534f316519a1606ee61269bb451dc5a178bdc65a91982d00f79520c9c4b92",
+  "0002_seed_navigation_data.sql": "3e9b4e6b30e8954d0f5f7a37e65c2701efdaaae49223836a4a3e8cb9a5f43441",
+  "0003_visitor_analytics.sql": "75d7282b38932ce979a401f22788be69cd81769428adb95b8f569c5ab42ae86d",
+  "0004_update_pc_category_icon.sql": "0637f046ff66ce718d4001435314e33ffe23ad7d9caa0c71bca4dc0087f0e84c",
+  "0005_first_round_hardening.sql": "181df192ec5945e6ab30f299559f9e66f7dc0906c3d2d8c94a9929455457aeac",
+  "0006_safe_maintenance.sql": "32bc8d4ee03387af10315cf6a63f7bd018c7f420b4857f7ab4ce4ccff2e5ec69"
+}

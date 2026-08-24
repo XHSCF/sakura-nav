@@ -9,6 +9,10 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SITE_STATUSES = new Set(["draft", "published"]);
 const ANALYTICS_RANGES = new Set([1, 7, 30, 90]);
 const ANALYTICS_RETENTION_DAYS = 90;
+const AUDIT_RETENTION_DAYS = 180;
+const CONTENT_REVISION_HEADER = "X-Sakura-Revision";
+const MAX_SITE_COUNT = 500;
+const MAX_CATEGORY_COUNT = 50;
 const VISITOR_ID_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 const DEFAULT_PUBLIC_VISIT_LIMIT_PER_MINUTE = 240;
 const encoder = new TextEncoder();
@@ -283,11 +287,22 @@ async function analyticsData(env, requestedDays) {
   };
 }
 
-async function deleteExpiredVisits(env) {
-  const configured = Number(await env.DB.prepare("SELECT value FROM settings WHERE key='analytics_retention_days'").first("value"));
-  const retentionDays = Number.isInteger(configured) && configured >= 30 && configured <= 365 ? configured : ANALYTICS_RETENTION_DAYS;
-  const cutoff = sqliteTimestamp(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
-  await env.DB.prepare("DELETE FROM visitor_events WHERE occurred_at<?").bind(cutoff).run();
+async function deleteExpiredOperationalData(env) {
+  const result = await env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('analytics_retention_days', 'audit_retention_days')").all();
+  const settings = Object.fromEntries((result.results || []).map((row) => [row.key, row.value]));
+  const configuredAnalytics = Number(settings.analytics_retention_days);
+  const configuredAudit = Number(settings.audit_retention_days);
+  const analyticsDays = Number.isInteger(configuredAnalytics) && configuredAnalytics >= 30 && configuredAnalytics <= 365
+    ? configuredAnalytics
+    : ANALYTICS_RETENTION_DAYS;
+  const auditDays = Number.isInteger(configuredAudit) && configuredAudit >= 30 && configuredAudit <= 730
+    ? configuredAudit
+    : AUDIT_RETENTION_DAYS;
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM visitor_events WHERE occurred_at<?").bind(sqliteTimestamp(Date.now() - analyticsDays * 24 * 60 * 60 * 1000)),
+    env.DB.prepare("DELETE FROM audit_logs WHERE created_at<?").bind(sqliteTimestamp(Date.now() - auditDays * 24 * 60 * 60 * 1000)),
+    env.DB.prepare("DELETE FROM login_attempts WHERE window_started<?").bind(Math.floor(Date.now() / 1000) - LOGIN_WINDOW_SECONDS)
+  ]);
 }
 
 export function validateCategoryPayload(payload) {
@@ -393,6 +408,50 @@ async function readSettings(env) {
   return Object.fromEntries((result.results || []).map((row) => [row.key, row.value]));
 }
 
+function expectedContentRevision(request) {
+  const value = request.headers.get(CONTENT_REVISION_HEADER);
+  if (!/^\d+$/.test(value || "")) {
+    throw new ApiError("后台版本已更新，请刷新页面后再保存。", 428, "CONTENT_REVISION_REQUIRED");
+  }
+  const revision = Number(value);
+  if (!Number.isSafeInteger(revision)) throw new ApiError("内容版本号无效。", 400, "INVALID_CONTENT_REVISION");
+  return revision;
+}
+
+async function currentContentRevision(env) {
+  const value = await env.DB.prepare("SELECT value FROM settings WHERE key='content_revision'").first("value");
+  const revision = Number(value);
+  if (value === null || value === undefined || !Number.isSafeInteger(revision) || revision < 0) {
+    throw new ApiError("数据库维护尚未完成，请先应用最新 migration。", 503, "DATABASE_MIGRATION_REQUIRED");
+  }
+  return revision;
+}
+
+function auditStatement(env, action, entityType, entityId, details = {}) {
+  return env.DB.prepare("INSERT INTO audit_logs(action, entity_type, entity_id, details_json) VALUES (?, ?, ?, ?)")
+    .bind(action, entityType, entityId, JSON.stringify(details));
+}
+
+function contentConflict() {
+  return new ApiError("内容已在另一个标签页或设备中更新。当前修改仍保留，请重新打开后台数据后再保存。", 409, "CONTENT_CONFLICT");
+}
+
+async function runContentMutation(request, env, statements) {
+  const expected = expectedContentRevision(request);
+  if (await currentContentRevision(env) !== expected) throw contentConflict();
+  const guard = env.DB.prepare("INSERT OR REPLACE INTO content_revision_guard(id, valid) VALUES (1, COALESCE((SELECT CASE WHEN CAST(value AS INTEGER)=? THEN 1 ELSE 0 END FROM settings WHERE key='content_revision'), 0))")
+    .bind(expected);
+  const bump = env.DB.prepare("UPDATE settings SET value=CAST(value AS INTEGER)+1, updated_at=CURRENT_TIMESTAMP WHERE key='content_revision'");
+  try {
+    await env.DB.batch([guard, ...statements, bump]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/content_revision_(?:must_match|guard)/i.test(message)) throw contentConflict();
+    throw error;
+  }
+  return expected + 1;
+}
+
 function hiddenSettingsForAdmin(settings) {
   return {
     id: settings.hidden_id || "new-world",
@@ -432,8 +491,7 @@ async function publicData(env) {
 }
 
 async function insertAudit(env, action, entityType, entityId, details = {}) {
-  await env.DB.prepare("INSERT INTO audit_logs(action, entity_type, entity_id, details_json) VALUES (?, ?, ?, ?)")
-    .bind(action, entityType, entityId, JSON.stringify(details)).run();
+  await auditStatement(env, action, entityType, entityId, details).run();
 }
 
 async function ensureSiteUnique(env, site, excludedId = "") {
@@ -582,6 +640,7 @@ async function adminData(env) {
     categories,
     sites,
     hiddenSection: hiddenSettingsForAdmin(settings),
+    revision: Number.isSafeInteger(Number(settings.content_revision)) ? Number(settings.content_revision) : 0,
     auditLogs: (auditResult.results || []).map((row) => ({
       id: row.id,
       action: row.action,
@@ -599,29 +658,38 @@ async function handleSiteMutation(request, env, pathname) {
   const routeId = match?.[1] || null;
   if (request.method === "POST" && !routeId) {
     const payload = await readJson(request);
+    const count = Number(await env.DB.prepare("SELECT COUNT(*) AS count FROM sites").first("count"));
+    if (count >= MAX_SITE_COUNT) throw new ApiError(`卡片数量已达到 ${MAX_SITE_COUNT} 张上限。`, 409, "SITE_LIMIT_REACHED");
     const categoryIds = new Set((await listCategories(env, true)).map((category) => category.id));
     const site = validateSitePayload(payload, categoryIds);
     await ensureSiteUnique(env, site);
-    await siteStatement(env, site).run();
-    await insertAudit(env, "create", "site", site.id, { name: site.name });
-    return json({ ok: true, site }, 201);
+    const revision = await runContentMutation(request, env, [
+      siteStatement(env, site),
+      auditStatement(env, "create", "site", site.id, { name: site.name })
+    ]);
+    return json({ ok: true, site, revision }, 201);
   }
   if (request.method === "PUT" && routeId) {
+    const existing = await env.DB.prepare("SELECT id FROM sites WHERE id=?").bind(routeId).first();
+    if (!existing) throw new ApiError("没有找到这张卡片。", 404, "NOT_FOUND");
     const payload = { ...(await readJson(request)), id: routeId };
     const categoryIds = new Set((await listCategories(env, true)).map((category) => category.id));
     const site = validateSitePayload(payload, categoryIds);
     await ensureSiteUnique(env, site, routeId);
-    const result = await siteStatement(env, site, true, routeId).run();
-    if (!result.meta?.changes) throw new ApiError("没有找到这张卡片。", 404, "NOT_FOUND");
-    await insertAudit(env, "update", "site", routeId, { name: site.name });
-    return json({ ok: true, site });
+    const revision = await runContentMutation(request, env, [
+      siteStatement(env, site, true, routeId),
+      auditStatement(env, "update", "site", routeId, { name: site.name })
+    ]);
+    return json({ ok: true, site, revision });
   }
   if (request.method === "DELETE" && routeId) {
     const existing = await env.DB.prepare("SELECT name FROM sites WHERE id=?").bind(routeId).first();
     if (!existing) throw new ApiError("没有找到这张卡片。", 404, "NOT_FOUND");
-    await env.DB.prepare("DELETE FROM sites WHERE id=?").bind(routeId).run();
-    await insertAudit(env, "delete", "site", routeId, { name: existing.name });
-    return json({ ok: true });
+    const revision = await runContentMutation(request, env, [
+      env.DB.prepare("DELETE FROM sites WHERE id=?").bind(routeId),
+      auditStatement(env, "delete", "site", routeId, { name: existing.name })
+    ]);
+    return json({ ok: true, revision });
   }
   return errorResponse("不支持的卡片操作。", 405, "METHOD_NOT_ALLOWED");
 }
@@ -632,28 +700,38 @@ async function handleCategoryMutation(request, env, pathname) {
   const routeId = match?.[1] || null;
   if (request.method === "POST" && !routeId) {
     const category = validateCategoryPayload(await readJson(request));
+    const count = Number(await env.DB.prepare("SELECT COUNT(*) AS count FROM categories").first("count"));
+    if (count >= MAX_CATEGORY_COUNT) throw new ApiError(`分类数量已达到 ${MAX_CATEGORY_COUNT} 个上限。`, 409, "CATEGORY_LIMIT_REACHED");
     await ensureCategoryUnique(env, category);
-    await env.DB.prepare("INSERT INTO categories(id, name, icon, sort_order, is_visible) VALUES (?, ?, ?, ?, ?)")
-      .bind(category.id, category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0).run();
-    await insertAudit(env, "create", "category", category.id, { name: category.name });
-    return json({ ok: true, category }, 201);
+    const revision = await runContentMutation(request, env, [
+      env.DB.prepare("INSERT INTO categories(id, name, icon, sort_order, is_visible) VALUES (?, ?, ?, ?, ?)")
+        .bind(category.id, category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0),
+      auditStatement(env, "create", "category", category.id, { name: category.name })
+    ]);
+    return json({ ok: true, category, revision }, 201);
   }
   if (request.method === "PUT" && routeId) {
+    const existing = await env.DB.prepare("SELECT id FROM categories WHERE id=?").bind(routeId).first();
+    if (!existing) throw new ApiError("没有找到这个分类。", 404, "NOT_FOUND");
     const category = validateCategoryPayload({ ...(await readJson(request)), id: routeId });
     await ensureCategoryUnique(env, category, routeId);
-    const result = await env.DB.prepare("UPDATE categories SET name=?, icon=?, sort_order=?, is_visible=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
-      .bind(category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0, routeId).run();
-    if (!result.meta?.changes) throw new ApiError("没有找到这个分类。", 404, "NOT_FOUND");
-    await insertAudit(env, "update", "category", routeId, { name: category.name });
-    return json({ ok: true, category });
+    const revision = await runContentMutation(request, env, [
+      env.DB.prepare("UPDATE categories SET name=?, icon=?, sort_order=?, is_visible=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
+        .bind(category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0, routeId),
+      auditStatement(env, "update", "category", routeId, { name: category.name })
+    ]);
+    return json({ ok: true, category, revision });
   }
   if (request.method === "DELETE" && routeId) {
     const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM sites WHERE category_id=?").bind(routeId).first("count");
     if (Number(count) > 0) throw new ApiError("该分类中仍有卡片，请先移动或删除这些卡片。", 409, "CATEGORY_NOT_EMPTY");
-    const result = await env.DB.prepare("DELETE FROM categories WHERE id=?").bind(routeId).run();
-    if (!result.meta?.changes) throw new ApiError("没有找到这个分类。", 404, "NOT_FOUND");
-    await insertAudit(env, "delete", "category", routeId);
-    return json({ ok: true });
+    const existing = await env.DB.prepare("SELECT id FROM categories WHERE id=?").bind(routeId).first();
+    if (!existing) throw new ApiError("没有找到这个分类。", 404, "NOT_FOUND");
+    const revision = await runContentMutation(request, env, [
+      env.DB.prepare("DELETE FROM categories WHERE id=?").bind(routeId),
+      auditStatement(env, "delete", "category", routeId)
+    ]);
+    return json({ ok: true, revision });
   }
   return errorResponse("不支持的分类操作。", 405, "METHOD_NOT_ALLOWED");
 }
@@ -671,9 +749,11 @@ async function handleHiddenSettings(request, env) {
   };
   if (!ICON_PATTERN.test(settings.hidden_icon)) throw new ApiError("隐藏板块图标必须使用 fa-* 格式。");
   const statements = Object.entries(settings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value));
-  await env.DB.batch(statements);
-  await insertAudit(env, "update", "settings", "hidden-section", { name: settings.hidden_name });
-  return json({ ok: true });
+  const revision = await runContentMutation(request, env, [
+    ...statements,
+    auditStatement(env, "update", "settings", "hidden-section", { name: settings.hidden_name })
+  ]);
+  return json({ ok: true, revision });
 }
 
 async function handleReorder(request, env) {
@@ -687,9 +767,11 @@ async function handleReorder(request, env) {
   const table = entity === "sites" ? "sites" : "categories";
   const existing = await env.DB.prepare(`SELECT id FROM ${table} WHERE id IN (${ids.map(() => "?").join(",")})`).bind(...ids).all();
   if ((existing.results || []).length !== ids.length) throw new ApiError("排序内容包含不存在的项目。", 404, "NOT_FOUND");
-  await env.DB.batch(ids.map((id, index) => env.DB.prepare(`UPDATE ${table} SET sort_order=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(index, id)));
-  await insertAudit(env, "reorder", entity === "sites" ? "site" : "category", "multiple", { count: ids.length });
-  return json({ ok: true });
+  const revision = await runContentMutation(request, env, [
+    ...ids.map((id, index) => env.DB.prepare(`UPDATE ${table} SET sort_order=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(index, id)),
+    auditStatement(env, "reorder", entity === "sites" ? "site" : "category", "multiple", { count: ids.length })
+  ]);
+  return json({ ok: true, revision });
 }
 
 function backupFromAdminData(data) {
@@ -706,7 +788,7 @@ async function handleImport(request, env) {
   await requireAdmin(env, request, true);
   const payload = await readJson(request, 1024 * 1024);
   if (payload?.version !== 1 || !Array.isArray(payload.categories) || !Array.isArray(payload.sites)) throw new ApiError("备份文件格式不正确。 ");
-  if (payload.categories.length > 50 || payload.sites.length > 500) throw new ApiError("备份中的数据量超过限制。 ");
+  if (payload.categories.length > MAX_CATEGORY_COUNT || payload.sites.length > MAX_SITE_COUNT) throw new ApiError("备份中的数据量超过限制。 ");
   const categories = payload.categories.map(validateCategoryPayload);
   const categoryIds = new Set(categories.map((category) => category.id));
   if (categoryIds.size !== categories.length) throw new ApiError("备份中存在重复的分类 ID。 ");
@@ -736,8 +818,8 @@ async function handleImport(request, env) {
     ...Object.entries(hiddenSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
     env.DB.prepare("INSERT INTO audit_logs(action, entity_type, entity_id, details_json) VALUES ('import', 'backup', 'all', ?)").bind(JSON.stringify({ categories: categories.length, sites: sites.length }))
   ];
-  await env.DB.batch(statements);
-  return json({ ok: true, categories: categories.length, sites: sites.length });
+  const revision = await runContentMutation(request, env, statements);
+  return json({ ok: true, categories: categories.length, sites: sites.length, revision });
 }
 
 async function handlePublic(request, env, pathname, ctx) {
@@ -841,8 +923,8 @@ export default {
     }
   },
   async scheduled(_controller, env, ctx) {
-    const task = deleteExpiredVisits(env).catch((error) => {
-      console.error(JSON.stringify({ message: "analytics cleanup failed", error: error instanceof Error ? error.message : String(error) }));
+    const task = deleteExpiredOperationalData(env).catch((error) => {
+      console.error(JSON.stringify({ message: "operational data cleanup failed", error: error instanceof Error ? error.message : String(error) }));
     });
     if (typeof ctx?.waitUntil === "function") ctx.waitUntil(task);
     else await task;

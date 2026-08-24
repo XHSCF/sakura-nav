@@ -59,6 +59,13 @@ test("expired admin sessions preserve non-sensitive unsaved form drafts in the c
   assert.match(application, /passphraseOmitted[\s\S]*?elements\.passphrase\.value = ""/);
 });
 
+test("admin content writes carry a revision and import first downloads a current backup", () => {
+  const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
+  assert.match(application, /headers\["X-Sakura-Revision"\] = String\(state\.data\.revision\)/);
+  assert.match(application, /confirmAction\("导入备份"[\s\S]*?await exportBackup\("导入前的当前数据已自动备份。"\)[\s\S]*?api\("\/api\/admin\/import"/);
+  assert.match(application, /return false;[\s\S]*?async function importBackup/);
+});
+
 test("admin styles remain usable without color-mix or backdrop-filter", () => {
   const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");
   const fallbackStart = css.indexOf("@supports not (color: color-mix(in srgb, #000 50%, #fff))");

@@ -4,7 +4,7 @@
   const state = {
     csrf: "",
     user: "",
-    data: { categories: [], sites: [], hiddenSection: {}, auditLogs: [] },
+    data: { categories: [], sites: [], hiddenSection: {}, auditLogs: [], revision: 0 },
     analytics: null,
     analyticsLoading: false,
     editingSiteId: null,
@@ -382,6 +382,13 @@
     const method = options.method || "GET";
     const headers = { Accept: "application/json", ...(options.headers || {}) };
     if (method !== "GET" && method !== "HEAD" && state.csrf) headers["X-Sakura-CSRF"] = state.csrf;
+    const contentMutation = method !== "GET" && method !== "HEAD" && (
+      /^\/api\/admin\/(?:sites|categories)(?:\/|$)/.test(path)
+      || new Set(["/api/admin/reorder", "/api/admin/hidden-settings", "/api/admin/import"]).has(path)
+    );
+    if (contentMutation && Number.isSafeInteger(state.data.revision)) {
+      headers["X-Sakura-Revision"] = String(state.data.revision);
+    }
     if (options.body && !(options.body instanceof FormData) && typeof options.body !== "string") {
       headers["Content-Type"] = "application/json";
       options.body = JSON.stringify(options.body);
@@ -1093,21 +1100,30 @@
     finally { setFormBusy(form, false); }
   }
 
-  async function exportBackup() {
+  async function exportBackup(successMessage = "备份已导出。 ") {
     try {
       const response = await fetch("/api/admin/export", { credentials: "same-origin", headers: { Accept: "application/json" } });
+      if (response.status === 401) {
+        const preserved = captureSessionDraft();
+        showLogin(preserved ? "登录已失效。重新登录后会恢复未保存的内容。" : "登录已失效，请重新登录。");
+      }
       if (!response.ok) throw new Error("导出备份失败。 ");
       const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `sakura-nav-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.href = objectUrl;
+      link.download = `sakura-nav-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
       link.hidden = true;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      showToast("备份已导出。 ");
-    } catch (error) { showToast(error.message, true); }
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      showToast(successMessage);
+      return true;
+    } catch (error) {
+      showToast(error.message, true);
+      return false;
+    }
   }
 
   async function importBackup(event) {
@@ -1117,7 +1133,11 @@
     if (file.size > 1024 * 1024) { showToast("备份文件不能超过 1 MB。", true); return; }
     let backup;
     try { backup = JSON.parse(await file.text()); } catch (_) { showToast("选择的文件不是有效 JSON。", true); return; }
-    if (!(await confirmAction("导入备份", "导入会替换数据库中的全部分类、卡片和新世界设置。确定继续吗？"))) return;
+    if (!(await confirmAction("导入备份", "系统会先下载当前数据备份，再替换全部分类、卡片和新世界设置。确定继续吗？"))) return;
+    if (!(await exportBackup("导入前的当前数据已自动备份。"))) {
+      showToast("当前数据未能备份，已取消导入。", true);
+      return;
+    }
     try {
       const { payload } = await api("/api/admin/import", { method: "POST", body: backup });
       await loadData();
@@ -1167,7 +1187,7 @@
   siteForm?.addEventListener("submit", saveSite);
   categoryForm?.addEventListener("submit", saveCategory);
   hiddenSettingsForm?.addEventListener("submit", saveHiddenSettings);
-  document.querySelector("[data-export]")?.addEventListener("click", exportBackup);
+  document.querySelector("[data-export]")?.addEventListener("click", () => exportBackup());
   document.querySelector("[data-import]")?.addEventListener("change", importBackup);
   document.querySelector("[data-analytics-range]")?.addEventListener("change", loadAnalytics);
   document.querySelector("[data-analytics-refresh]")?.addEventListener("click", loadAnalytics);
