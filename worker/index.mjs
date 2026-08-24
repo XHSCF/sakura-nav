@@ -11,6 +11,7 @@ const ANALYTICS_RANGES = new Set([1, 7, 30, 90]);
 const ANALYTICS_RETENTION_DAYS = 90;
 const AUDIT_RETENTION_DAYS = 180;
 const CONTENT_REVISION_HEADER = "X-Sakura-Revision";
+const DATABASE_SCHEMA_VERSION = 6;
 const MAX_SITE_COUNT = 500;
 const MAX_CATEGORY_COUNT = 50;
 const VISITOR_ID_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
@@ -298,11 +299,22 @@ async function deleteExpiredOperationalData(env) {
   const auditDays = Number.isInteger(configuredAudit) && configuredAudit >= 30 && configuredAudit <= 730
     ? configuredAudit
     : AUDIT_RETENTION_DAYS;
-  await env.DB.batch([
+  const cleanupResults = await env.DB.batch([
     env.DB.prepare("DELETE FROM visitor_events WHERE occurred_at<?").bind(sqliteTimestamp(Date.now() - analyticsDays * 24 * 60 * 60 * 1000)),
     env.DB.prepare("DELETE FROM audit_logs WHERE created_at<?").bind(sqliteTimestamp(Date.now() - auditDays * 24 * 60 * 60 * 1000)),
     env.DB.prepare("DELETE FROM login_attempts WHERE window_started<?").bind(Math.floor(Date.now() / 1000) - LOGIN_WINDOW_SECONDS)
   ]);
+  const completedAt = new Date().toISOString();
+  const summary = {
+    visitorEvents: Number(cleanupResults[0]?.meta?.changes || 0),
+    auditLogs: Number(cleanupResults[1]?.meta?.changes || 0),
+    loginAttempts: Number(cleanupResults[2]?.meta?.changes || 0)
+  };
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES ('maintenance_last_run_at', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(completedAt),
+    env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES ('maintenance_last_result', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(JSON.stringify(summary))
+  ]);
+  return { completedAt, ...summary };
 }
 
 export function validateCategoryPayload(payload) {
@@ -636,11 +648,42 @@ async function adminData(env) {
     readSettings(env),
     env.DB.prepare("SELECT id, action, entity_type, entity_id, details_json, created_at FROM audit_logs ORDER BY id DESC LIMIT 100").all()
   ]);
+  const revision = Number(settings.content_revision);
+  if (!Number.isSafeInteger(revision) || revision < 0) {
+    throw new ApiError("数据库维护尚未完成，请先应用最新 migration。", 503, "DATABASE_MIGRATION_REQUIRED");
+  }
+  let maintenanceResult = null;
+  try {
+    const parsed = JSON.parse(settings.maintenance_last_result || "null");
+    if (parsed && typeof parsed === "object") {
+      maintenanceResult = {
+        visitorEvents: Number(parsed.visitorEvents) || 0,
+        auditLogs: Number(parsed.auditLogs) || 0,
+        loginAttempts: Number(parsed.loginAttempts) || 0
+      };
+    }
+  } catch (_) {
+    maintenanceResult = null;
+  }
+  const configuredAnalyticsRetention = Number(settings.analytics_retention_days);
+  const configuredAuditRetention = Number(settings.audit_retention_days);
   return {
     categories,
     sites,
     hiddenSection: hiddenSettingsForAdmin(settings),
-    revision: Number.isSafeInteger(Number(settings.content_revision)) ? Number(settings.content_revision) : 0,
+    revision,
+    systemStatus: {
+      schemaVersion: DATABASE_SCHEMA_VERSION,
+      contentRevision: revision,
+      siteCount: sites.length,
+      siteLimit: MAX_SITE_COUNT,
+      categoryCount: categories.length,
+      categoryLimit: MAX_CATEGORY_COUNT,
+      analyticsRetentionDays: Number.isInteger(configuredAnalyticsRetention) ? configuredAnalyticsRetention : ANALYTICS_RETENTION_DAYS,
+      auditRetentionDays: Number.isInteger(configuredAuditRetention) ? configuredAuditRetention : AUDIT_RETENTION_DAYS,
+      lastMaintenanceAt: settings.maintenance_last_run_at || null,
+      lastMaintenanceResult: maintenanceResult
+    },
     auditLogs: (auditResult.results || []).map((row) => ({
       id: row.id,
       action: row.action,

@@ -187,11 +187,14 @@
           </section>
 
           <section class="settings-card full-settings-card">
-            <div class="panel-heading compact-heading"><div><h2>部署状态</h2><p>后台需要 Cloudflare D1 和三个管理员密钥。</p></div></div>
+            <div class="panel-heading compact-heading"><div><h2>系统状态</h2><p>查看数据库版本、容量、写入保护和自动维护状态。</p></div></div>
             <ul class="status-list">
-              <li><i class="fas fa-database"></i><span>D1 数据库：已连接</span></li>
-              <li><i class="fas fa-user-lock"></i><span>管理员会话：已验证</span></li>
-              <li><i class="fas fa-shield-alt"></i><span>写入保护：CSRF 与同源检查已启用</span></li>
+              <li><i class="fas fa-database"></i><span data-system-database>D1 数据库：正在读取状态</span></li>
+              <li><i class="fas fa-code-branch"></i><span data-system-revision>内容修订：正在读取</span></li>
+              <li><i class="fas fa-chart-pie"></i><span data-system-capacity>内容容量：正在读取</span></li>
+              <li><i class="fas fa-broom"></i><span data-system-retention>自动清理：正在读取</span></li>
+              <li><i class="fas fa-clock"></i><span data-system-maintenance>最近维护：正在读取</span></li>
+              <li><i class="fas fa-shield-alt"></i><span>后台安全：会话、CSRF 与同源检查已启用</span></li>
             </ul>
           </section>
         </section>
@@ -225,7 +228,7 @@
             <label data-category-field><span>所属分类</span><select name="category" required></select></label>
             <label data-added-field><span>收录日期</span><span class="date-control"><input name="addedAt" type="date"></span></label>
             <label><span>卡片类型</span><select name="cardType"><option value="single">单按钮卡片</option><option value="dual">双按钮卡片</option></select></label>
-            <label><span>发布状态</span><select name="status"><option value="published">立即发布</option><option value="draft">保存为草稿</option></select></label>
+            <label><span>发布状态</span><select name="status"><option value="published">立即发布</option><option value="draft">暂时下架（保存为草稿）</option></select><small>草稿仍保存在数据库中，可随时重新发布。</small></label>
           </div>
         </section>
 

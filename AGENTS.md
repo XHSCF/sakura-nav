@@ -293,6 +293,8 @@ python tools/validate_admin.py
 python tools/validate_migrations.py
 ```
 
+- 本地 `.d1-backups/` 可能包含生产数据库完整导出，必须同时保留在 `.gitignore` 与 `.assetsignore` 中；不得提交、上传、作为静态资源部署、展示内容或在回复中复制其中的敏感数据。
+
 - `validate_site.py` 必须为 0 个错误；已有 HTTP 提示不等于错误，不顺便修改无关 HTTP 网站。
 - `tools/test_frontend.js` 必须全部通过；新增可复用的纯逻辑时应同步补充回归测试。
 - `git diff --check` 必须无输出。

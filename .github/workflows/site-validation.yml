@@ -30,7 +30,7 @@ jobs:
           python-version: "3.13"
 
       - name: Check Python syntax
-        run: python -m py_compile tools/validate_site.py tools/validate_admin.py tools/check_links.py
+        run: python -m py_compile tools/validate_site.py tools/validate_admin.py tools/validate_migrations.py tools/check_links.py
 
       - name: Check JavaScript syntax
         run: node --check assets/js/theme-init.js && node --check assets/js/data-loader.js && node --check assets/js/analytics.js && node --check assets/js/app-guard.js && node --check assets/js/sakura-core.js && node --check assets/js/sakura-app.js && node --check admin/admin-core.js && node --check admin/admin.js && node --check worker/index.mjs
@@ -48,3 +48,6 @@ jobs:
 
       - name: Validate D1 schema and admin assets
         run: python tools/validate_admin.py
+
+      - name: Validate migration history and checksums
+        run: python tools/validate_migrations.py

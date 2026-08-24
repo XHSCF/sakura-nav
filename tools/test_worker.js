@@ -158,6 +158,10 @@ test("Cloudflare configuration binds static assets and D1 without hardcoded secr
   assert.match(worker, /env\.ADMIN_PASSWORD/);
   assert.match(worker, /env\.ADMIN_SESSION_SECRET/);
   assert.doesNotMatch(worker, /replace-with-a-strong-password/);
+  const assetIgnore = fs.readFileSync(path.join(root, ".assetsignore"), "utf8");
+  assert.match(assetIgnore, /^\.d1-backups\/$/m);
+  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "site-validation.yml"), "utf8");
+  assert.match(workflow, /python tools\/validate_migrations\.py/);
 });
 
 test("admin page is script-src self compatible and exposes required management flows", () => {
@@ -225,6 +229,12 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.ok(initialData.categories.length > 0);
   assert.ok(initialData.sites.length > 0);
   assert.equal(initialData.revision, 0);
+  assert.equal(initialData.systemStatus.schemaVersion, 6);
+  assert.equal(initialData.systemStatus.contentRevision, 0);
+  assert.equal(initialData.systemStatus.siteCount, initialData.sites.length);
+  assert.equal(initialData.systemStatus.categoryCount, initialData.categories.length);
+  assert.equal(initialData.systemStatus.siteLimit, 500);
+  assert.equal(initialData.systemStatus.categoryLimit, 50);
 
   const duplicateCategoryBackup = {
     version: 1,
@@ -434,4 +444,10 @@ test("scheduled maintenance removes expired operational rows without touching re
   assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM audit_logs WHERE entity_id='expired'").first("count"), 0);
   assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM audit_logs WHERE entity_id='recent'").first("count"), 1);
   assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM login_attempts WHERE key='expired-login'").first("count"), 0);
+  assert.match(await env.DB.prepare("SELECT value FROM settings WHERE key='maintenance_last_run_at'").first("value"), /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(JSON.parse(await env.DB.prepare("SELECT value FROM settings WHERE key='maintenance_last_result'").first("value")), {
+    visitorEvents: 1,
+    auditLogs: 1,
+    loginAttempts: 1
+  });
 });

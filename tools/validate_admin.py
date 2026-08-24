@@ -95,6 +95,13 @@ def main() -> int:
         if not (ROOT / relative).is_file():
             errors.append(f"缺少后台文件：{relative}")
 
+    asset_ignore_path = ROOT / ".assetsignore"
+    if asset_ignore_path.is_file():
+        asset_ignores = {line.strip() for line in asset_ignore_path.read_text(encoding="utf-8").splitlines() if line.strip()}
+        for protected_path in {".d1-backups/", ".wrangler/", ".dev.vars*", ".env*"}:
+            if protected_path not in asset_ignores:
+                errors.append(f"静态资源排除清单缺少敏感路径：{protected_path}")
+
     maintenance_path = ROOT / "tools" / "maintain_d1.ps1"
     if maintenance_path.is_file():
         maintenance = maintenance_path.read_text(encoding="utf-8")
@@ -154,7 +161,10 @@ def main() -> int:
             "卡片显示完整性提示": "data-preview-fit-status" in admin_html and "function schedulePreviewFitCheck(" in admin_js,
             "验证完成后再显示后台": "sessionLoading.hidden = true" in admin_js and "await loadData();\n      showApp();" in admin_js,
             "多标签页内容冲突保护": 'headers["X-Sakura-Revision"]' in admin_js,
+            "内容冲突表单恢复": "function restoreConflictDraft(" in admin_js and "async function handleContentConflict(" in admin_js,
             "导入前自动备份": 'exportBackup("导入前的当前数据已自动备份。")' in admin_js,
+            "动态系统状态": "data-system-database" in admin_html and "data-system-maintenance" in admin_html and "systemStatus" in admin_js,
+            "草稿临时下架说明": "暂时下架（保存为草稿）" in admin_html,
         }
         for label, present in interaction_rules.items():
             if not present:

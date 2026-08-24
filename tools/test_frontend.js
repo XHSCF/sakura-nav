@@ -511,7 +511,7 @@ test("public pages share a compact non-repeating footer", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
   [homepage, aboutPage].forEach((page) => {
-    assert.match(page, /<footer class="site-footer">[\s\S]*?个人维护的纯静态导航，无广告、无第三方统计。[\s\S]*?data-runtime-days>[\s\S]*?data-data-updated[\s\S]*?data-current-year/);
+    assert.match(page, /<footer class="site-footer">[\s\S]*?个人维护的轻量导航，无广告、无第三方统计。[\s\S]*?data-runtime-days>[\s\S]*?data-data-updated[\s\S]*?data-current-year/);
     assert.doesNotMatch(page, /footer-project-links|>skrto\.top<|>www\.skrto\.top<|纯静态 · 无广告 · 无第三方统计脚本/);
   });
   assert.match(application, /node\.textContent = `已运行 \$\{runtimeDays\} 天`/);

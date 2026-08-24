@@ -260,10 +260,10 @@
     }
   }
 
-  function formDraftValues(form) {
+  function formDraftValues(form, includePasswords = false) {
     const values = {};
     Array.from(form.elements).forEach((field) => {
-      if (!field.name || ["button", "submit", "file", "password"].includes(field.type)) return;
+      if (!field.name || ["button", "submit", "file"].includes(field.type) || (!includePasswords && field.type === "password")) return;
       if (field.type === "radio") {
         if (field.checked) values[field.name] = field.value;
         return;
@@ -407,6 +407,66 @@
       throw error;
     }
     return { payload, response };
+  }
+
+  function captureConflictDraft(type) {
+    if (type === "site") return { type, editingId: state.editingSiteId, values: formDraftValues(siteForm, true) };
+    if (type === "category") return { type, editingId: state.editingCategoryId, values: formDraftValues(categoryForm, true) };
+    if (type === "settings") return { type, values: formDraftValues(hiddenSettingsForm, true) };
+    return null;
+  }
+
+  function restoreConflictDraft(draft) {
+    if (!draft) return false;
+    if (draft.type === "site") {
+      const existing = draft.editingId ? state.data.sites.find((site) => site.id === draft.editingId) : null;
+      if (siteDialog.open) {
+        setFormBaseline(siteForm);
+        siteDialog.close();
+      }
+      openSiteDialog(existing || null);
+      if (draft.editingId && !existing) state.editingSiteId = null;
+      applyFormDraft(siteForm, draft.values);
+      updateSiteFormVisibility();
+      updateCardPreview();
+      updateUnsavedIndicator(siteForm);
+      return Boolean(draft.editingId && !existing);
+    }
+    if (draft.type === "category") {
+      const existing = draft.editingId ? categoryById(draft.editingId) : null;
+      if (categoryDialog.open) {
+        setFormBaseline(categoryForm);
+        categoryDialog.close();
+      }
+      openCategoryDialog(existing || null);
+      if (draft.editingId && !existing) state.editingCategoryId = null;
+      applyFormDraft(categoryForm, draft.values);
+      updateUnsavedIndicator(categoryForm);
+      return Boolean(draft.editingId && !existing);
+    }
+    applyFormDraft(hiddenSettingsForm, draft.values);
+    updateUnsavedIndicator(hiddenSettingsForm);
+    return false;
+  }
+
+  async function handleContentConflict(error, draftType = null) {
+    if (error?.code !== "CONTENT_CONFLICT") return false;
+    const draft = captureConflictDraft(draftType);
+    if (draft) {
+      const reload = await confirmAction("检测到其他页面的更新", "当前输入不会丢失。是否重新加载数据库中的最新内容，再继续检查和保存？");
+      if (!reload) {
+        showToast("当前输入仍保留；重新保存前需要先加载最新内容。", true);
+        return true;
+      }
+    }
+    try {
+      await loadData();
+      const originalMissing = restoreConflictDraft(draft);
+      showToast(originalMissing ? "最新内容已加载；原项目已被删除，当前输入已转为新增项目。" : draft ? "最新内容已加载，当前输入仍保留，请检查后重新保存。" : "内容已更新，请重新执行刚才的操作。", false);
+    } catch (reloadError) {
+      showToast(`加载最新内容失败：${reloadError.message}`, true);
+    }
+    return true;
   }
 
   function showLogin(message = "") {
@@ -780,6 +840,17 @@
     form.elements.welcome.value = settings.welcome || "";
     form.elements.enabled.checked = settings.enabled !== false;
     setFormBaseline(form);
+
+    const system = state.data.systemStatus || {};
+    const maintenance = system.lastMaintenanceResult;
+    const maintenanceText = system.lastMaintenanceAt
+      ? `${formatDateTime(system.lastMaintenanceAt)} · 清理访问 ${formattedNumber(maintenance?.visitorEvents)}、记录 ${formattedNumber(maintenance?.auditLogs)}、限速 ${formattedNumber(maintenance?.loginAttempts)}`
+      : "尚未记录；系统每天北京时间 11:17 自动执行";
+    document.querySelector("[data-system-database]").textContent = `D1 数据库：已连接 · 数据结构 v${system.schemaVersion || "?"}`;
+    document.querySelector("[data-system-revision]").textContent = `内容修订：#${formattedNumber(system.contentRevision)}`;
+    document.querySelector("[data-system-capacity]").textContent = `内容容量：${formattedNumber(system.siteCount)} / ${formattedNumber(system.siteLimit)} 张卡片 · ${formattedNumber(system.categoryCount)} / ${formattedNumber(system.categoryLimit)} 个分类`;
+    document.querySelector("[data-system-retention]").textContent = `自动清理：访问 ${formattedNumber(system.analyticsRetentionDays)} 天 · 修改记录 ${formattedNumber(system.auditRetentionDays)} 天`;
+    document.querySelector("[data-system-maintenance]").textContent = `最近维护：${maintenanceText}`;
   }
 
   function renderAll() {
@@ -964,7 +1035,7 @@
       await loadData();
       showToast(state.editingSiteId ? "卡片已保存。" : "卡片已添加。 ");
     } catch (error) {
-      showToast(error.message, true);
+      if (!(await handleContentConflict(error, "site"))) showToast(error.message, true);
     } finally {
       setFormBusy(siteForm, false);
     }
@@ -976,7 +1047,7 @@
       await api(`/api/admin/sites/${encodeURIComponent(site.id)}`, { method: "DELETE" });
       await loadData();
       showToast("卡片已删除。 ");
-    } catch (error) { showToast(error.message, true); }
+    } catch (error) { if (!(await handleContentConflict(error))) showToast(error.message, true); }
   }
 
   async function moveSite(site, direction) {
@@ -988,7 +1059,7 @@
     try {
       await api("/api/admin/reorder", { method: "POST", body: { entity: "sites", ids: group.map((item) => item.id) } });
       await loadData();
-    } catch (error) { showToast(error.message, true); }
+    } catch (error) { if (!(await handleContentConflict(error))) showToast(error.message, true); }
   }
 
   function nextCategoryId(base) {
@@ -1039,7 +1110,7 @@
       categoryDialog.close();
       await loadData();
       showToast(state.editingCategoryId ? "分类已保存。" : "分类已添加。 ");
-    } catch (error) { showToast(error.message, true); }
+    } catch (error) { if (!(await handleContentConflict(error, "category"))) showToast(error.message, true); }
     finally { setFormBusy(categoryForm, false); }
   }
 
@@ -1054,7 +1125,7 @@
       await api(`/api/admin/categories/${encodeURIComponent(category.id)}`, { method: "DELETE" });
       await loadData();
       showToast("分类已删除。 ");
-    } catch (error) { showToast(error.message, true); }
+    } catch (error) { if (!(await handleContentConflict(error))) showToast(error.message, true); }
   }
 
   async function moveCategory(category, direction) {
@@ -1066,7 +1137,7 @@
     try {
       await api("/api/admin/reorder", { method: "POST", body: { entity: "categories", ids: categories.map((item) => item.id) } });
       await loadData();
-    } catch (error) { showToast(error.message, true); }
+    } catch (error) { if (!(await handleContentConflict(error))) showToast(error.message, true); }
   }
 
   function confirmAction(title, message) {
@@ -1096,7 +1167,7 @@
       } });
       await loadData();
       showToast("新世界设置已保存。 ");
-    } catch (error) { showToast(error.message, true); }
+    } catch (error) { if (!(await handleContentConflict(error, "settings"))) showToast(error.message, true); }
     finally { setFormBusy(form, false); }
   }
 
@@ -1142,7 +1213,7 @@
       const { payload } = await api("/api/admin/import", { method: "POST", body: backup });
       await loadData();
       showToast(`已导入 ${payload.categories} 个分类和 ${payload.sites} 张卡片。`);
-    } catch (error) { showToast(error.message, true); }
+    } catch (error) { if (!(await handleContentConflict(error))) showToast(error.message, true); }
   }
 
   loginForm?.addEventListener("submit", async (event) => {

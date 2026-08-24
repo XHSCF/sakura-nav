@@ -53,17 +53,26 @@ test("expired admin sessions preserve non-sensitive unsaved form drafts in the c
   assert.match(application, /function restoreSessionDraft\(/);
   assert.match(application, /window\.sessionStorage\.setItem\(sessionDraftKey/);
   assert.match(application, /window\.sessionStorage\.removeItem\(sessionDraftKey/);
-  assert.match(application, /\["button", "submit", "file", "password"\]\.includes\(field\.type\)/);
+  assert.match(application, /function formDraftValues\(form, includePasswords = false\)[\s\S]*?\(!includePasswords && field\.type === "password"\)/);
+  assert.match(application, /draft\.site = \{ editingId: state\.editingSiteId, values: formDraftValues\(siteForm\) \}/);
   assert.match(application, /response\.status === 401[\s\S]*?captureSessionDraft\(\)[\s\S]*?showLogin\(/);
   assert.match(application, /await loadData\(\);\s*showApp\(\);\s*const restored = restoreSessionDraft\(\);/);
   assert.match(application, /passphraseOmitted[\s\S]*?elements\.passphrase\.value = ""/);
 });
 
 test("admin content writes carry a revision and import first downloads a current backup", () => {
+  const html = fs.readFileSync(path.join(root, "admin", "index.html"), "utf8");
   const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
   assert.match(application, /headers\["X-Sakura-Revision"\] = String\(state\.data\.revision\)/);
   assert.match(application, /confirmAction\("导入备份"[\s\S]*?await exportBackup\("导入前的当前数据已自动备份。"\)[\s\S]*?api\("\/api\/admin\/import"/);
   assert.match(application, /return false;[\s\S]*?async function importBackup/);
+  assert.match(application, /function captureConflictDraft\(/);
+  assert.match(application, /function restoreConflictDraft\(/);
+  assert.match(application, /async function handleContentConflict\(/);
+  assert.match(application, /最新内容已加载，当前输入仍保留/);
+  assert.match(html, /暂时下架（保存为草稿）/);
+  assert.match(html, /data-system-database/);
+  assert.match(html, /data-system-maintenance/);
 });
 
 test("admin styles remain usable without color-mix or backdrop-filter", () => {

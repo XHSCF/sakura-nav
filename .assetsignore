@@ -1,6 +1,7 @@
 .git/
 .github/
 .wrangler/
+.d1-backups/
 admin-data/
 docs/
 migrations/
@@ -8,6 +9,9 @@ tools/
 worker/
 .dev.vars*
 .env*
+node_modules/
+coverage/
+*.log
 AGENTS.md
 README*.md
 wrangler.jsonc
