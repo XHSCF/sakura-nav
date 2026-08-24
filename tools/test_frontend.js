@@ -432,6 +432,9 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(stylesheet, /@media \(min-width:\s*1024px\)\s*\{\s*\.category-bar\s*\{[^}]*overflow-x:\s*hidden;[^}]*\}\s*\.category-bar \.filter-chip\s*\{[^}]*flex:\s*1 1 0;[^}]*min-width:\s*0;[^}]*padding-inline:\s*6px;/s);
   assert.match(stylesheet, /\.category-bar\s*\{\s*--segmented-indicator-inset:\s*3px;/s);
   assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 14px;[^}]*text-align:\s*center;/s);
+  assert.match(application, /const categorySummary = result\?\.closest\("\.category-summary"\);/);
+  assert.match(application, /function activeResultTarget\(\)\s*\{[\s\S]*?if \(state\.view === "history" && contentUtilities\) return contentUtilities;[\s\S]*?if \(categorySummary\) return categorySummary;[\s\S]*?if \(accessNotice\) return accessNotice;/s);
+  assert.match(application, /const visualGap = 10;[\s\S]*?visibleStickyHeight\(siteHeader\) \+ visibleStickyHeight\(categoryShell\) \+ visualGap;/s);
   assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length\)/);
   assert.doesNotMatch(homepage, /data-category-scroll|category-scroll-button/);
   assert.doesNotMatch(stylesheet, /category-scroll-button/);

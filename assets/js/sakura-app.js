@@ -270,6 +270,7 @@
     const searchForm = document.querySelector("[data-search-form]");
     const clear = document.querySelector("[data-search-clear]");
     const result = document.querySelector("[data-search-result]");
+    const categorySummary = result?.closest(".category-summary");
     const empty = document.querySelector("[data-empty-state]");
     const emptyTitle = document.querySelector("[data-empty-title]");
     const emptyMessage = document.querySelector("[data-empty-message]");
@@ -830,6 +831,7 @@
 
     function activeResultTarget() {
       if (state.view === "history" && contentUtilities) return contentUtilities;
+      if (categorySummary) return categorySummary;
       if (accessNotice) return accessNotice;
       if (empty?.classList.contains("is-visible")) return empty;
       const headings = Array.from(gridRoot.querySelectorAll("[data-result-scroll-target]"));
@@ -858,7 +860,7 @@
           if (token !== scrollRequestToken) return;
           const target = activeResultTarget();
           if (!target) return;
-          const visualGap = window.matchMedia("(max-width: 768px)").matches ? 18 : 22;
+          const visualGap = 10;
           const offset = visibleStickyHeight(siteHeader) + visibleStickyHeight(categoryShell) + visualGap;
           root.style.setProperty("--result-scroll-offset", `${offset}px`);
           const targetTop = window.scrollY + target.getBoundingClientRect().top - offset;
