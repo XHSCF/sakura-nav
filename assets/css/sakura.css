@@ -24,7 +24,6 @@
   --glass-shadow: 0 10px 32px rgba(45, 38, 77, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.76);
   --layer-border: rgba(37, 35, 56, 0.14);
   --card-bg: #ffffff;
-  --card-bg-hover: #f8fafb;
   --control-bg: rgba(255, 255, 255, 0.94);
   --control-bg-hover: #f1f3f6;
   --progress-track: rgba(37, 35, 56, 0.14);
@@ -73,7 +72,6 @@
   --glass-shadow: 0 12px 34px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   --layer-border: rgba(229, 224, 255, 0.14);
   --card-bg: #1c1f28;
-  --card-bg-hover: #20242e;
   --control-bg: rgba(33, 36, 49, 0.94);
   --control-bg-hover: #292d38;
   --progress-track: rgba(229, 224, 255, 0.16);
@@ -1238,13 +1236,6 @@ select {
   border-radius: var(--apple-corner-card);
   background: var(--card-bg);
   box-shadow: none;
-  transition: background-color 0.22s ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .site-card-link:hover {
-    background: var(--card-bg-hover);
-  }
 }
 
 .site-card-link::after {

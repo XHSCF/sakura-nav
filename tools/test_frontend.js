@@ -308,7 +308,8 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
   assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*136px;[^}]*align-items:\s*center;[^}]*padding:\s*16px;/s);
-  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*none;[^}]*transition:\s*background-color/s);
+  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.doesNotMatch(stylesheet, /\.site-card-link\s*\{[^}]*transition:\s*background-color/s);
   assert.doesNotMatch(stylesheet, /\.site-card-link\s*\{[^}]*box-shadow:\s*0 1px 0/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*136px;/);
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*100px;/s);
@@ -327,7 +328,7 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.doesNotMatch(stylesheet, /\.site-card-action\s*\{[^}]*box-shadow:[^}]*inset 0 [1-9]px 0/s);
   assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-action:hover\s*\{[^}]*background:\s*var\(--control-bg-hover\);[^}]*box-shadow:\s*none;[^}]*transform:\s*none;/s);
   assert.doesNotMatch(stylesheet, /\.site-card-action:hover\s*,\s*\.site-card-action:focus-visible/);
-  assert.match(stylesheet, /\.site-card-link:hover\s*\{[^}]*background:\s*var\(--card-bg-hover\);/s);
+  assert.doesNotMatch(stylesheet, /\.site-card-link:hover\s*\{[^}]*background:/s);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*94px;[\s\S]*?\.site-card-title\s*\{[^}]*font-size:\s*17px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*14px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*gap:\s*10px;[^}]*padding:\s*12px;[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*76px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*84px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*52px;/);
