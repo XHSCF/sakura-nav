@@ -85,12 +85,29 @@ def main() -> int:
         "admin/admin.js",
         "assets/js/analytics.js",
         "assets/js/data-loader.js",
+        "tools/maintain_d1.ps1",
+        "tools/validate_migrations.py",
+        "migrations/checksums.json",
         ".dev.vars.example",
         ".assetsignore",
     ]
     for relative in required_files:
         if not (ROOT / relative).is_file():
             errors.append(f"缺少后台文件：{relative}")
+
+    maintenance_path = ROOT / "tools" / "maintain_d1.ps1"
+    if maintenance_path.is_file():
+        maintenance = maintenance_path.read_text(encoding="utf-8")
+        maintenance_rules = {
+            "国内 Wrangler 下载回退": "https://registry.npmmirror.com" in maintenance,
+            "Codex Node 运行时回退": "codexNodeDirectory" in maintenance and '$env:Path = "$codexNodeDirectory;$env:Path"' in maintenance,
+            "pnpm 进度输出兼容": '$ErrorActionPreference = "Continue"' in maintenance,
+            "初始化 migration 保护": "unsafeInitial" in maintenance and "SiteCount -gt 0" in maintenance,
+            "migration 前自动备份": "New-D1Backup" in maintenance,
+        }
+        for label, present in maintenance_rules.items():
+            if not present:
+                errors.append(f"D1 维护脚本缺少{label}")
 
     admin_css_path = ROOT / "admin/admin.css"
     if admin_css_path.is_file():

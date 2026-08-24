@@ -33,6 +33,15 @@ function Resolve-WranglerCommand {
   if ($env:USERPROFILE) {
     $codexPnpm = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd"
     if (Test-Path -LiteralPath $codexPnpm) {
+      $codexNodeDirectory = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin"
+      $codexNode = Join-Path $codexNodeDirectory "node.exe"
+      if (-not (Test-Path -LiteralPath $codexNode)) {
+        throw "The Codex pnpm runtime was found, but its Node.js executable is missing."
+      }
+      $env:Path = "$codexNodeDirectory;$env:Path"
+      if (-not $env:pnpm_config_registry) {
+        $env:pnpm_config_registry = "https://registry.npmmirror.com"
+      }
       return @{ File = $codexPnpm; Prefix = @("dlx", "wrangler@$WranglerVersion") }
     }
   }
@@ -44,8 +53,14 @@ function Invoke-Wrangler {
   param([Parameter(Mandatory = $true)][string[]]$Arguments)
   $allArguments = @($script:Wrangler.Prefix) + $Arguments
   $command = $script:Wrangler.File
-  $output = & $command @allArguments 2>&1
-  $exitCode = $LASTEXITCODE
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $output = & $command @allArguments 2>&1
+    $exitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
   $text = @($output | ForEach-Object { $_.ToString() })
   if ($exitCode -ne 0) {
     throw "Wrangler failed with exit code ${exitCode}:`n$($text -join "`n")"
