@@ -353,12 +353,22 @@ test("cards and square controls use responsive Apple-style continuous corners", 
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border-radius:\s*999px;/s);
 });
 
+test("page background uses continuous theme ambience without isolated fixed spots", () => {
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  const bodyBlock = stylesheet.match(/\nbody\s*\{([\s\S]*?)\n\}/)?.[1] || "";
+
+  assert.match(stylesheet, /:root\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 5%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*1\.5%[^}]*--page-ambient-tint-soft:[^}]*0\.8%/s);
+  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 7%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*2\.5%[^}]*--page-ambient-tint-soft:[^}]*1\.2%/s);
+  assert.match(bodyBlock, /background:\s*var\(--bg\);[\s\S]*radial-gradient\(ellipse 90% 30rem at 50% 0%, var\(--page-ambient-glow\), transparent 78%\),[\s\S]*linear-gradient\(180deg, var\(--page-ambient-tint-strong\) 0%, var\(--bg\) 36%, var\(--page-ambient-tint-soft\) 70%, var\(--bg\) 100%\);/s);
+  assert.match(bodyBlock, /background-repeat:\s*no-repeat;[\s\S]*background-size:\s*100% 100%;/s);
+  assert.doesNotMatch(bodyBlock, /circle at 10% 10%|circle at 90% 25%|rgba\(233, 133, 167/);
+});
+
 test("segmented controls use one sliding indicator without bounce", () => {
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
   assert.doesNotMatch(stylesheet, /\.hero::before\s*\{/);
-  assert.match(stylesheet, /body\s*\{[\s\S]*radial-gradient\(circle at 50% 12rem,[^;]+var\(--bg\);/);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\);/s);
   assert.doesNotMatch(stylesheet, /\.category-bar\s*\{[^}]*0 8px 24px/s);
   assert.match(stylesheet, /\.filter-chip-count,\s*\.group-count\s*\{[^}]*min-width:\s*22px;[^}]*height:\s*22px;[^}]*font-variant-numeric:\s*tabular-nums;/s);
