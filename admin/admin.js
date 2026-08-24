@@ -98,7 +98,7 @@
       if (buttonIcon) buttonIcon.className = current.icon;
     });
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.content = theme === "dark" ? "#171a24" : "#e4eef4";
+    if (themeMeta) themeMeta.content = theme === "dark" ? "#0d0f14" : "#f7f8fa";
   }
 
   function applyAdminColorTheme(themeId, persist) {

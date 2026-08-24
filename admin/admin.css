@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  --bg: #e4eef4;
+  --bg: #f7f8fa;
   --surface: rgba(255, 255, 255, 0.84);
   --surface-solid: #fff;
   --surface-soft: rgba(255, 255, 255, 0.58);
@@ -18,7 +18,7 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #171a24;
+  --bg: #0d0f14;
   --surface: rgba(35, 39, 53, 0.9);
   --surface-solid: #242836;
   --surface-soft: rgba(40, 45, 61, 0.72);
@@ -28,12 +28,12 @@
   --primary: #63d8d0;
   --primary-strong: #69ddd5;
   --primary-soft: color-mix(in srgb, var(--primary) 15%, transparent);
-  --accent-foreground: #171a24;
+  --accent-foreground: #0d0f14;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
 }
 
 :root[data-color-theme="purple"] { --primary: #7565d9; --primary-strong: #5c4fc1; --accent-foreground: #fff; }
-:root[data-theme="dark"][data-color-theme="purple"] { --primary: #a99cf3; --primary-strong: #c4bbff; --accent-foreground: #171a24; }
+:root[data-theme="dark"][data-color-theme="purple"] { --primary: #a99cf3; --primary-strong: #c4bbff; --accent-foreground: #0d0f14; }
 :root[data-color-theme="ocean"] { --primary: #1672c4; --primary-strong: #1262ae; --accent-foreground: #fff; }
 :root[data-theme="dark"][data-color-theme="ocean"] { --primary: #67b0f4; --primary-strong: #9bcdff; --accent-foreground: #14202b; }
 :root[data-color-theme="apple"] { --primary: #34c759; --primary-strong: #18853a; --accent-foreground: #10351a; }
@@ -56,7 +56,6 @@ button, select { cursor: pointer; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
-.admin-atmosphere { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 34%), radial-gradient(circle at 90% 15%, rgba(84, 152, 220, 0.13), transparent 34%); }
 .eyebrow { color: var(--primary-strong); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; }
 .admin-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-size: 18px; font-weight: 850; text-decoration: none; }
 .admin-brand img { border-radius: 10px; }
@@ -410,10 +409,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   textarea:focus-visible,
   a:focus-visible {
     outline: 3px solid var(--primary);
-  }
-
-  .admin-atmosphere {
-    background: var(--bg);
   }
 
   .session-spinner,

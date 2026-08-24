@@ -19,7 +19,7 @@ test("public pages use the current brand without exposing repository details", (
     assert.doesNotMatch(source, /github\.com\/XHSCF\/sakura-nav|GitHub 仓库|Cloudflare 自动部署/);
     assert.doesNotMatch(source, /assets\/images\/og-sakura\.png/);
     assert.match(source, /<meta name="twitter:card" content="summary">/);
-    assert.match(source, /<meta name="theme-color" content="#e4eef4">/);
+    assert.match(source, /<meta name="theme-color" content="#f7f8fa">/);
     assert.match(source, /<meta (?:property="og:image"|name="twitter:image") content="https:\/\/skrto\.top\/assets\/images\/icons\/pwa-512\.png">/);
     assert.match(source, /data-color-theme-control/);
     assert.match(source, /data-color-theme-toggle/);
@@ -29,8 +29,8 @@ test("public pages use the current brand without exposing repository details", (
   const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "manifest.webmanifest"), "utf8"));
   assert.equal(manifest.name, "SAKURA导航");
   assert.equal(manifest.short_name, "SAKURA导航");
-  assert.equal(manifest.background_color, "#e4eef4");
-  assert.equal(manifest.theme_color, "#e4eef4");
+  assert.equal(manifest.background_color, "#f7f8fa");
+  assert.equal(manifest.theme_color, "#f7f8fa");
 });
 
 test("theme mode follows the expected three-state cycle", () => {
@@ -420,15 +420,16 @@ test("cards and square controls use responsive Apple-style continuous corners", 
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border-radius:\s*999px;/s);
 });
 
-test("page background uses continuous theme ambience without isolated fixed spots", () => {
+test("page background uses solid neutral colors without ambient gradients", () => {
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
   const bodyBlock = stylesheet.match(/\nbody\s*\{([\s\S]*?)\n\}/)?.[1] || "";
 
-  assert.match(stylesheet, /:root\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 5%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*2\.4%[^}]*--page-ambient-tint-middle:[^}]*1\.8%[^}]*--page-ambient-tint-lower:[^}]*1\.4%/s);
-  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 7%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*4\.5%[^}]*--page-ambient-tint-middle:[^}]*3\.4%[^}]*--page-ambient-tint-lower:[^}]*2\.6%/s);
-  assert.match(bodyBlock, /background:\s*var\(--bg\);[\s\S]*radial-gradient\(ellipse 90% 30rem at 50% 0%, var\(--page-ambient-glow\), transparent 78%\),[\s\S]*linear-gradient\(180deg,[\s\S]*var\(--page-ambient-tint-strong\) 0%,[\s\S]*var\(--bg\) 20%,[\s\S]*var\(--page-ambient-tint-middle\) 40%,[\s\S]*var\(--bg\) 60%,[\s\S]*var\(--page-ambient-tint-lower\) 80%,[\s\S]*var\(--bg\) 100%\);/s);
-  assert.match(bodyBlock, /background-repeat:\s*no-repeat;[\s\S]*background-size:\s*100% 100%;/s);
-  assert.doesNotMatch(bodyBlock, /circle at 10% 10%|circle at 90% 25%|rgba\(233, 133, 167/);
+  assert.match(stylesheet, /:root\s*\{[^}]*--bg:\s*#f7f8fa;/s);
+  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--bg:\s*#0d0f14;/s);
+  assert.match(stylesheet, /html\s*\{[^}]*background:\s*var\(--bg\);/s);
+  assert.match(bodyBlock, /background:\s*var\(--bg\);/s);
+  assert.doesNotMatch(stylesheet, /--page-ambient-|\.admin-atmosphere/);
+  assert.doesNotMatch(bodyBlock, /gradient\(/);
 });
 
 test("segmented controls use one sliding indicator without bounce", () => {
