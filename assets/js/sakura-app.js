@@ -276,8 +276,6 @@
     const resetFilters = document.querySelector("[data-reset-filters]");
     const categoryBar = document.querySelector("[data-category-bar]");
     const categoryShell = categoryBar?.closest(".category-shell");
-    const categoryScrollLeft = document.querySelector("[data-category-scroll=\"left\"]");
-    const categoryScrollRight = document.querySelector("[data-category-scroll=\"right\"]");
     const clearRecent = document.querySelector("[data-clear-recent]");
     const returnHome = document.querySelector("[data-return-home]");
     const contentUtilities = document.querySelector(".content-utilities");
@@ -305,7 +303,6 @@
     let scrollRequestToken = 0;
     let hiddenTransitionToken = 0;
     let normalScrollY = 0;
-    let categoryControlFrame = 0;
     let segmentedIndicatorFrame = 0;
     let selectedCardIndex = -1;
     let utilityResetTimer = 0;
@@ -716,7 +713,6 @@
           ? `找到 ${sites.length} / ${data.sites.length} 个站点 · 涉及 ${matchedCategories} 个板块`
           : `${data.sites.length} 个站点 · ${data.categories.length} 个分类`;
       }
-      scheduleCategoryScrollControls();
     }
 
     function renderHiddenSection() {
@@ -854,39 +850,6 @@
       });
     }
 
-    function updateCategoryScrollControls() {
-      if (!categoryBar || !categoryScrollLeft || !categoryScrollRight) return;
-      if (!window.matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)").matches) {
-        categoryScrollLeft.hidden = true;
-        categoryScrollRight.hidden = true;
-        return;
-      }
-      const maxScrollLeft = Math.max(0, categoryBar.scrollWidth - categoryBar.clientWidth);
-      const hasOverflow = maxScrollLeft > 1;
-      const atStart = categoryBar.scrollLeft <= 1;
-      const atEnd = categoryBar.scrollLeft >= maxScrollLeft - 1;
-      categoryScrollLeft.hidden = !hasOverflow || atStart;
-      categoryScrollRight.hidden = !hasOverflow || atEnd;
-      categoryScrollLeft.disabled = !hasOverflow || atStart;
-      categoryScrollRight.disabled = !hasOverflow || atEnd;
-    }
-
-    function scheduleCategoryScrollControls() {
-      window.cancelAnimationFrame(categoryControlFrame);
-      categoryControlFrame = window.requestAnimationFrame(() => {
-        updateCategoryScrollControls();
-        window.requestAnimationFrame(updateCategoryScrollControls);
-      });
-    }
-
-    function scrollCategories(direction) {
-      if (!categoryBar || !window.matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)").matches) return;
-      categoryBar.scrollBy({
-        left: direction * categoryBar.clientWidth * 0.7,
-        behavior: reducedMotion ? "auto" : "smooth"
-      });
-    }
-
     function scheduleResultScroll() {
       const token = ++scrollRequestToken;
       window.scrollTo({ top: window.scrollY, behavior: "auto" });
@@ -1016,22 +979,14 @@
         centerCategoryButton(button);
         scheduleResultScroll();
       });
-      categoryBar.addEventListener("scroll", updateCategoryScrollControls, { passive: true });
-      categoryScrollLeft?.addEventListener("click", () => scrollCategories(-1));
-      categoryScrollRight?.addEventListener("click", () => scrollCategories(1));
-      window.addEventListener("resize", () => {
-        scheduleCategoryScrollControls();
-        scheduleSegmentedIndicators();
-      });
+      window.addEventListener("resize", scheduleSegmentedIndicators);
       if (window.ResizeObserver) {
         const segmentedResizeObserver = new ResizeObserver(() => {
-          scheduleCategoryScrollControls();
           scheduleSegmentedIndicators();
         });
         segmentedResizeObserver.observe(categoryBar);
       }
       document.fonts?.ready.then(() => {
-        scheduleCategoryScrollControls();
         scheduleSegmentedIndicators();
       });
     }

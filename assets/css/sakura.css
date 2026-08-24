@@ -746,7 +746,6 @@ select {
   width: min(100%, 1040px);
   max-width: 100%;
   margin-inline: auto;
-  gap: 8px;
 }
 
 .category-bar {
@@ -773,14 +772,21 @@ select {
   border: 1px solid transparent;
   background: color-mix(in srgb, var(--glass-bg-strong) 38%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 34%, transparent);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 720;
   white-space: nowrap;
   transform: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1024px) {
+  .category-bar {
+    overflow-x: hidden;
+  }
+
   .category-bar .filter-chip {
-    padding-inline: 14px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 6px;
   }
 }
 
@@ -800,43 +806,6 @@ select {
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 76%, transparent), 0 6px 18px color-mix(in srgb, var(--primary) 27%, transparent);
   font-weight: 780;
   transform: none;
-}
-
-.category-scroll-button {
-  display: none;
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border: 1px solid var(--glass-border);
-  border-radius: 50%;
-  color: var(--primary-strong);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 28%, transparent), transparent 62%),
-    var(--glass-bg-strong);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  font-size: 12px;
-  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-}
-
-.category-scroll-button:hover {
-  border-color: color-mix(in srgb, var(--primary) 28%, var(--line));
-  color: var(--primary);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 44%, transparent), transparent 60%),
-    color-mix(in srgb, var(--primary) 10%, var(--glass-bg-strong));
-}
-
-.category-scroll-button[hidden] {
-  display: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .category-scroll-button:not([hidden]) {
-    display: grid;
-  }
 }
 
 .access-notice {
@@ -1882,11 +1851,6 @@ select {
 
   .category-slider {
     width: 100%;
-    gap: 0;
-  }
-
-  .category-scroll-button {
-    display: none !important;
   }
 
   .content-section .access-notice {
@@ -1929,7 +1893,7 @@ select {
     color: var(--muted);
     background: color-mix(in srgb, var(--glass-bg-strong) 38%, transparent);
     box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 34%, transparent);
-    font-size: 12px;
+    font-size: 14px;
     white-space: nowrap;
     scroll-snap-align: center;
     transform: none;
@@ -2137,7 +2101,7 @@ select {
   }
 }
 
-/* iOS-style category control: one glass indicator slides beneath stable labels. */
+/* iOS-style category control: one flat theme indicator slides beneath stable labels. */
 .category-bar {
   position: relative;
   isolation: isolate;
@@ -2158,15 +2122,10 @@ select {
   bottom: var(--segmented-indicator-inset);
   left: 0;
   width: var(--segmented-indicator-width, 0px);
-  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--glass-border));
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--glass-highlight) 42%, transparent), transparent 62%),
-    color-mix(in srgb, var(--primary) 13%, var(--glass-bg-strong));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 76%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--primary) 8%, transparent),
-    0 0 9px color-mix(in srgb, var(--primary) 7%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-solid));
+  box-shadow: none;
   opacity: 0;
   pointer-events: none;
   transform: translate3d(var(--segmented-indicator-x, 0px), 0, 0);
@@ -2216,13 +2175,16 @@ select {
   background: color-mix(in srgb, var(--surface-solid) 18%, transparent);
 }
 
+.category-bar .filter-chip-count {
+  font-size: 12px;
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .site-header,
   .site-nav,
   .color-theme-panel,
   .category-bar,
-  .icon-button,
-  .category-scroll-button {
+  .icon-button {
     background: var(--glass-bg-fallback);
   }
 }
@@ -2248,8 +2210,7 @@ select {
   .site-nav,
   .color-theme-panel,
   .category-bar,
-  .icon-button,
-  .category-scroll-button {
+  .icon-button {
     border-color: var(--line);
     background: var(--glass-bg-fallback);
     box-shadow: var(--shadow-sm);
@@ -2258,7 +2219,6 @@ select {
   .nav-link:hover,
   .nav-link[aria-current="page"],
   .icon-button:hover,
-  .category-scroll-button:hover,
   .color-theme-option:hover,
   .color-theme-option:focus-visible,
   .color-theme-option.is-active {
@@ -2325,9 +2285,9 @@ select {
   }
 
   .segmented-indicator {
-    border-color: var(--primary);
-    background: var(--surface-solid);
-    box-shadow: var(--shadow-sm);
+    border-color: transparent;
+    background: var(--surface-soft);
+    box-shadow: none;
   }
 
   .category-bar .filter-chip,
@@ -2450,8 +2410,7 @@ select {
   .site-nav,
   .color-theme-panel,
   .category-bar,
-  .icon-button,
-  .category-scroll-button {
+  .icon-button {
     background: var(--glass-bg-fallback);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

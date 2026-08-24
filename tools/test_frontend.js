@@ -306,8 +306,8 @@ test("public styles keep a complete Android baseline without modern color mixing
   assert.notEqual(fallbackStart, -1);
   assert.notEqual(reducedTransparencyStart, -1);
   assert.match(fallback, /body\s*\{[^}]*background:\s*var\(--bg\);/s);
-  assert.match(fallback, /\.site-header,[\s\S]*?\.category-scroll-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
-  assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*var\(--primary\);[^}]*background:\s*var\(--surface-solid\);/s);
+  assert.match(fallback, /\.site-header,[\s\S]*?\.icon-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
+  assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*var\(--surface-soft\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.site-card-action\s*\{[^}]*border-color:\s*var\(--primary\);[^}]*background:\s*var\(--surface-solid\);/s);
   assert.match(fallback, /\.site-card-description,[\s\S]*?\.category-bar \.filter-chip\s*\{[^}]*color:\s*var\(--muted\);/s);
   assert.match(fallback, /--category-icon-bg:\s*var\(--surface-solid\);[^}]*--category-icon-border:\s*var\(--primary\);/s);
@@ -361,6 +361,7 @@ test("segmented controls use one sliding indicator without bounce", () => {
   assert.match(stylesheet, /\.group-count\s*\{[^}]*min-width:\s*24px;[^}]*margin-left:\s*-4px;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*width:\s*var\(--segmented-indicator-width, 0px\);[^}]*transform:\s*translate3d\(var\(--segmented-indicator-x, 0px\), 0, 0\);[^}]*width 240ms[^}]*transform 240ms/s);
+  assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 10%, transparent\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 10%, var\(--surface-solid\)\);[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*0 0 9px color-mix\(in srgb, var\(--primary\) 7%, transparent\);/s);
   assert.match(stylesheet, /\.site-card-action:focus-visible\s*\{[^}]*0 0 13px color-mix\(in srgb, var\(--primary\) 16%, transparent\);/s);
@@ -411,10 +412,15 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*var\(--surface-solid\);[^}]*background:\s*color-mix\([^}]*box-shadow:\s*inset 0 0 0 1px/s);
   assert.match(stylesheet, /\.category-slider\s*\{[^}]*width:\s*min\(100%, 1040px\);/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*padding:\s*2px;/s);
-  assert.match(stylesheet, /@media \(min-width:\s*769px\)\s*\{\s*\.category-bar \.filter-chip\s*\{[^}]*padding-inline:\s*14px;/s);
+  assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*font-size:\s*14px;[^}]*font-weight:\s*720;/s);
+  assert.match(stylesheet, /\.category-bar \.filter-chip-count\s*\{[^}]*font-size:\s*12px;/s);
+  assert.match(stylesheet, /@media \(min-width:\s*1024px\)\s*\{\s*\.category-bar\s*\{[^}]*overflow-x:\s*hidden;[^}]*\}\s*\.category-bar \.filter-chip\s*\{[^}]*flex:\s*1 1 0;[^}]*min-width:\s*0;[^}]*padding-inline:\s*6px;/s);
   assert.match(stylesheet, /\.category-bar\s*\{\s*--segmented-indicator-inset:\s*3px;/s);
   assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 24px;[^}]*text-align:\s*center;/s);
   assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length\)/);
+  assert.doesNotMatch(homepage, /data-category-scroll|category-scroll-button/);
+  assert.doesNotMatch(stylesheet, /category-scroll-button/);
+  assert.doesNotMatch(application, /categoryScroll|scrollCategories|updateCategoryScrollControls|scheduleCategoryScrollControls/);
 });
 
 test("restoring all sites does not focus the search input", () => {
