@@ -137,12 +137,14 @@ test("database loader accepts legitimate empty data and sanitizes bundled hidden
     data: {
       categories: [],
       sites: [],
-      hiddenSection: { id: "new-world", name: "新世界", icon: "fa-door-open", welcome: "欢迎", unlockHash: "a".repeat(64) }
+      hiddenSection: { id: "new-world", name: "新世界", icon: "fa-door-open", welcome: "欢迎", unlockHash: "a".repeat(64) },
+      announcement: { text: "临时公告" }
     }
   }), { status: 200, headers: { "Content-Type": "application/json" } }));
   assert.equal(remote.source, "database");
   assert.deepEqual(remote.categories, []);
   assert.deepEqual(remote.sites, []);
+  assert.deepEqual(remote.announcement, { text: "临时公告" });
 
   const fallback = await loadWith(async () => { throw new Error("database offline"); });
   assert.equal(fallback.source, "snapshot");
@@ -150,6 +152,7 @@ test("database loader accepts legitimate empty data and sanitizes bundled hidden
   assert.equal(fallback.hiddenSection.enabled, false);
   assert.equal(Object.hasOwn(fallback.hiddenSection, "passphrase"), false);
   assert.equal(Object.hasOwn(fallback.hiddenSection, "sites"), false);
+  assert.equal(fallback.announcement, null);
   assert.match(source, /const timeout = 2000/);
 });
 
@@ -300,7 +303,7 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.doesNotMatch(application, /cardBody\.href\s*=/);
   assert.match(application, /article\.classList\.toggle\("has-single-action", cardActions\.length === 1\)/);
   assert.match(application, /if \(hasCardActions\) \{\s*const actions = document\.createElement\("div"\)/);
-  assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
+  assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => \{ trackVisit\(site\.id\); reportSiteClick\(site\.id\); \}\)/);
   assert.match(application, /if \(!hiddenCard\) \{\s*const category = document\.createElement\("span"\)/);
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
   assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
@@ -331,6 +334,22 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /@media \(max-width:\s*350px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*70px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*78px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*48px;/);
   assert.doesNotMatch(application, /sakura-favorites|favorite-button|favorite-order|scheduleFavoriteFocus|toggleFavorite|moveFavorite/);
   assert.doesNotMatch(stylesheet, /favorite-button|favorite-order|has-order-controls|--favorite-foreground/);
+});
+
+test("maintenance states, private click counting and temporary announcements are progressively rendered", () => {
+  const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+  assert.match(homepage, /data-site-announcement[^>]*hidden>[\s\S]*data-site-announcement-text/);
+  assert.match(application, /data\.announcement\?\.text[\s\S]*siteAnnouncement\.hidden = false/);
+  assert.match(application, /function reportSiteClick\(siteId\)[\s\S]*"\.\/api\/public\/click"[\s\S]*keepalive: true[\s\S]*JSON\.stringify\(\{ siteId \}\)/);
+  assert.doesNotMatch(application, /reportSiteClick\([^)]*,/);
+  assert.match(application, /site\.maintenanceStatus === "review" \? "待复查" : "临时失效"/);
+  assert.match(application, /document\.createElement\(site\.maintenanceStatus === "unavailable" \? "span" : "a"\)/);
+  assert.match(application, /actionLink\.setAttribute\("aria-disabled", "true"\)/);
+  assert.match(stylesheet, /\.site-announcement\s*\{[^}]*width:\s*fit-content;[^}]*max-width:\s*min\(100%, 920px\);/s);
+  assert.match(stylesheet, /\.site-card-action\.is-disabled,[\s\S]*cursor:\s*not-allowed;/);
+  assert.match(stylesheet, /\.site-card-maintenance\.is-review[\s\S]*\.site-card-maintenance\.is-unavailable/);
 });
 
 test("navigation controls use lightweight Liquid Glass with accessible fallbacks", () => {
@@ -543,7 +562,7 @@ test("keyboard selection focuses card actions without opening the card", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
   assert.match(application, /announceUtility\(`已选择 \$\{siteName\}，按 Enter 选择操作按钮`\)/);
-  assert.match(application, /const firstAction = card\?\.querySelector\("\.site-card-action"\)/);
+  assert.match(application, /const firstAction = card\?\.querySelector\("\.site-card-action:not\(\.is-disabled\)"\)/);
   assert.match(application, /firstAction\.focus\(\)/);
   assert.doesNotMatch(application, /card\?\.querySelector\("\.site-card-link"\)\?\.click\(\)/);
 });
@@ -569,7 +588,7 @@ test("the configured Android dual-link card renders only its two action links", 
   });
   assert.match(application, /const cardBody = document\.createElement\("div"\)/);
   assert.match(application, /cardActions\.forEach\(\(action\) =>/);
-  assert.match(application, /actionLink\.addEventListener\("click", \(\) => trackVisit\(site\.id\)\)/);
+  assert.match(application, /actionLink\.addEventListener\("click", \(\) => \{ trackVisit\(site\.id\); reportSiteClick\(site\.id\); \}\)/);
 
   const healthCheck = fs.readFileSync(path.join(repositoryRoot, "tools/check_links.py"), "utf8");
   assert.match(healthCheck, /if re\.search\(r'\\burlLabel\\s\*:', block\):\s+continue/);

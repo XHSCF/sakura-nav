@@ -843,6 +843,35 @@ select {
   text-align: center;
 }
 
+.site-announcement {
+  display: flex;
+  width: fit-content;
+  max-width: min(100%, 920px);
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 auto 8px;
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  background: var(--surface-soft);
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.site-announcement[hidden] {
+  display: none;
+}
+
+.site-announcement i {
+  flex: 0 0 auto;
+  margin-top: 0.24em;
+  color: var(--primary-strong);
+}
+
 .access-notice i {
   flex: 0 0 auto;
   margin-top: 0.35em;
@@ -1302,6 +1331,18 @@ select {
   transform: scale(0.97);
 }
 
+.site-card-action.is-disabled,
+.site-card-action.is-disabled:hover,
+.site-card-action.is-disabled:active {
+  border-color: var(--line);
+  color: var(--muted);
+  background: var(--surface-soft);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.78;
+  transform: none;
+}
+
 .site-icon {
   display: grid;
   flex: 0 0 64px;
@@ -1404,6 +1445,34 @@ select {
   font-weight: 850;
   letter-spacing: 0.05em;
   line-height: 1.2;
+}
+
+.site-card-maintenance {
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 9px;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.site-card-maintenance.is-review {
+  border-color: color-mix(in srgb, #c99328 38%, var(--line));
+  color: color-mix(in srgb, #9b6811 78%, var(--text));
+  background: color-mix(in srgb, #e8ad3b 10%, var(--surface));
+}
+
+.site-card-maintenance.is-unavailable {
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--line));
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+}
+
+.site-card.is-unavailable .site-icon {
+  filter: saturate(0.45);
+  opacity: 0.78;
 }
 
 .hide-card-categories .site-card-category {

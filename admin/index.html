@@ -86,7 +86,10 @@
             <h1 data-dashboard-title>内容管理</h1>
             <p data-dashboard-description>修改并发布后，前台会直接读取数据库中的最新内容。</p>
           </div>
-          <button class="primary-button" type="button" data-add-site><i class="fas fa-plus" aria-hidden="true"></i><span>添加卡片</span></button>
+          <div class="dashboard-actions">
+            <button class="secondary-button" type="button" data-batch-add><i class="fas fa-layer-group" aria-hidden="true"></i><span>批量添加</span></button>
+            <button class="primary-button" type="button" data-add-site><i class="fas fa-plus" aria-hidden="true"></i><span>添加卡片</span></button>
+          </div>
         </section>
 
         <section class="stats-grid" aria-label="数据概览" data-content-stats>
@@ -106,6 +109,7 @@
             <select data-site-category-filter aria-label="按分类筛选"><option value="all">全部分类</option></select>
             <select data-site-visibility-filter aria-label="按位置筛选"><option value="all">全部位置</option><option value="public">仅普通分类</option><option value="hidden">仅新世界</option></select>
             <select data-site-status-filter aria-label="按状态筛选"><option value="all">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option></select>
+            <select data-site-maintenance-filter aria-label="按维护状态筛选"><option value="all">全部维护状态</option><option value="normal">正常</option><option value="review">待复查</option><option value="unavailable">临时失效</option></select>
           </div>
           <div class="table-wrap">
             <table class="data-table">
@@ -133,6 +137,15 @@
             </div>
           </div>
 
+          <div class="analytics-privacy-bar click-privacy-bar">
+            <div class="analytics-privacy-copy"><i class="fas fa-mouse-pointer" aria-hidden="true"></i><div><strong data-click-analytics-status>卡片点击统计已启用</strong><span>只按卡片和日期累计次数，不保存访客身份、IP、设备或跳转网址。</span></div></div>
+            <div class="analytics-privacy-actions">
+              <strong class="click-total"><span data-click-total>0</span> 次点击</strong>
+              <label class="switch-control"><input type="checkbox" data-click-analytics-enabled checked><span>记录新点击</span></label>
+              <button class="secondary-button analytics-clear-button" type="button" data-click-analytics-clear><i class="fas fa-trash-alt" aria-hidden="true"></i><span>清空点击</span></button>
+            </div>
+          </div>
+
           <div class="analytics-state" data-analytics-loading role="status"><span class="session-spinner" aria-hidden="true"></span><strong>正在读取访问统计</strong></div>
           <div class="analytics-state is-error" data-analytics-error role="alert" hidden><i class="fas fa-exclamation-circle" aria-hidden="true"></i><strong>访问统计暂时无法读取</strong><span data-analytics-error-message></span></div>
 
@@ -152,6 +165,8 @@
               <section class="analytics-card" aria-labelledby="analytics-system-title"><div class="analytics-card-heading"><div><h3 id="analytics-system-title">操作系统</h3></div></div><div class="analytics-breakdown" data-analytics-systems></div></section>
               <section class="analytics-card" aria-labelledby="analytics-page-title"><div class="analytics-card-heading"><div><h3 id="analytics-page-title">热门页面</h3></div></div><div class="analytics-breakdown" data-analytics-pages-list></div></section>
               <section class="analytics-card" aria-labelledby="analytics-source-title"><div class="analytics-card-heading"><div><h3 id="analytics-source-title">访问来源</h3></div></div><div class="analytics-breakdown" data-analytics-sources></div></section>
+              <section class="analytics-card" aria-labelledby="click-top-title"><div class="analytics-card-heading"><div><h3 id="click-top-title">热门卡片</h3><p>当前范围内点击次数最多的公开卡片。</p></div></div><div class="analytics-breakdown" data-click-top></div></section>
+              <section class="analytics-card" aria-labelledby="click-unvisited-title"><div class="analytics-card-heading"><div><h3 id="click-unvisited-title">尚未点击</h3><p>当前范围内还没有点击的已发布卡片，最多显示 20 张。</p></div></div><div class="analytics-breakdown" data-click-unvisited></div></section>
               <section class="analytics-card analytics-wide" aria-labelledby="analytics-recent-title"><div class="analytics-card-heading"><div><h3 id="analytics-recent-title">最近访问</h3><p>最多显示当前范围内最近 50 条匿名记录。</p></div></div><div class="table-wrap"><table class="data-table analytics-table"><thead><tr><th>时间与页面</th><th>国家与地区</th><th>设备</th><th>来源</th></tr></thead><tbody data-analytics-recent></tbody></table></div><div class="panel-empty analytics-empty" data-analytics-recent-empty hidden><i class="fas fa-chart-line"></i><strong>当前范围还没有访问记录</strong></div></section>
             </div>
           </div>
@@ -166,6 +181,17 @@
         </section>
 
         <section class="admin-panel settings-grid" data-panel="settings" hidden>
+          <form class="settings-card full-settings-card admin-form" data-announcement-form>
+            <div class="panel-heading compact-heading"><div><h2>临时公告</h2><p>前台只显示当前有效的一条纯文本公告，到期后自动下线。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
+            <div class="form-grid two-columns">
+              <label class="wide-field"><span>公告内容</span><textarea name="text" maxlength="240" rows="3" placeholder="例如：部分资源正在维护，预计今晚恢复。"></textarea><small><span data-announcement-count>0</span>/240，不支持 HTML。</small></label>
+              <label><span>开始时间（可选）</span><span class="date-control"><input name="startsAt" type="datetime-local"></span></label>
+              <label><span>结束时间（可选）</span><span class="date-control"><input name="endsAt" type="datetime-local"></span></label>
+            </div>
+            <div class="announcement-preview" data-announcement-preview><i class="fas fa-bullhorn" aria-hidden="true"></i><span>公告预览会显示在这里。</span></div>
+            <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存临时公告</span></button></div>
+          </form>
+
           <form class="settings-card admin-form" data-hidden-settings-form>
             <div class="panel-heading compact-heading"><div><h2>新世界设置</h2><p>更改入口信息和搜索口令。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
             <div class="form-grid two-columns">
@@ -178,7 +204,7 @@
           </form>
 
           <section class="settings-card">
-            <div class="panel-heading compact-heading"><div><h2>数据备份</h2><p>导出全部分类、卡片和隐藏板块设置。</p></div></div>
+            <div class="panel-heading compact-heading"><div><h2>数据备份</h2><p>导出全部分类、卡片、隐藏板块设置和临时公告。</p></div></div>
             <div class="backup-actions">
               <button class="secondary-button" type="button" data-export><i class="fas fa-download"></i><span>导出 JSON 备份</span></button>
               <label class="secondary-button file-button"><i class="fas fa-upload"></i><span>导入 JSON 备份</span><input type="file" accept="application/json,.json" data-import hidden></label>
@@ -200,6 +226,11 @@
         </section>
 
         <section class="admin-panel" data-panel="history" hidden>
+          <section class="version-section" aria-labelledby="version-title">
+            <div class="panel-heading compact-heading"><div><h2 id="version-title">历史版本</h2><p>保留最近 20 个修改前版本；恢复前还会自动保存当前内容。</p></div><button class="secondary-button admin-icon-button" type="button" data-versions-refresh aria-label="刷新历史版本" title="刷新历史版本"><i class="fas fa-sync-alt"></i></button></div>
+            <div class="version-list" data-version-list></div>
+            <div class="panel-empty compact-empty" data-version-empty hidden><i class="fas fa-code-branch"></i><strong>还没有历史版本</strong><span>第一次修改内容后会自动生成。</span></div>
+          </section>
           <div class="panel-heading"><div><h2>修改记录</h2><p>显示最近 100 次后台操作。</p></div></div>
           <div class="audit-list" data-audit-list></div>
           <div class="panel-empty" data-audit-empty hidden><i class="fas fa-history"></i><strong>还没有修改记录</strong></div>
@@ -229,6 +260,7 @@
             <label data-added-field><span>收录日期</span><span class="date-control"><input name="addedAt" type="date"></span></label>
             <label><span>卡片类型</span><select name="cardType"><option value="single">单按钮卡片</option><option value="dual">双按钮卡片</option></select></label>
             <label><span>发布状态</span><select name="status"><option value="published">立即发布</option><option value="draft">暂时下架（保存为草稿）</option></select><small>草稿仍保存在数据库中，可随时重新发布。</small></label>
+            <label><span>维护状态</span><select name="maintenanceStatus"><option value="normal">正常</option><option value="review">待复查（前台提示）</option><option value="unavailable">临时失效（前台禁用按钮）</option></select><small>不会因一次联网失败自动改变。</small></label>
           </div>
         </section>
 
@@ -261,6 +293,24 @@
         </section>
       </div>
       <footer class="dialog-footer"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存卡片</span></button></footer>
+    </form>
+  </dialog>
+
+  <dialog class="admin-dialog batch-dialog" data-batch-dialog>
+    <form class="dialog-card admin-form" data-batch-form>
+      <header class="dialog-header"><div><span class="eyebrow">批量添加</span><h2>一次添加多张卡片</h2></div><button class="icon-close" type="button" data-close-dialog aria-label="关闭"><i class="fas fa-times"></i></button></header>
+      <div class="dialog-scroll">
+        <section class="form-section" aria-labelledby="batch-input-heading">
+          <div class="form-section-heading"><h3 id="batch-input-heading">粘贴 JSON 数组</h3><p>每次最多 50 张。系统会先在本地解析预览，再由服务器重新检查分类、重复项和字段组合。</p></div>
+          <label><span>卡片数据</span><textarea name="json" class="batch-json-input" rows="12" spellcheck="false" placeholder='[{"id":"example","name":"示例网站","description":"简短描述。","category":"tools","url":"https://example.com/","keywords":["示例"],"addedAt":"2026-08-25","status":"published","maintenanceStatus":"normal"}]' required></textarea></label>
+          <div class="batch-toolbar"><button class="secondary-button" type="button" data-batch-parse><i class="fas fa-search"></i><span>解析并预览</span></button><span data-batch-summary>尚未解析</span></div>
+        </section>
+        <section class="form-section" aria-labelledby="batch-preview-heading">
+          <div class="form-section-heading"><h3 id="batch-preview-heading">添加预览</h3><p>确认名称、位置、分类和按钮数量后再整批保存。</p></div>
+          <div class="batch-preview" data-batch-preview><div class="panel-empty compact-empty"><i class="fas fa-layer-group"></i><strong>等待解析卡片数据</strong></div></div>
+        </section>
+      </div>
+      <footer class="dialog-footer"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="secondary-button" type="button" data-close-dialog>取消</button><button class="primary-button" type="submit" data-batch-submit disabled><i class="fas fa-plus"></i><span>整批添加</span></button></footer>
     </form>
   </dialog>
 

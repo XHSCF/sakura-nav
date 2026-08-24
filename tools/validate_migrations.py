@@ -18,7 +18,7 @@ DESTRUCTIVE_CONTENT = re.compile(
     re.IGNORECASE,
 )
 CONTENT_CHANGE = re.compile(
-    r"\b(?:INSERT\s+(?:OR\s+\w+\s+)?INTO|UPDATE)\s+[\"'`\[]?(?:sites|categories)\b|\bhidden_(?:id|name|icon|passphrase|welcome|enabled)\b",
+    r"\b(?:INSERT\s+(?:OR\s+\w+\s+)?INTO|UPDATE)\s+[\"'`\[]?(?:sites|categories)\b|\b(?:hidden_(?:id|name|icon|passphrase|welcome|enabled)|announcement_(?:text|enabled|starts_at|ends_at))\b",
     re.IGNORECASE,
 )
 
@@ -97,17 +97,29 @@ def main() -> int:
             errors.append("增量 migration 覆盖或删除了后台自定义卡片")
         required_settings = dict(
             production.execute(
-                "SELECT key, value FROM settings WHERE key IN ('content_revision', 'audit_retention_days')"
+                "SELECT key, value FROM settings WHERE key IN ('content_revision', 'audit_retention_days', 'click_analytics_enabled', 'announcement_enabled')"
             )
         )
-        if required_settings != {"audit_retention_days": "180", "content_revision": "0"}:
-            errors.append("安全维护 migration 缺少内容版本或修改记录保留期")
+        if required_settings != {
+            "announcement_enabled": "0",
+            "audit_retention_days": "180",
+            "click_analytics_enabled": "1",
+            "content_revision": "1",
+        }:
+            errors.append("第五轮 migration 缺少内容版本、公告或点击统计设置")
+        site_columns = {row[1] for row in production.execute("PRAGMA table_info(sites)")}
+        if "maintenance_status" not in site_columns:
+            errors.append("第五轮 migration 未添加卡片维护状态")
+        required_tables = {"content_versions", "site_click_daily", "site_click_minute", "site_click_guard"}
+        actual_tables = {row[0] for row in production.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if not required_tables.issubset(actual_tables):
+            errors.append("第五轮 migration 缺少历史版本或点击统计数据表")
 
         production.execute("BEGIN")
         production.execute(
             "INSERT OR REPLACE INTO content_revision_guard(id, valid) VALUES "
             "(1, COALESCE((SELECT CASE WHEN CAST(value AS INTEGER)=? THEN 1 ELSE 0 END FROM settings WHERE key='content_revision'), 0))",
-            (0,),
+            (1,),
         )
         production.execute("UPDATE sites SET description='版本 1' WHERE id='custom-production-card'")
         production.execute(

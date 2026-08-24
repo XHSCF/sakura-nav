@@ -7,6 +7,9 @@
     data: { categories: [], sites: [], hiddenSection: {}, auditLogs: [], revision: 0 },
     analytics: null,
     analyticsLoading: false,
+    versions: [],
+    versionsLoading: false,
+    batchSites: [],
     editingSiteId: null,
     editingCategoryId: null,
     idTouched: false,
@@ -22,10 +25,13 @@
   const siteForm = document.querySelector("[data-site-form]");
   const categoryDialog = document.querySelector("[data-category-dialog]");
   const categoryForm = document.querySelector("[data-category-form]");
+  const batchDialog = document.querySelector("[data-batch-dialog]");
+  const batchForm = document.querySelector("[data-batch-form]");
   const confirmDialog = document.querySelector("[data-confirm-dialog]");
   const hiddenSettingsForm = document.querySelector("[data-hidden-settings-form]");
+  const announcementForm = document.querySelector("[data-announcement-form]");
   const toast = document.querySelector("[data-toast]");
-  const trackedForms = [siteForm, categoryForm, hiddenSettingsForm].filter(Boolean);
+  const trackedForms = [siteForm, categoryForm, batchForm, hiddenSettingsForm, announcementForm].filter(Boolean);
   const formBaselines = new WeakMap();
   const dialogClosePending = new WeakSet();
   let previewMeasureFrame = 0;
@@ -298,13 +304,15 @@
     if (categoryDialog?.open && isFormDirty(categoryForm)) {
       draft.category = { editingId: state.editingCategoryId, values: formDraftValues(categoryForm) };
     }
+    if (batchDialog?.open && isFormDirty(batchForm)) draft.batch = { values: formDraftValues(batchForm) };
     if (isFormDirty(hiddenSettingsForm)) {
       draft.settings = {
         values: formDraftValues(hiddenSettingsForm),
         passphraseOmitted: formFieldChanged(hiddenSettingsForm, "passphrase")
       };
     }
-    if (!draft.site && !draft.category && !draft.settings) return false;
+    if (isFormDirty(announcementForm)) draft.announcement = { values: formDraftValues(announcementForm) };
+    if (!draft.site && !draft.category && !draft.batch && !draft.settings && !draft.announcement) return false;
     try {
       window.sessionStorage.setItem(sessionDraftKey, JSON.stringify(draft));
       return true;
@@ -337,6 +345,12 @@
       updateUnsavedIndicator(hiddenSettingsForm);
       restored = true;
     }
+    if (draft.announcement?.values) {
+      applyFormDraft(announcementForm, draft.announcement.values);
+      renderAnnouncementPreview();
+      updateUnsavedIndicator(announcementForm);
+      restored = true;
+    }
     if (draft.site?.values) {
       const existing = draft.site.editingId ? state.data.sites.find((site) => site.id === draft.site.editingId) : null;
       openSiteDialog(existing || null);
@@ -353,13 +367,19 @@
       applyFormDraft(categoryForm, draft.category.values);
       updateUnsavedIndicator(categoryForm);
       restored = true;
+    } else if (draft.batch?.values) {
+      openBatchDialog();
+      applyFormDraft(batchForm, draft.batch.values);
+      parseBatchInput();
+      updateUnsavedIndicator(batchForm);
+      restored = true;
     }
     clearSessionDraft();
     return restored ? { passphraseOmitted: Boolean(draft.settings?.passphraseOmitted) } : null;
   }
 
   function syncDialogScrollLock() {
-    const hasOpenDialog = [siteDialog, categoryDialog, confirmDialog].some((dialog) => Boolean(dialog?.open));
+    const hasOpenDialog = [siteDialog, batchDialog, categoryDialog, confirmDialog].some((dialog) => Boolean(dialog?.open));
     root.classList.toggle("has-open-dialog", hasOpenDialog);
     document.body.classList.toggle("has-open-dialog", hasOpenDialog);
   }
@@ -385,7 +405,8 @@
     if (method !== "GET" && method !== "HEAD" && state.csrf) headers["X-Sakura-CSRF"] = state.csrf;
     const contentMutation = method !== "GET" && method !== "HEAD" && (
       /^\/api\/admin\/(?:sites|categories)(?:\/|$)/.test(path)
-      || new Set(["/api/admin/reorder", "/api/admin/hidden-settings", "/api/admin/import"]).has(path)
+      || /^\/api\/admin\/versions\/\d+\/restore$/.test(path)
+      || new Set(["/api/admin/reorder", "/api/admin/hidden-settings", "/api/admin/announcement", "/api/admin/import"]).has(path)
     );
     if (contentMutation && Number.isSafeInteger(state.data.revision)) {
       headers["X-Sakura-Revision"] = String(state.data.revision);
@@ -432,6 +453,8 @@
     if (type === "site") return { type, editingId: state.editingSiteId, values: formDraftValues(siteForm, true) };
     if (type === "category") return { type, editingId: state.editingCategoryId, values: formDraftValues(categoryForm, true) };
     if (type === "settings") return { type, values: formDraftValues(hiddenSettingsForm, true) };
+    if (type === "announcement") return { type, values: formDraftValues(announcementForm, true) };
+    if (type === "batch") return { type, values: formDraftValues(batchForm, true) };
     return null;
   }
 
@@ -462,6 +485,19 @@
       applyFormDraft(categoryForm, draft.values);
       updateUnsavedIndicator(categoryForm);
       return Boolean(draft.editingId && !existing);
+    }
+    if (draft.type === "announcement") {
+      applyFormDraft(announcementForm, draft.values);
+      renderAnnouncementPreview();
+      updateUnsavedIndicator(announcementForm);
+      return false;
+    }
+    if (draft.type === "batch") {
+      openBatchDialog();
+      applyFormDraft(batchForm, draft.values);
+      parseBatchInput();
+      updateUnsavedIndicator(batchForm);
+      return false;
     }
     applyFormDraft(hiddenSettingsForm, draft.values);
     updateUnsavedIndicator(hiddenSettingsForm);
@@ -552,12 +588,14 @@
     const category = document.querySelector("[data-site-category-filter]").value;
     const visibility = document.querySelector("[data-site-visibility-filter]").value;
     const status = document.querySelector("[data-site-status-filter]").value;
+    const maintenance = document.querySelector("[data-site-maintenance-filter]").value;
     return state.data.sites.filter((site) => {
       const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
       return (!query || searchable.includes(query))
         && (category === "all" || site.category === category)
         && (visibility === "all" || (visibility === "hidden") === Boolean(site.isHidden))
-        && (status === "all" || site.status === status);
+        && (status === "all" || site.status === status)
+        && (maintenance === "all" || (site.maintenanceStatus || "normal") === maintenance);
     });
   }
 
@@ -590,6 +628,9 @@
       const statusCell = document.createElement("td");
       statusCell.dataset.label = "状态";
       statusCell.appendChild(createElement("span", `table-badge ${site.status === "draft" ? "is-draft" : "is-published"}`, site.status === "draft" ? "草稿" : "已发布"));
+      if ((site.maintenanceStatus || "normal") !== "normal") {
+        statusCell.appendChild(createElement("span", `table-badge maintenance-badge is-${site.maintenanceStatus}`, site.maintenanceStatus === "review" ? "待复查" : "临时失效"));
+      }
 
       const actionCell = document.createElement("td");
       const actions = createElement("div", "row-actions");
@@ -629,8 +670,8 @@
   }
 
   function auditDescription(log) {
-    const actions = { create: "新增", update: "修改", delete: "删除", clear: "清空", import: "导入", seed: "初始化" };
-    const types = { site: "卡片", category: "分类", settings: "设置", analytics: "访问统计", backup: "备份", navigation: "导航数据" };
+    const actions = { create: "新增", "batch-create": "批量新增", update: "修改", delete: "删除", clear: "清空", import: "导入", restore: "恢复", seed: "初始化" };
+    const types = { site: "卡片", category: "分类", settings: "设置", announcement: "公告", analytics: "访问统计", backup: "备份", navigation: "导航数据", "content-version": "历史版本" };
     const name = log.details?.name ? `“${log.details.name}”` : log.entityId;
     return `${actions[log.action] || log.action}${types[log.entityType] || log.entityType} ${name}`;
   }
@@ -650,6 +691,55 @@
       item.append(iconWrap, copy, time);
       list.appendChild(item);
     });
+  }
+
+  function renderVersions() {
+    const list = document.querySelector("[data-version-list]");
+    const empty = document.querySelector("[data-version-empty]");
+    list.replaceChildren();
+    empty.hidden = state.versions.length > 0;
+    state.versions.forEach((version) => {
+      const item = createElement("article", "version-item");
+      const iconWrap = createElement("span", "version-icon");
+      iconWrap.appendChild(icon("fa-code-branch"));
+      const copy = createElement("div", "version-copy");
+      copy.append(
+        createElement("strong", "", version.summary || `修订 ${version.revision}`),
+        createElement("span", "", `修订 #${formattedNumber(version.revision)} · ${formattedNumber(version.siteCount)} 张卡片 · ${formattedNumber(version.categoryCount)} 个分类 · ${formatDateTime(version.createdAt)}`)
+      );
+      const restore = createElement("button", "secondary-button version-restore-button");
+      restore.type = "button";
+      restore.append(icon("fa-undo-alt"), createElement("span", "", "恢复此版本"));
+      restore.addEventListener("click", () => restoreVersion(version));
+      item.append(iconWrap, copy, restore);
+      list.appendChild(item);
+    });
+  }
+
+  async function loadVersions() {
+    if (state.versionsLoading) return;
+    state.versionsLoading = true;
+    const refresh = document.querySelector("[data-versions-refresh]");
+    refresh.disabled = true;
+    try {
+      const { payload } = await api("/api/admin/versions");
+      state.versions = payload.data?.versions || [];
+      renderVersions();
+    } catch (error) {
+      showToast(error.message, true);
+    } finally {
+      state.versionsLoading = false;
+      refresh.disabled = false;
+    }
+  }
+
+  async function restoreVersion(version) {
+    if (!(await confirmAction("恢复历史版本", `确定恢复“${version.summary}”吗？当前内容会先自动保存为一个新历史版本，入口口令不会被历史版本改变。`))) return;
+    try {
+      await api(`/api/admin/versions/${version.id}/restore`, { method: "POST", body: {} });
+      await Promise.all([loadData(), loadVersions()]);
+      showToast(`已恢复修订 #${version.revision} 的内容。`);
+    } catch (error) { if (!(await handleContentConflict(error))) showToast(error.message, true); }
   }
 
   function formattedNumber(value) {
@@ -780,12 +870,18 @@
     const enabled = document.querySelector("[data-analytics-enabled]");
     enabled.checked = data.enabled !== false;
     document.querySelector("[data-analytics-status-text]").textContent = data.enabled === false ? "匿名统计已暂停" : "匿名统计已启用";
+    const clickData = data.clickAnalytics || {};
+    document.querySelector("[data-click-total]").textContent = formattedNumber(clickData.total);
+    document.querySelector("[data-click-analytics-enabled]").checked = clickData.enabled !== false;
+    document.querySelector("[data-click-analytics-status]").textContent = clickData.enabled === false ? "卡片点击统计已暂停" : "卡片点击统计已启用";
     renderAnalyticsTrend(data);
     renderBreakdown("[data-analytics-devices]", data.devices, (row) => deviceLabel(row.label));
     renderBreakdown("[data-analytics-browsers]", data.browsers);
     renderBreakdown("[data-analytics-systems]", data.operatingSystems);
     renderBreakdown("[data-analytics-pages-list]", data.pages, (row) => pageLabel(row.label));
     renderBreakdown("[data-analytics-sources]", data.sources, (row) => row.label || "直接访问");
+    renderBreakdown("[data-click-top]", (clickData.top || []).map((row) => ({ ...row, page_views: row.clicks })), (row) => row.name || row.site_id);
+    renderBreakdown("[data-click-unvisited]", (clickData.unvisited || []).map((row) => ({ ...row, page_views: 0 })), (row) => row.name || row.site_id);
     renderAnalyticsLocations(data.locations);
     renderAnalyticsRecent(data.recent);
     document.querySelector("[data-analytics-loading]").hidden = true;
@@ -850,6 +946,40 @@
     }
   }
 
+  async function saveClickAnalyticsEnabled(event) {
+    const control = event.currentTarget;
+    const enabled = control.checked;
+    control.disabled = true;
+    try {
+      await api("/api/admin/click-analytics/settings", { method: "PUT", body: { enabled } });
+      if (state.analytics?.clickAnalytics) state.analytics.clickAnalytics.enabled = enabled;
+      document.querySelector("[data-click-analytics-status]").textContent = enabled ? "卡片点击统计已启用" : "卡片点击统计已暂停";
+      showToast(enabled ? "已开始记录新的卡片点击。" : "已暂停记录新的卡片点击。");
+      await loadData();
+    } catch (error) {
+      control.checked = !enabled;
+      showToast(error.message, true);
+    } finally {
+      control.disabled = false;
+    }
+  }
+
+  async function clearClickAnalytics() {
+    if (!(await confirmAction("清空点击统计", "这会永久删除全部卡片点击次数，且不会影响页面访问统计。确定继续吗？"))) return;
+    const button = document.querySelector("[data-click-analytics-clear]");
+    button.disabled = true;
+    try {
+      const { payload } = await api("/api/admin/click-analytics", { method: "DELETE" });
+      state.analytics = null;
+      showToast(`已清空 ${formattedNumber(payload.deleted)} 条卡片日期统计。`);
+      await Promise.all([loadAnalytics(), loadData()]);
+    } catch (error) {
+      showToast(error.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   function renderSettings() {
     const form = hiddenSettingsForm;
     const settings = state.data.hiddenSection;
@@ -860,15 +990,23 @@
     form.elements.enabled.checked = settings.enabled !== false;
     setFormBaseline(form);
 
+    const announcement = state.data.announcement || {};
+    announcementForm.elements.text.value = announcement.text || "";
+    announcementForm.elements.enabled.checked = announcement.enabled === true;
+    announcementForm.elements.startsAt.value = dateTimeLocalValue(announcement.startsAt);
+    announcementForm.elements.endsAt.value = dateTimeLocalValue(announcement.endsAt);
+    renderAnnouncementPreview();
+    setFormBaseline(announcementForm);
+
     const system = state.data.systemStatus || {};
     const maintenance = system.lastMaintenanceResult;
     const maintenanceText = system.lastMaintenanceAt
-      ? `${formatDateTime(system.lastMaintenanceAt)} · 清理访问 ${formattedNumber(maintenance?.visitorEvents)}、记录 ${formattedNumber(maintenance?.auditLogs)}、限速 ${formattedNumber(maintenance?.loginAttempts)}`
+      ? `${formatDateTime(system.lastMaintenanceAt)} · 清理访问 ${formattedNumber(maintenance?.visitorEvents)}、点击 ${formattedNumber(maintenance?.siteClicks)}、记录 ${formattedNumber(maintenance?.auditLogs)}、版本 ${formattedNumber(maintenance?.contentVersions)}`
       : "尚未记录；系统每天北京时间 11:17 自动执行";
     document.querySelector("[data-system-database]").textContent = `D1 数据库：已连接 · 数据结构 v${system.schemaVersion || "?"}`;
     document.querySelector("[data-system-revision]").textContent = `内容修订：#${formattedNumber(system.contentRevision)}`;
     document.querySelector("[data-system-capacity]").textContent = `内容容量：${formattedNumber(system.siteCount)} / ${formattedNumber(system.siteLimit)} 张卡片 · ${formattedNumber(system.categoryCount)} / ${formattedNumber(system.categoryLimit)} 个分类`;
-    document.querySelector("[data-system-retention]").textContent = `自动清理：访问 ${formattedNumber(system.analyticsRetentionDays)} 天 · 修改记录 ${formattedNumber(system.auditRetentionDays)} 天`;
+    document.querySelector("[data-system-retention]").textContent = `自动清理：访问 ${formattedNumber(system.analyticsRetentionDays)} 天 · 点击 ${formattedNumber(system.clickAnalyticsRetentionDays)} 天 · 修改记录 ${formattedNumber(system.auditRetentionDays)} 天`;
     document.querySelector("[data-system-maintenance]").textContent = `最近维护：${maintenanceText}`;
   }
 
@@ -895,6 +1033,20 @@
     return `${year}-${month}-${day}`;
   }
 
+  function dateTimeLocalValue(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+    return shifted.toISOString().slice(0, 16);
+  }
+
+  function dateTimeIsoValue(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+  }
+
   async function loadData() {
     const { payload } = await api("/api/admin/data");
     state.data = payload.data;
@@ -903,25 +1055,27 @@
 
   async function selectTab(tabId) {
     const currentTab = document.querySelector("[data-tab].is-active")?.dataset.tab;
-    if (currentTab === "settings" && tabId !== "settings" && isFormDirty(hiddenSettingsForm)) {
-      if (!(await confirmAction("放弃未保存修改", "新世界设置还没有保存，确定离开这个页面吗？"))) return;
+    if (currentTab === "settings" && tabId !== "settings" && (isFormDirty(hiddenSettingsForm) || isFormDirty(announcementForm))) {
+      if (!(await confirmAction("放弃未保存修改", "设置页面还有内容没有保存，确定离开吗？"))) return;
       renderSettings();
     }
     document.querySelectorAll("[data-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.tab === tabId));
     document.querySelectorAll("[data-panel]").forEach((panel) => { panel.hidden = panel.dataset.panel !== tabId; });
     document.querySelector("[data-add-site]").hidden = tabId !== "sites";
+    document.querySelector("[data-batch-add]").hidden = tabId !== "sites";
     document.querySelector("[data-content-stats]").hidden = tabId === "analytics";
     const copy = {
       sites: ["SAKURA 控制台", "内容管理", "修改并发布后，前台会直接读取数据库中的最新内容。"],
-      analytics: ["匿名访问数据", "访问统计", "查看访问趋势、设备、来源，以及国家和大致地区。"],
+      analytics: ["匿名访问数据", "访问统计", "查看访问趋势、设备、来源、地区与卡片点击。"],
       categories: ["分类结构", "分类管理", "维护前台分类名称、图标、显示状态和排列顺序。"],
-      settings: ["数据与安全", "设置与备份", "管理新世界入口、数据库备份和部署状态。"],
-      history: ["后台审计", "修改记录", "查看最近的内容管理和访问统计设置操作。"]
+      settings: ["数据与安全", "设置与备份", "管理临时公告、新世界入口、数据库备份和部署状态。"],
+      history: ["版本与审计", "修改记录", "查看、恢复历史内容版本和最近的后台操作。"]
     }[tabId] || ["SAKURA 控制台", "内容管理", "管理网站内容。"];
     document.querySelector("[data-dashboard-eyebrow]").textContent = copy[0];
     document.querySelector("[data-dashboard-title]").textContent = copy[1];
     document.querySelector("[data-dashboard-description]").textContent = copy[2];
     if (tabId === "analytics") await loadAnalytics();
+    if (tabId === "history") await loadVersions();
   }
 
   function nextUniqueId(base, ignoredId = null) {
@@ -943,6 +1097,7 @@
     const idHelp = siteForm.querySelector("[data-id-help]");
     if (idHelp) idHelp.textContent = site && !duplicate ? "卡片 ID 创建后保持不变，不能修改。" : "根据名称或网址自动生成，可在保存前修改。";
     fields.status.value = site?.status || "published";
+    fields.maintenanceStatus.value = site?.maintenanceStatus || "normal";
     fields.location.value = site?.isHidden ? "hidden" : "public";
     fields.cardType.value = site?.urlLabel ? "dual" : "single";
     fields.addedAt.value = site?.addedAt || localDateValue();
@@ -986,6 +1141,7 @@
 
   function updateCardPreview() {
     const fields = siteForm.elements;
+    const preview = document.querySelector("[data-card-preview]");
     const hidden = fields.location.value === "hidden";
     const category = hidden ? null : categoryById(fields.category.value);
     document.querySelector("[data-preview-icon]").className = `fas ${hidden ? state.data.hiddenSection.icon || "fa-door-open" : category?.icon || "fa-link"}`;
@@ -993,6 +1149,7 @@
     document.querySelector("[data-preview-description]").textContent = fields.description.value.trim() || "卡片描述会显示在这里。";
     document.querySelector("[data-preview-category]").textContent = hidden ? state.data.hiddenSection.name || "新世界" : category?.name || "所属分类";
     document.querySelector("[data-description-count]").textContent = String(fields.description.value.length);
+    preview?.classList.toggle("is-unavailable", fields.maintenanceStatus.value === "unavailable");
     const actions = document.querySelector("[data-preview-actions]");
     actions.replaceChildren();
     if (fields.cardType.value === "dual") {
@@ -1039,7 +1196,8 @@
       keywords: fields.keywords.value.split(/[,，\n]/).map((value) => value.trim()).filter(Boolean),
       addedAt: hidden ? null : fields.addedAt.value,
       sortOrder: state.editingSiteId ? state.data.sites.find((site) => site.id === state.editingSiteId)?.sortOrder || 0 : 9999,
-      status: fields.status.value
+      status: fields.status.value,
+      maintenanceStatus: fields.maintenanceStatus.value
     };
   }
 
@@ -1079,6 +1237,109 @@
       await api("/api/admin/reorder", { method: "POST", body: { entity: "sites", ids: group.map((item) => item.id) } });
       await loadData();
     } catch (error) { if (!(await handleContentConflict(error))) showToast(error.message, true); }
+  }
+
+  function openBatchDialog() {
+    batchForm.reset();
+    state.batchSites = [];
+    document.querySelector("[data-batch-summary]").textContent = "尚未解析";
+    document.querySelector("[data-batch-submit]").disabled = true;
+    const preview = document.querySelector("[data-batch-preview]");
+    preview.replaceChildren();
+    const empty = createElement("div", "panel-empty compact-empty");
+    empty.append(icon("fa-layer-group"), createElement("strong", "", "等待解析卡片数据"));
+    preview.appendChild(empty);
+    batchDialog.showModal();
+    syncDialogScrollLock();
+    setFormBaseline(batchForm);
+    window.setTimeout(() => batchForm.elements.json.focus(), 0);
+  }
+
+  function parseBatchInput() {
+    let rows;
+    try { rows = JSON.parse(batchForm.elements.json.value); } catch (_) {
+      state.batchSites = [];
+      document.querySelector("[data-batch-summary]").textContent = "JSON 格式不正确";
+      document.querySelector("[data-batch-submit]").disabled = true;
+      showToast("批量数据不是有效的 JSON。", true);
+      return false;
+    }
+    try {
+      if (!Array.isArray(rows) || !rows.length) throw new Error("请提供至少一张卡片组成的 JSON 数组。");
+      if (rows.length > 50) throw new Error("每次最多批量添加 50 张卡片。");
+      const categoryIds = new Set(state.data.categories.map((category) => category.id));
+      const knownIds = new Set(state.data.sites.map((site) => site.id));
+      const knownNames = new Set(state.data.sites.map((site) => site.name.toLocaleLowerCase("zh-CN")));
+      const knownUrls = new Set(state.data.sites.flatMap((site) => [site.url, site.secondaryUrl].filter(Boolean)));
+      rows.forEach((row, index) => {
+        const number = index + 1;
+        if (!row || typeof row !== "object" || Array.isArray(row)) throw new Error(`第 ${number} 条必须是卡片对象。`);
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(row.id || ""))) throw new Error(`第 ${number} 条卡片 ID 不正确。`);
+        if (!String(row.name || "").trim() || !String(row.description || "").trim()) throw new Error(`第 ${number} 条缺少名称或描述。`);
+        if (!row.isHidden && !categoryIds.has(row.category)) throw new Error(`第 ${number} 条所属分类不存在。`);
+        const urls = [row.url, row.secondaryUrl].filter(Boolean);
+        urls.forEach((value) => {
+          let parsed;
+          try { parsed = new URL(value); } catch (_) { throw new Error(`第 ${number} 条链接格式不正确。`); }
+          if (!new Set(["http:", "https:"]).has(parsed.protocol)) throw new Error(`第 ${number} 条链接必须使用 HTTP(S)。`);
+        });
+        if ((row.secondaryUrl && !row.secondaryUrlLabel) || (!row.secondaryUrl && row.secondaryUrlLabel)) throw new Error(`第 ${number} 条第二按钮名称和链接必须同时填写。`);
+        const nameKey = String(row.name).trim().toLocaleLowerCase("zh-CN");
+        if (knownIds.has(row.id) || knownNames.has(nameKey)) throw new Error(`第 ${number} 条 ID 或名称与现有卡片重复。`);
+        if (urls.some((url) => knownUrls.has(url))) throw new Error(`第 ${number} 条链接与现有卡片重复。`);
+        knownIds.add(row.id);
+        knownNames.add(nameKey);
+        urls.forEach((url) => knownUrls.add(url));
+      });
+    } catch (error) {
+      state.batchSites = [];
+      document.querySelector("[data-batch-summary]").textContent = error.message;
+      document.querySelector("[data-batch-submit]").disabled = true;
+      showToast(error.message, true);
+      return false;
+    }
+    state.batchSites = rows;
+    document.querySelector("[data-batch-summary]").textContent = `已解析 ${rows.length} 张卡片`;
+    document.querySelector("[data-batch-submit]").disabled = false;
+    const preview = document.querySelector("[data-batch-preview]");
+    const tableWrap = createElement("div", "table-wrap");
+    const table = createElement("table", "data-table batch-preview-table");
+    const head = document.createElement("thead");
+    head.innerHTML = "<tr><th>卡片</th><th>位置 / 分类</th><th>按钮</th><th>状态</th></tr>";
+    const body = document.createElement("tbody");
+    rows.forEach((site) => {
+      const row = document.createElement("tr");
+      const card = document.createElement("td");
+      const copy = createElement("div", "site-cell-copy");
+      copy.append(createElement("strong", "", site.name), createElement("span", "", site.id));
+      card.appendChild(copy);
+      const category = createElement("td", "", site.isHidden ? state.data.hiddenSection.name || "新世界" : categoryById(site.category)?.name || site.category);
+      category.dataset.label = "位置";
+      const buttons = createElement("td", "", site.secondaryUrl ? "双按钮" : "单按钮");
+      buttons.dataset.label = "按钮";
+      const status = createElement("td", "", `${site.status === "draft" ? "草稿" : "发布"} · ${{ review: "待复查", unavailable: "临时失效" }[site.maintenanceStatus] || "正常"}`);
+      status.dataset.label = "状态";
+      row.append(card, category, buttons, status);
+      body.appendChild(row);
+    });
+    table.append(head, body);
+    tableWrap.appendChild(table);
+    preview.replaceChildren(tableWrap);
+    return true;
+  }
+
+  async function saveBatchSites(event) {
+    event.preventDefault();
+    if (!parseBatchInput()) return;
+    setFormBusy(batchForm, true);
+    try {
+      const { payload } = await api("/api/admin/sites/batch", { method: "POST", body: { sites: state.batchSites } });
+      setFormBaseline(batchForm);
+      batchDialog.close();
+      await loadData();
+      showToast(`已批量添加 ${payload.created} 张卡片。`);
+    } catch (error) { if (!(await handleContentConflict(error, "batch"))) showToast(error.message, true); }
+    finally { setFormBusy(batchForm, false); }
   }
 
   function nextCategoryId(base) {
@@ -1190,6 +1451,35 @@
     finally { setFormBusy(form, false); }
   }
 
+  function renderAnnouncementPreview() {
+    const text = announcementForm.elements.text.value.trim();
+    document.querySelector("[data-announcement-count]").textContent = String(announcementForm.elements.text.value.length);
+    const preview = document.querySelector("[data-announcement-preview]");
+    preview.querySelector("span").textContent = text || "公告预览会显示在这里。";
+    preview.classList.toggle("is-empty", !text);
+  }
+
+  async function saveAnnouncement(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const startsAt = dateTimeIsoValue(form.elements.startsAt.value);
+    const endsAt = dateTimeIsoValue(form.elements.endsAt.value);
+    if (form.elements.startsAt.value && !startsAt) { showToast("公告开始时间不正确。", true); return; }
+    if (form.elements.endsAt.value && !endsAt) { showToast("公告结束时间不正确。", true); return; }
+    setFormBusy(form, true);
+    try {
+      await api("/api/admin/announcement", { method: "PUT", body: {
+        text: form.elements.text.value,
+        enabled: form.elements.enabled.checked,
+        startsAt,
+        endsAt
+      } });
+      await loadData();
+      showToast(form.elements.enabled.checked ? "临时公告已保存并启用。" : "临时公告已保存，当前未启用。");
+    } catch (error) { if (!(await handleContentConflict(error, "announcement"))) showToast(error.message, true); }
+    finally { setFormBusy(form, false); }
+  }
+
   async function exportBackup(successMessage = "备份已导出。 ") {
     try {
       const response = await fetch("/api/admin/export", { credentials: "same-origin", headers: { Accept: "application/json" } });
@@ -1223,7 +1513,7 @@
     if (file.size > 1024 * 1024) { showToast("备份文件不能超过 1 MB。", true); return; }
     let backup;
     try { backup = JSON.parse(await file.text()); } catch (_) { showToast("选择的文件不是有效 JSON。", true); return; }
-    if (!(await confirmAction("导入备份", "系统会先下载当前数据备份，再替换全部分类、卡片和新世界设置。确定继续吗？"))) return;
+    if (!(await confirmAction("导入备份", "系统会先下载当前数据备份，再替换全部分类、卡片、新世界设置和备份内的公告。确定继续吗？"))) return;
     if (!(await exportBackup("导入前的当前数据已自动备份。"))) {
       showToast("当前数据未能备份，已取消导入。", true);
       return;
@@ -1268,21 +1558,29 @@
   setupAdminThemeControls();
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => selectTab(button.dataset.tab)));
   document.querySelector("[data-add-site]")?.addEventListener("click", () => openSiteDialog());
+  document.querySelector("[data-batch-add]")?.addEventListener("click", openBatchDialog);
   document.querySelector("[data-add-category]")?.addEventListener("click", () => openCategoryDialog());
   document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => requestDialogClose(button.closest("dialog"))));
-  ["data-site-search", "data-site-category-filter", "data-site-visibility-filter", "data-site-status-filter"].forEach((attribute) => {
+  ["data-site-search", "data-site-category-filter", "data-site-visibility-filter", "data-site-status-filter", "data-site-maintenance-filter"].forEach((attribute) => {
     const control = document.querySelector(`[${attribute}]`);
     control?.addEventListener(control.matches("input") ? "input" : "change", renderSites);
   });
   siteForm?.addEventListener("submit", saveSite);
+  batchForm?.addEventListener("submit", saveBatchSites);
+  document.querySelector("[data-batch-parse]")?.addEventListener("click", parseBatchInput);
   categoryForm?.addEventListener("submit", saveCategory);
   hiddenSettingsForm?.addEventListener("submit", saveHiddenSettings);
+  announcementForm?.addEventListener("submit", saveAnnouncement);
+  announcementForm?.addEventListener("input", renderAnnouncementPreview);
   document.querySelector("[data-export]")?.addEventListener("click", () => exportBackup());
   document.querySelector("[data-import]")?.addEventListener("change", importBackup);
   document.querySelector("[data-analytics-range]")?.addEventListener("change", loadAnalytics);
   document.querySelector("[data-analytics-refresh]")?.addEventListener("click", loadAnalytics);
   document.querySelector("[data-analytics-enabled]")?.addEventListener("change", saveAnalyticsEnabled);
   document.querySelector("[data-analytics-clear]")?.addEventListener("click", clearAnalytics);
+  document.querySelector("[data-click-analytics-enabled]")?.addEventListener("change", saveClickAnalyticsEnabled);
+  document.querySelector("[data-click-analytics-clear]")?.addEventListener("click", clearClickAnalytics);
+  document.querySelector("[data-versions-refresh]")?.addEventListener("click", loadVersions);
 
   siteForm?.addEventListener("input", (event) => {
     const fields = siteForm.elements;
@@ -1311,14 +1609,14 @@
     ["input", "change"].forEach((eventName) => form.addEventListener(eventName, () => updateUnsavedIndicator(form)));
   });
 
-  [siteDialog, categoryDialog].forEach((dialog) => dialog?.addEventListener("click", (event) => {
+  [siteDialog, batchDialog, categoryDialog].forEach((dialog) => dialog?.addEventListener("click", (event) => {
     if (event.target === dialog) requestDialogClose(dialog);
   }));
-  [siteDialog, categoryDialog].forEach((dialog) => dialog?.addEventListener("cancel", (event) => {
+  [siteDialog, batchDialog, categoryDialog].forEach((dialog) => dialog?.addEventListener("cancel", (event) => {
     event.preventDefault();
     requestDialogClose(dialog);
   }));
-  [siteDialog, categoryDialog, confirmDialog].forEach((dialog) => dialog?.addEventListener("close", syncDialogScrollLock));
+  [siteDialog, batchDialog, categoryDialog, confirmDialog].forEach((dialog) => dialog?.addEventListener("close", syncDialogScrollLock));
   window.addEventListener("resize", schedulePreviewFitCheck);
   window.addEventListener("beforeunload", (event) => {
     if (!hasUnsavedChanges()) return;

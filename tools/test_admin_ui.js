@@ -46,6 +46,29 @@ test("admin analytics UI exposes responsive privacy, location and history views"
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.analytics-dashboard-grid \{ grid-template-columns: 1fr;/);
 });
 
+test("fifth-round admin UI exposes history restore, maintenance, batch, clicks and announcements", () => {
+  const html = fs.readFileSync(path.join(root, "admin", "index.html"), "utf8");
+  const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");
+  const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
+  [
+    "data-batch-add", "data-batch-dialog", "data-site-maintenance-filter", "name=\"maintenanceStatus\"",
+    "data-click-analytics-enabled", "data-click-top", "data-click-unvisited", "data-announcement-form",
+    "data-announcement-preview", "data-version-list", "data-versions-refresh"
+  ].forEach((token) => assert.ok(html.includes(token), token));
+  assert.match(application, /function parseBatchInput\(/);
+  assert.match(application, /api\("\/api\/admin\/sites\/batch"/);
+  assert.match(application, /\[siteDialog, batchDialog, categoryDialog, confirmDialog\]\.some/);
+  assert.match(application, /function saveAnnouncement\(/);
+  assert.match(application, /api\("\/api\/admin\/announcement"/);
+  assert.match(application, /function restoreVersion\(/);
+  assert.match(application, /\/api\/admin\/versions\/\$\{version\.id\}\/restore/);
+  assert.match(application, /\/api\/admin\/click-analytics/);
+  assert.match(css, /\.version-item\s*\{[^}]*grid-template-columns:/s);
+  assert.match(css, /@media \(max-width: 760px\)[\s\S]*?\.version-item\s*\{[^}]*grid-template-columns:/s);
+  assert.match(css, /\.batch-preview-table\s*\{[^}]*min-width:\s*620px;/s);
+  assert.match(css, /\.announcement-preview\s*\{[^}]*background:/s);
+});
+
 test("expired admin sessions preserve non-sensitive unsaved form drafts in the current tab", () => {
   const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
   assert.match(application, /const sessionDraftKey = "sakura-admin-session-draft-v1"/);

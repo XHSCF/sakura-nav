@@ -285,6 +285,8 @@
     const homeNavLink = document.querySelector("[data-home-nav]");
     const historyNavLink = document.querySelector("[data-history-nav]");
     const accessNotice = document.querySelector("[data-access-notice]");
+    const siteAnnouncement = document.querySelector("[data-site-announcement]");
+    const siteAnnouncementText = document.querySelector("[data-site-announcement-text]");
     const copyView = document.querySelector("[data-copy-view]");
     const copyViewLabel = document.querySelector("[data-copy-view-label]");
     const utilityStatus = document.querySelector("[data-utility-status]");
@@ -315,6 +317,10 @@
     const currentDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
     const normalSearchPlaceholder = search?.getAttribute("placeholder") || "";
     empty?.setAttribute("data-result-scroll-target", "empty");
+    if (siteAnnouncement && siteAnnouncementText && data.announcement?.text) {
+      siteAnnouncementText.textContent = data.announcement.text;
+      siteAnnouncement.hidden = false;
+    }
 
     const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
     if (shortcut) shortcut.textContent = /Mac|iPhone|iPad|iPod/i.test(platform) ? "⌘ K" : "Ctrl K";
@@ -454,6 +460,16 @@
       writeJsonStorage(recentVisitsKey, recentVisits);
     }
 
+    function reportSiteClick(siteId) {
+      fetch("./api/public/click", {
+        method: "POST",
+        credentials: "same-origin",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId })
+      }).catch(() => {});
+    }
+
     function matchesView(site) {
       if (state.view === "history") return recentVisits.some((entry) => entry.id === site.id);
       return true;
@@ -550,6 +566,8 @@
       article.classList.toggle("has-card-actions", hasCardActions);
       article.classList.toggle("has-single-action", cardActions.length === 1);
       article.classList.toggle("has-dual-links", dualLinkCard);
+      article.classList.toggle("is-under-review", site.maintenanceStatus === "review");
+      article.classList.toggle("is-unavailable", site.maintenanceStatus === "unavailable");
       markContentReveal(
         article,
         `card:${hiddenCard ? "hidden" : "normal"}:${site.id}`,
@@ -590,20 +608,32 @@
         newBadge.setAttribute("aria-label", "最近收录");
         meta.appendChild(newBadge);
       }
+      if (site.maintenanceStatus === "review" || site.maintenanceStatus === "unavailable") {
+        const maintenanceBadge = document.createElement("span");
+        maintenanceBadge.className = `site-card-maintenance is-${site.maintenanceStatus}`;
+        maintenanceBadge.textContent = site.maintenanceStatus === "review" ? "待复查" : "临时失效";
+        meta.appendChild(maintenanceBadge);
+      }
       copy.append(title, description);
       if (meta.childElementCount) copy.appendChild(meta);
       if (hasCardActions) {
         const actions = document.createElement("div");
         actions.className = "site-card-actions";
         cardActions.forEach((action) => {
-          const actionLink = document.createElement("a");
+          const actionLink = document.createElement(site.maintenanceStatus === "unavailable" ? "span" : "a");
           actionLink.className = "site-card-action";
-          actionLink.href = action.url;
-          actionLink.target = "_blank";
-          actionLink.rel = "noopener noreferrer";
           actionLink.textContent = action.label;
-          actionLink.setAttribute("aria-label", `通过${action.label}打开 ${site.name}`);
-          if (!hiddenCard) actionLink.addEventListener("click", () => trackVisit(site.id));
+          if (site.maintenanceStatus === "unavailable") {
+            actionLink.classList.add("is-disabled");
+            actionLink.setAttribute("aria-disabled", "true");
+            actionLink.setAttribute("title", "该链接当前临时失效");
+          } else {
+            actionLink.href = action.url;
+            actionLink.target = "_blank";
+            actionLink.rel = "noopener noreferrer";
+            actionLink.setAttribute("aria-label", `通过${action.label}打开 ${site.name}`);
+            if (!hiddenCard) actionLink.addEventListener("click", () => { trackVisit(site.id); reportSiteClick(site.id); });
+          }
           actions.appendChild(actionLink);
         });
         copy.appendChild(actions);
@@ -643,10 +673,12 @@
     function openKeyboardSelection() {
       const cards = Array.from(activeCardRoot()?.querySelectorAll(".site-card") || []);
       const card = cards[selectedCardIndex];
-      const firstAction = card?.querySelector(".site-card-action");
+      const firstAction = card?.querySelector(".site-card-action:not(.is-disabled)");
       if (firstAction) {
         firstAction.focus();
         announceUtility(`已聚焦 ${firstAction.textContent} 按钮，按 Enter 打开`);
+      } else if (card) {
+        announceUtility("这张卡片当前临时失效，暂时无法打开");
       }
     }
 

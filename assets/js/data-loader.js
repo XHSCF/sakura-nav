@@ -17,6 +17,7 @@
         welcome: hidden.welcome || "欢迎踏入新世界的大门",
         enabled: false
       }),
+      announcement: null,
       source: "snapshot"
     });
   }
@@ -44,6 +45,7 @@
         categories: remote.categories,
         sites: remote.sites,
         hiddenSection: remote.hiddenSection && typeof remote.hiddenSection === "object" ? remote.hiddenSection : fallback.hiddenSection,
+        announcement: remote.announcement && typeof remote.announcement.text === "string" ? { text: remote.announcement.text } : null,
         source: "database"
       });
       return window.SAKURA_DATA;

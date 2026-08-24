@@ -228,9 +228,9 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const initialData = (await dataResponse.json()).data;
   assert.ok(initialData.categories.length > 0);
   assert.ok(initialData.sites.length > 0);
-  assert.equal(initialData.revision, 0);
-  assert.equal(initialData.systemStatus.schemaVersion, 6);
-  assert.equal(initialData.systemStatus.contentRevision, 0);
+  assert.equal(initialData.revision, 1);
+  assert.equal(initialData.systemStatus.schemaVersion, 7);
+  assert.equal(initialData.systemStatus.contentRevision, 1);
   assert.equal(initialData.systemStatus.siteCount, initialData.sites.length);
   assert.equal(initialData.systemStatus.categoryCount, initialData.categories.length);
   assert.equal(initialData.systemStatus.siteLimit, 500);
@@ -285,7 +285,7 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(invalidCategoryRouteResponse.status, 404);
   const createResponse = await module.default.fetch(request("/api/admin/sites", { method: "POST", body: newSite, cookie, csrf: login.csrf, revision: initialData.revision }), env);
   assert.equal(createResponse.status, 201);
-  assert.equal((await createResponse.clone().json()).revision, 1);
+  assert.equal((await createResponse.clone().json()).revision, initialData.revision + 1);
 
   const staleSite = { ...newSite, id: "stale-admin-site", name: "过期标签页卡片", url: "https://example.test/stale-card" };
   const staleResponse = await module.default.fetch(request("/api/admin/sites", {
@@ -295,7 +295,7 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal((await staleResponse.json()).code, "CONTENT_CONFLICT");
 
   const currentAdminData = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
-  assert.equal(currentAdminData.revision, 1);
+  assert.equal(currentAdminData.revision, initialData.revision + 1);
   assert.ok(!currentAdminData.sites.some((site) => site.id === staleSite.id));
 
   const missingRevisionResponse = await module.default.fetch(request("/api/admin/sites", {
@@ -315,7 +315,7 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     revision: currentAdminData.revision
   }), env);
   assert.equal(hiddenSettingsResponse.status, 200);
-  assert.equal((await hiddenSettingsResponse.json()).revision, 2);
+  assert.equal((await hiddenSettingsResponse.json()).revision, initialData.revision + 2);
 
   const categoryIds = [...currentAdminData.categories].sort((left, right) => left.sortOrder - right.sortOrder).map((category) => category.id);
   const reorderResponse = await module.default.fetch(request("/api/admin/reorder", {
@@ -323,19 +323,19 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     body: { entity: "categories", ids: categoryIds },
     cookie,
     csrf: login.csrf,
-    revision: 2
+    revision: initialData.revision + 2
   }), env);
   assert.equal(reorderResponse.status, 200);
-  assert.equal((await reorderResponse.json()).revision, 3);
+  assert.equal((await reorderResponse.json()).revision, initialData.revision + 3);
 
   const exportedBackupResponse = await module.default.fetch(request("/api/admin/export", { cookie }), env);
   assert.equal(exportedBackupResponse.status, 200);
   const exportedBackup = await exportedBackupResponse.json();
   const importResponse = await module.default.fetch(request("/api/admin/import", {
-    method: "POST", body: exportedBackup, cookie, csrf: login.csrf, revision: 3
+    method: "POST", body: exportedBackup, cookie, csrf: login.csrf, revision: initialData.revision + 3
   }), env);
   assert.equal(importResponse.status, 200);
-  assert.equal((await importResponse.json()).revision, 4);
+  assert.equal((await importResponse.json()).revision, initialData.revision + 4);
 
   const publicResponse = await module.default.fetch(request("/api/public/data"), env);
   assert.equal(publicResponse.status, 200);
@@ -422,11 +422,107 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(Number(analyticsAfterClear.summary.page_views), 0);
 
   const deleteResponse = await module.default.fetch(request(`/api/admin/sites/${newSite.id}`, {
-    method: "DELETE", cookie, csrf: login.csrf, revision: 4
+    method: "DELETE", cookie, csrf: login.csrf, revision: initialData.revision + 4
   }), env);
   assert.equal(deleteResponse.status, 200);
   const publicAfterDelete = (await (await module.default.fetch(request("/api/public/data"), env)).json()).data;
   assert.ok(!publicAfterDelete.sites.some((site) => site.id === newSite.id));
+});
+
+test("fifth-round history, maintenance, batch, click analytics and announcement flows are atomic", async () => {
+  const module = await workerPromise;
+  const env = {
+    DB: new TestD1Database(),
+    ASSETS: { fetch: async () => new Response("asset") },
+    ADMIN_USERNAME: "admin",
+    ADMIN_PASSWORD: "correct horse battery staple",
+    ADMIN_SESSION_SECRET: "a-test-session-secret-that-is-longer-than-32-characters",
+    PUBLIC_CLICK_LIMIT_PER_MINUTE: "60"
+  };
+  const loginResponse = await module.default.fetch(request("/api/admin/login", {
+    method: "POST", body: { username: "admin", password: "correct horse battery staple" }
+  }), env);
+  const login = await loginResponse.json();
+  const cookie = loginResponse.headers.get("Set-Cookie").split(";", 1)[0];
+  const initial = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
+  const originalPassphrase = initial.hiddenSection.passphrase;
+  const batchSites = [
+    {
+      id: "batch-review", name: "批量待复查", description: "用于测试批量添加。", category: "tools",
+      url: "https://example.test/batch-review", addedAt: "2026-08-25", status: "published", maintenanceStatus: "review"
+    },
+    {
+      id: "batch-unavailable", name: "批量临时失效", description: "用于测试维护状态。", category: "tools",
+      url: "https://example.test/batch-unavailable", addedAt: "2026-08-25", status: "published", maintenanceStatus: "unavailable"
+    }
+  ];
+  const batchResponse = await module.default.fetch(request("/api/admin/sites/batch", {
+    method: "POST", body: { sites: batchSites }, cookie, csrf: login.csrf, revision: initial.revision
+  }), env);
+  assert.equal(batchResponse.status, 201);
+  assert.equal((await batchResponse.json()).created, 2);
+
+  const duplicateBatch = await module.default.fetch(request("/api/admin/sites/batch", {
+    method: "POST",
+    body: { sites: [{ ...batchSites[0], id: "batch-third", name: "另一张卡片" }] },
+    cookie,
+    csrf: login.csrf,
+    revision: initial.revision + 1
+  }), env);
+  assert.equal(duplicateBatch.status, 409);
+  assert.equal(await env.DB.prepare("SELECT COUNT(*) AS count FROM sites WHERE id='batch-third'").first("count"), 0);
+
+  let publicData = (await (await module.default.fetch(request("/api/public/data"), env)).json()).data;
+  assert.equal(publicData.sites.find((site) => site.id === "batch-review").maintenanceStatus, "review");
+  assert.equal(publicData.sites.find((site) => site.id === "batch-unavailable").maintenanceStatus, "unavailable");
+  assert.equal(publicData.announcement, null);
+
+  assert.equal((await module.default.fetch(request("/api/public/click", { method: "POST", body: { siteId: "batch-review" } }), env)).status, 204);
+  assert.equal((await module.default.fetch(request("/api/public/click", { method: "POST", body: { siteId: "batch-unavailable" } }), env)).status, 204);
+  const analytics = (await (await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env)).json()).data;
+  assert.equal(analytics.clickAnalytics.total, 1);
+  assert.equal(analytics.clickAnalytics.top[0].site_id, "batch-review");
+  assert.equal(await env.DB.prepare("SELECT COALESCE(SUM(clicks), 0) AS clicks FROM site_click_daily WHERE site_id='batch-unavailable'").first("clicks"), 0);
+
+  const announcementResponse = await module.default.fetch(request("/api/admin/announcement", {
+    method: "PUT",
+    body: { text: "今晚进行短时维护。", enabled: true, startsAt: "", endsAt: "" },
+    cookie,
+    csrf: login.csrf,
+    revision: initial.revision + 1
+  }), env);
+  assert.equal(announcementResponse.status, 200);
+  publicData = (await (await module.default.fetch(request("/api/public/data"), env)).json()).data;
+  assert.deepEqual(publicData.announcement, { text: "今晚进行短时维护。" });
+
+  const expiredAnnouncementResponse = await module.default.fetch(request("/api/admin/announcement", {
+    method: "PUT",
+    body: { text: "已经结束的公告。", enabled: true, startsAt: "2019-01-01T00:00:00.000Z", endsAt: "2020-01-01T00:00:00.000Z" },
+    cookie,
+    csrf: login.csrf,
+    revision: initial.revision + 2
+  }), env);
+  assert.equal(expiredAnnouncementResponse.status, 200);
+  publicData = (await (await module.default.fetch(request("/api/public/data"), env)).json()).data;
+  assert.equal(publicData.announcement, null);
+
+  const versionsResponse = await module.default.fetch(request("/api/admin/versions", { cookie }), env);
+  assert.equal(versionsResponse.status, 200);
+  const versions = (await versionsResponse.json()).data.versions;
+  assert.ok(versions.some((version) => version.summary.includes("批量添加")));
+  const originalVersion = versions.find((version) => Number(version.revision) === initial.revision);
+  assert.ok(originalVersion);
+  const storedSnapshots = await env.DB.prepare("SELECT snapshot_json FROM content_versions").all();
+  assert.equal(storedSnapshots.results.some((row) => row.snapshot_json.includes(originalPassphrase)), false);
+
+  const restoreResponse = await module.default.fetch(request(`/api/admin/versions/${originalVersion.id}/restore`, {
+    method: "POST", body: {}, cookie, csrf: login.csrf, revision: initial.revision + 3
+  }), env);
+  assert.equal(restoreResponse.status, 200);
+  const restoredAdmin = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
+  assert.equal(restoredAdmin.hiddenSection.passphrase, originalPassphrase);
+  assert.ok(!restoredAdmin.sites.some((site) => site.id === "batch-review"));
+  assert.equal(restoredAdmin.announcement.enabled, false);
 });
 
 test("scheduled maintenance removes expired operational rows without touching recent records", async () => {
@@ -448,6 +544,9 @@ test("scheduled maintenance removes expired operational rows without touching re
   assert.deepEqual(JSON.parse(await env.DB.prepare("SELECT value FROM settings WHERE key='maintenance_last_result'").first("value")), {
     visitorEvents: 1,
     auditLogs: 1,
-    loginAttempts: 1
+    loginAttempts: 1,
+    siteClicks: 0,
+    clickMinutes: 0,
+    contentVersions: 0
   });
 });

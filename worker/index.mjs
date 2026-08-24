@@ -7,15 +7,20 @@ const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ICON_PATTERN = /^fa-[a-z0-9-]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SITE_STATUSES = new Set(["draft", "published"]);
+const MAINTENANCE_STATUSES = new Set(["normal", "review", "unavailable"]);
 const ANALYTICS_RANGES = new Set([1, 7, 30, 90]);
 const ANALYTICS_RETENTION_DAYS = 90;
+const CLICK_ANALYTICS_RETENTION_DAYS = 90;
 const AUDIT_RETENTION_DAYS = 180;
 const CONTENT_REVISION_HEADER = "X-Sakura-Revision";
-const DATABASE_SCHEMA_VERSION = 6;
+const DATABASE_SCHEMA_VERSION = 7;
 const MAX_SITE_COUNT = 500;
 const MAX_CATEGORY_COUNT = 50;
+const MAX_BATCH_SITE_COUNT = 50;
+const CONTENT_VERSION_LIMIT = 20;
 const VISITOR_ID_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 const DEFAULT_PUBLIC_VISIT_LIMIT_PER_MINUTE = 240;
+const DEFAULT_PUBLIC_CLICK_LIMIT_PER_MINUTE = 600;
 const encoder = new TextEncoder();
 
 function apiHeaders(extra = {}) {
@@ -242,6 +247,32 @@ async function recordVisit(request, env, visit) {
     .bind(visitorHash, visit.path, visit.referrerHost, client.deviceType, client.browser, client.operatingSystem, geography.countryCode, geography.region, geography.city, minuteBucket, minuteBucket, visitLimit).run();
 }
 
+async function recordSiteClick(env, siteId) {
+  const [site, enabled] = await Promise.all([
+    env.DB.prepare("SELECT s.id FROM sites s JOIN categories c ON c.id=s.category_id WHERE s.id=? AND s.is_hidden=0 AND s.status='published' AND s.maintenance_status<>'unavailable' AND c.is_visible=1").bind(siteId).first(),
+    env.DB.prepare("SELECT value FROM settings WHERE key='click_analytics_enabled'").first("value")
+  ]);
+  if (!site || enabled === "0") return;
+  const now = new Date();
+  const minuteBucket = now.toISOString().slice(0, 16);
+  const beijingDay = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const configuredLimit = Number(env.PUBLIC_CLICK_LIMIT_PER_MINUTE);
+  const clickLimit = Number.isInteger(configuredLimit) && configuredLimit >= 60 && configuredLimit <= 3000
+    ? configuredLimit
+    : DEFAULT_PUBLIC_CLICK_LIMIT_PER_MINUTE;
+  try {
+    await env.DB.batch([
+      env.DB.prepare("INSERT OR REPLACE INTO site_click_guard(id, valid) VALUES (1, CASE WHEN COALESCE((SELECT clicks FROM site_click_minute WHERE minute_bucket=?), 0)<? THEN 1 ELSE 0 END)").bind(minuteBucket, clickLimit),
+      env.DB.prepare("INSERT INTO site_click_minute(minute_bucket, clicks) VALUES (?, 1) ON CONFLICT(minute_bucket) DO UPDATE SET clicks=clicks+1").bind(minuteBucket),
+      env.DB.prepare("INSERT INTO site_click_daily(site_id, day, clicks, updated_at) VALUES (?, ?, 1, CURRENT_TIMESTAMP) ON CONFLICT(site_id, day) DO UPDATE SET clicks=clicks+1, updated_at=CURRENT_TIMESTAMP").bind(siteId, beijingDay)
+    ], `添加卡片：${site.name}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/site_click_limit_must_match/i.test(message)) return;
+    throw error;
+  }
+}
+
 function sqliteTimestamp(value) {
   return new Date(value).toISOString().slice(0, 19).replace("T", " ");
 }
@@ -259,8 +290,9 @@ function analyticsRows(result) {
 async function analyticsData(env, requestedDays) {
   const days = ANALYTICS_RANGES.has(Number(requestedDays)) ? Number(requestedDays) : 7;
   const start = analyticsStartTimestamp(days);
+  const startDay = new Date(new Date(`${start.replace(" ", "T")}Z`).getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const results = await env.DB.batch([
-    env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('analytics_enabled', 'analytics_retention_days')"),
+    env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('analytics_enabled', 'analytics_retention_days', 'click_analytics_enabled', 'click_analytics_retention_days')"),
     env.DB.prepare("SELECT COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors, COUNT(DISTINCT path) AS pages, COUNT(DISTINCT CASE WHEN country_code IS NOT NULL THEN country_code END) AS countries FROM visitor_events WHERE occurred_at>=?").bind(start),
     env.DB.prepare("SELECT strftime('%Y-%m-%d', occurred_at, '+8 hours') AS day, COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors FROM visitor_events WHERE occurred_at>=? GROUP BY day ORDER BY day").bind(start),
     env.DB.prepare("SELECT device_type AS label, COUNT(*) AS page_views FROM visitor_events WHERE occurred_at>=? GROUP BY device_type ORDER BY page_views DESC").bind(start),
@@ -269,7 +301,10 @@ async function analyticsData(env, requestedDays) {
     env.DB.prepare("SELECT path AS label, COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors FROM visitor_events WHERE occurred_at>=? GROUP BY path ORDER BY page_views DESC LIMIT 12").bind(start),
     env.DB.prepare("SELECT COALESCE(referrer_host, '') AS label, COUNT(*) AS page_views FROM visitor_events WHERE occurred_at>=? GROUP BY referrer_host ORDER BY page_views DESC LIMIT 12").bind(start),
     env.DB.prepare("SELECT country_code, region, city, COUNT(*) AS page_views, COUNT(DISTINCT visitor_hash) AS visitors FROM visitor_events WHERE occurred_at>=? GROUP BY country_code, region, city ORDER BY page_views DESC LIMIT 50").bind(start),
-    env.DB.prepare("SELECT id, path, referrer_host, device_type, browser, operating_system, country_code, region, city, occurred_at FROM visitor_events WHERE occurred_at>=? ORDER BY id DESC LIMIT 50").bind(start)
+    env.DB.prepare("SELECT id, path, referrer_host, device_type, browser, operating_system, country_code, region, city, occurred_at FROM visitor_events WHERE occurred_at>=? ORDER BY id DESC LIMIT 50").bind(start),
+    env.DB.prepare("SELECT COALESCE(SUM(clicks), 0) AS clicks FROM site_click_daily WHERE day>=?").bind(startDay),
+    env.DB.prepare("SELECT s.id AS site_id, s.name, COALESCE(SUM(c.clicks), 0) AS clicks FROM sites s LEFT JOIN site_click_daily c ON c.site_id=s.id AND c.day>=? WHERE s.is_hidden=0 AND s.status='published' GROUP BY s.id, s.name HAVING clicks>0 ORDER BY clicks DESC, s.name LIMIT 20").bind(startDay),
+    env.DB.prepare("SELECT s.id AS site_id, s.name FROM sites s WHERE s.is_hidden=0 AND s.status='published' AND NOT EXISTS (SELECT 1 FROM site_click_daily c WHERE c.site_id=s.id AND c.day>=? AND c.clicks>0) ORDER BY s.sort_order, s.name LIMIT 20").bind(startDay)
   ]);
   const settings = Object.fromEntries(analyticsRows(results[0]).map((row) => [row.key, row.value]));
   return {
@@ -284,31 +319,52 @@ async function analyticsData(env, requestedDays) {
     pages: analyticsRows(results[6]),
     sources: analyticsRows(results[7]),
     locations: analyticsRows(results[8]),
-    recent: analyticsRows(results[9])
+    recent: analyticsRows(results[9]),
+    clickAnalytics: {
+      enabled: settings.click_analytics_enabled !== "0",
+      retentionDays: Number(settings.click_analytics_retention_days) || CLICK_ANALYTICS_RETENTION_DAYS,
+      total: Number(analyticsRows(results[10])[0]?.clicks || 0),
+      top: analyticsRows(results[11]),
+      unvisited: analyticsRows(results[12])
+    }
   };
 }
 
 async function deleteExpiredOperationalData(env) {
-  const result = await env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('analytics_retention_days', 'audit_retention_days')").all();
+  const result = await env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('analytics_retention_days', 'audit_retention_days', 'click_analytics_retention_days', 'content_version_limit')").all();
   const settings = Object.fromEntries((result.results || []).map((row) => [row.key, row.value]));
   const configuredAnalytics = Number(settings.analytics_retention_days);
   const configuredAudit = Number(settings.audit_retention_days);
+  const configuredClicks = Number(settings.click_analytics_retention_days);
+  const configuredVersions = Number(settings.content_version_limit);
   const analyticsDays = Number.isInteger(configuredAnalytics) && configuredAnalytics >= 30 && configuredAnalytics <= 365
     ? configuredAnalytics
     : ANALYTICS_RETENTION_DAYS;
   const auditDays = Number.isInteger(configuredAudit) && configuredAudit >= 30 && configuredAudit <= 730
     ? configuredAudit
     : AUDIT_RETENTION_DAYS;
+  const clickDays = Number.isInteger(configuredClicks) && configuredClicks >= 30 && configuredClicks <= 365
+    ? configuredClicks
+    : CLICK_ANALYTICS_RETENTION_DAYS;
+  const versionLimit = Number.isInteger(configuredVersions) && configuredVersions >= 5 && configuredVersions <= 50
+    ? configuredVersions
+    : CONTENT_VERSION_LIMIT;
   const cleanupResults = await env.DB.batch([
     env.DB.prepare("DELETE FROM visitor_events WHERE occurred_at<?").bind(sqliteTimestamp(Date.now() - analyticsDays * 24 * 60 * 60 * 1000)),
     env.DB.prepare("DELETE FROM audit_logs WHERE created_at<?").bind(sqliteTimestamp(Date.now() - auditDays * 24 * 60 * 60 * 1000)),
-    env.DB.prepare("DELETE FROM login_attempts WHERE window_started<?").bind(Math.floor(Date.now() / 1000) - LOGIN_WINDOW_SECONDS)
+    env.DB.prepare("DELETE FROM login_attempts WHERE window_started<?").bind(Math.floor(Date.now() / 1000) - LOGIN_WINDOW_SECONDS),
+    env.DB.prepare("DELETE FROM site_click_daily WHERE day<?").bind(new Date(Date.now() + 8 * 60 * 60 * 1000 - clickDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)),
+    env.DB.prepare("DELETE FROM site_click_minute WHERE minute_bucket<?").bind(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)),
+    env.DB.prepare("DELETE FROM content_versions WHERE id NOT IN (SELECT id FROM content_versions ORDER BY id DESC LIMIT ?)").bind(versionLimit)
   ]);
   const completedAt = new Date().toISOString();
   const summary = {
     visitorEvents: Number(cleanupResults[0]?.meta?.changes || 0),
     auditLogs: Number(cleanupResults[1]?.meta?.changes || 0),
-    loginAttempts: Number(cleanupResults[2]?.meta?.changes || 0)
+    loginAttempts: Number(cleanupResults[2]?.meta?.changes || 0),
+    siteClicks: Number(cleanupResults[3]?.meta?.changes || 0),
+    clickMinutes: Number(cleanupResults[4]?.meta?.changes || 0),
+    contentVersions: Number(cleanupResults[5]?.meta?.changes || 0)
   };
   await env.DB.batch([
     env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES ('maintenance_last_run_at', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(completedAt),
@@ -346,6 +402,8 @@ export function validateSitePayload(payload, categoryIds = new Set()) {
   if (secondaryUrlLabel && secondaryUrlLabel === urlLabel) throw new ApiError("两个按钮不能使用相同名称。");
   const status = payload?.status ?? "published";
   if (!SITE_STATUSES.has(status)) throw new ApiError("发布状态不正确。");
+  const maintenanceStatus = payload?.maintenanceStatus ?? "normal";
+  if (!MAINTENANCE_STATUSES.has(maintenanceStatus)) throw new ApiError("维护状态不正确。");
   return {
     id: validateId(payload?.id, "卡片 ID"),
     name: requireString(payload?.name, "卡片名称", 60),
@@ -359,7 +417,8 @@ export function validateSitePayload(payload, categoryIds = new Set()) {
     keywords: validateKeywords(payload?.keywords),
     addedAt: validateDate(payload?.addedAt, hidden),
     sortOrder: Number.isInteger(Number(payload?.sortOrder)) ? Number(payload.sortOrder) : 0,
-    status
+    status,
+    maintenanceStatus
   };
 }
 
@@ -380,6 +439,7 @@ function rowToSite(row) {
     site.secondaryUrlLabel = row.secondary_label;
   }
   if (!row.is_hidden && row.added_at) site.addedAt = row.added_at;
+  if (row.maintenance_status && row.maintenance_status !== "normal") site.maintenanceStatus = row.maintenance_status;
   return site;
 }
 
@@ -410,6 +470,7 @@ async function listSites(env, { admin = false, hidden = null } = {}) {
     isHidden: Boolean(row.is_hidden),
     sortOrder: row.sort_order,
     status: row.status,
+    maintenanceStatus: row.maintenance_status || "normal",
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }));
@@ -448,14 +509,78 @@ function contentConflict() {
   return new ApiError("内容已在另一个标签页或设备中更新。当前修改仍保留，请重新打开后台数据后再保存。", 409, "CONTENT_CONFLICT");
 }
 
-async function runContentMutation(request, env, statements) {
+function announcementForAdmin(settings) {
+  return {
+    text: settings.announcement_text || "",
+    enabled: settings.announcement_enabled === "1",
+    startsAt: settings.announcement_starts_at || "",
+    endsAt: settings.announcement_ends_at || ""
+  };
+}
+
+function validateAnnouncementPayload(payload) {
+  const text = optionalString(payload?.text, 240) || "";
+  const enabled = payload?.enabled === true;
+  const parseTime = (value, label) => {
+    const source = cleanText(value);
+    if (!source) return "";
+    const date = new Date(source);
+    if (Number.isNaN(date.getTime())) throw new ApiError(`${label}格式不正确。`);
+    return date.toISOString();
+  };
+  const startsAt = parseTime(payload?.startsAt, "公告开始时间");
+  const endsAt = parseTime(payload?.endsAt, "公告结束时间");
+  if (enabled && !text) throw new ApiError("启用公告前请填写公告内容。");
+  if (startsAt && endsAt && new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
+    throw new ApiError("公告结束时间必须晚于开始时间。");
+  }
+  return { text, enabled, startsAt, endsAt };
+}
+
+function activeAnnouncement(settings, now = Date.now()) {
+  const announcement = announcementForAdmin(settings);
+  if (!announcement.enabled || !announcement.text) return null;
+  const startsAt = announcement.startsAt ? new Date(announcement.startsAt).getTime() : null;
+  const endsAt = announcement.endsAt ? new Date(announcement.endsAt).getTime() : null;
+  if ((startsAt !== null && (!Number.isFinite(startsAt) || now < startsAt))
+    || (endsAt !== null && (!Number.isFinite(endsAt) || now >= endsAt))) return null;
+  return { text: announcement.text };
+}
+
+async function contentSnapshot(env) {
+  const [categories, sites, settings] = await Promise.all([
+    listCategories(env, true),
+    listSites(env, { admin: true }),
+    readSettings(env)
+  ]);
+  const revision = Number(settings.content_revision);
+  return {
+    revision,
+    data: {
+      version: 1,
+      categories,
+      sites: sites.map(({ createdAt, updatedAt, ...site }) => site),
+      hiddenSection: (() => {
+        const { passphrase, ...safe } = hiddenSettingsForAdmin(settings);
+        return safe;
+      })(),
+      announcement: announcementForAdmin(settings)
+    }
+  };
+}
+
+async function runContentMutation(request, env, statements, summary = "内容更新") {
   const expected = expectedContentRevision(request);
-  if (await currentContentRevision(env) !== expected) throw contentConflict();
+  const snapshot = await contentSnapshot(env);
+  if (!Number.isSafeInteger(snapshot.revision) || snapshot.revision !== expected) throw contentConflict();
   const guard = env.DB.prepare("INSERT OR REPLACE INTO content_revision_guard(id, valid) VALUES (1, COALESCE((SELECT CASE WHEN CAST(value AS INTEGER)=? THEN 1 ELSE 0 END FROM settings WHERE key='content_revision'), 0))")
     .bind(expected);
+  const version = env.DB.prepare("INSERT INTO content_versions(revision, summary, snapshot_json) VALUES (?, ?, ?)")
+    .bind(expected, requireString(summary, "版本说明", 120), JSON.stringify(snapshot.data));
+  const trimVersions = env.DB.prepare(`DELETE FROM content_versions WHERE id NOT IN (SELECT id FROM content_versions ORDER BY id DESC LIMIT ${CONTENT_VERSION_LIMIT})`);
   const bump = env.DB.prepare("UPDATE settings SET value=CAST(value AS INTEGER)+1, updated_at=CURRENT_TIMESTAMP WHERE key='content_revision'");
   try {
-    await env.DB.batch([guard, ...statements, bump]);
+    await env.DB.batch([guard, version, ...statements, bump, trimVersions]);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (/content_revision_(?:must_match|guard)/i.test(message)) throw contentConflict();
@@ -498,6 +623,7 @@ async function publicData(env) {
     categories: categories.map(({ sortOrder, isVisible, ...category }) => category),
     sites: sites.filter((site) => visibleIds.has(site.category)).map(({ isHidden, sortOrder, status, createdAt, updatedAt, ...site }) => site),
     hiddenSection: await hiddenSettingsForPublic(settings),
+    announcement: activeAnnouncement(settings),
     source: "database"
   };
 }
@@ -527,13 +653,13 @@ function siteStatement(env, site, update = false, originalId = site.id) {
   const values = [
     site.name, site.description, site.category, site.isHidden ? 1 : 0, site.url, site.urlLabel,
     site.secondaryUrl, site.secondaryUrlLabel, JSON.stringify(site.keywords), site.addedAt,
-    site.sortOrder, site.status
+    site.sortOrder, site.status, site.maintenanceStatus
   ];
   if (update) {
-    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
+    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, maintenance_status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
       .bind(...values, originalId);
   }
-  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status, maintenance_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .bind(site.id, ...values);
 }
 
@@ -659,7 +785,10 @@ async function adminData(env) {
       maintenanceResult = {
         visitorEvents: Number(parsed.visitorEvents) || 0,
         auditLogs: Number(parsed.auditLogs) || 0,
-        loginAttempts: Number(parsed.loginAttempts) || 0
+        loginAttempts: Number(parsed.loginAttempts) || 0,
+        siteClicks: Number(parsed.siteClicks) || 0,
+        clickMinutes: Number(parsed.clickMinutes) || 0,
+        contentVersions: Number(parsed.contentVersions) || 0
       };
     }
   } catch (_) {
@@ -671,6 +800,7 @@ async function adminData(env) {
     categories,
     sites,
     hiddenSection: hiddenSettingsForAdmin(settings),
+    announcement: announcementForAdmin(settings),
     revision,
     systemStatus: {
       schemaVersion: DATABASE_SCHEMA_VERSION,
@@ -680,6 +810,7 @@ async function adminData(env) {
       categoryCount: categories.length,
       categoryLimit: MAX_CATEGORY_COUNT,
       analyticsRetentionDays: Number.isInteger(configuredAnalyticsRetention) ? configuredAnalyticsRetention : ANALYTICS_RETENTION_DAYS,
+      clickAnalyticsRetentionDays: Number(settings.click_analytics_retention_days) || CLICK_ANALYTICS_RETENTION_DAYS,
       auditRetentionDays: Number.isInteger(configuredAuditRetention) ? configuredAuditRetention : AUDIT_RETENTION_DAYS,
       lastMaintenanceAt: settings.maintenance_last_run_at || null,
       lastMaintenanceResult: maintenanceResult
@@ -709,7 +840,7 @@ async function handleSiteMutation(request, env, pathname) {
     const revision = await runContentMutation(request, env, [
       siteStatement(env, site),
       auditStatement(env, "create", "site", site.id, { name: site.name })
-    ]);
+    ], `添加卡片：${site.name}`);
     return json({ ok: true, site, revision }, 201);
   }
   if (request.method === "PUT" && routeId) {
@@ -722,7 +853,7 @@ async function handleSiteMutation(request, env, pathname) {
     const revision = await runContentMutation(request, env, [
       siteStatement(env, site, true, routeId),
       auditStatement(env, "update", "site", routeId, { name: site.name })
-    ]);
+    ], `更新卡片：${site.name}`);
     return json({ ok: true, site, revision });
   }
   if (request.method === "DELETE" && routeId) {
@@ -731,10 +862,53 @@ async function handleSiteMutation(request, env, pathname) {
     const revision = await runContentMutation(request, env, [
       env.DB.prepare("DELETE FROM sites WHERE id=?").bind(routeId),
       auditStatement(env, "delete", "site", routeId, { name: existing.name })
-    ]);
+    ], `删除卡片：${existing.name}`);
     return json({ ok: true, revision });
   }
   return errorResponse("不支持的卡片操作。", 405, "METHOD_NOT_ALLOWED");
+}
+
+async function handleBatchSiteCreate(request, env) {
+  await requireAdmin(env, request, true);
+  if (request.method !== "POST") return errorResponse("批量添加只支持 POST 请求。", 405, "METHOD_NOT_ALLOWED");
+  const payload = await readJson(request, 512 * 1024);
+  if (!Array.isArray(payload?.sites) || !payload.sites.length) throw new ApiError("请至少提供一张卡片。", 400, "INVALID_BATCH");
+  if (payload.sites.length > MAX_BATCH_SITE_COUNT) throw new ApiError(`每次最多批量添加 ${MAX_BATCH_SITE_COUNT} 张卡片。`, 400, "BATCH_LIMIT_REACHED");
+  const [existingCount, categories, existingSites] = await Promise.all([
+    env.DB.prepare("SELECT COUNT(*) AS count FROM sites").first("count"),
+    listCategories(env, true),
+    listSites(env, { admin: true })
+  ]);
+  if (Number(existingCount) + payload.sites.length > MAX_SITE_COUNT) {
+    throw new ApiError(`添加后会超过 ${MAX_SITE_COUNT} 张卡片上限。`, 409, "SITE_LIMIT_REACHED");
+  }
+  const categoryIds = new Set(categories.map((category) => category.id));
+  const usedIds = new Set(existingSites.map((site) => site.id));
+  const usedNames = new Set(existingSites.map((site) => site.name.toLocaleLowerCase("zh-CN")));
+  const usedUrls = new Set(existingSites.flatMap((site) => [site.url, site.secondaryUrl].filter(Boolean)));
+  const sites = payload.sites.map((item, index) => {
+    let site;
+    try {
+      site = validateSitePayload({ ...item, sortOrder: Number.isInteger(Number(item?.sortOrder)) ? Number(item.sortOrder) : 9999 + index }, categoryIds);
+    } catch (error) {
+      if (error instanceof ApiError) throw new ApiError(`第 ${index + 1} 条：${error.message}`, error.status, error.code);
+      throw error;
+    }
+    const nameKey = site.name.toLocaleLowerCase("zh-CN");
+    if (usedIds.has(site.id)) throw new ApiError(`第 ${index + 1} 条：卡片 ID“${site.id}”已存在。`, 409, "DUPLICATE_SITE");
+    if (usedNames.has(nameKey)) throw new ApiError(`第 ${index + 1} 条：卡片名称“${site.name}”已存在。`, 409, "DUPLICATE_SITE");
+    const duplicateUrl = [site.url, site.secondaryUrl].filter(Boolean).find((url) => usedUrls.has(url));
+    if (duplicateUrl) throw new ApiError(`第 ${index + 1} 条：链接“${duplicateUrl}”已存在。`, 409, "DUPLICATE_SITE");
+    usedIds.add(site.id);
+    usedNames.add(nameKey);
+    [site.url, site.secondaryUrl].filter(Boolean).forEach((url) => usedUrls.add(url));
+    return site;
+  });
+  const revision = await runContentMutation(request, env, [
+    ...sites.map((site) => siteStatement(env, site)),
+    auditStatement(env, "batch-create", "site", "multiple", { count: sites.length, ids: sites.map((site) => site.id) })
+  ], `批量添加 ${sites.length} 张卡片`);
+  return json({ ok: true, created: sites.length, sites, revision }, 201);
 }
 
 async function handleCategoryMutation(request, env, pathname) {
@@ -750,7 +924,7 @@ async function handleCategoryMutation(request, env, pathname) {
       env.DB.prepare("INSERT INTO categories(id, name, icon, sort_order, is_visible) VALUES (?, ?, ?, ?, ?)")
         .bind(category.id, category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0),
       auditStatement(env, "create", "category", category.id, { name: category.name })
-    ]);
+    ], `添加分类：${category.name}`);
     return json({ ok: true, category, revision }, 201);
   }
   if (request.method === "PUT" && routeId) {
@@ -762,7 +936,7 @@ async function handleCategoryMutation(request, env, pathname) {
       env.DB.prepare("UPDATE categories SET name=?, icon=?, sort_order=?, is_visible=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
         .bind(category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0, routeId),
       auditStatement(env, "update", "category", routeId, { name: category.name })
-    ]);
+    ], `更新分类：${category.name}`);
     return json({ ok: true, category, revision });
   }
   if (request.method === "DELETE" && routeId) {
@@ -773,7 +947,7 @@ async function handleCategoryMutation(request, env, pathname) {
     const revision = await runContentMutation(request, env, [
       env.DB.prepare("DELETE FROM categories WHERE id=?").bind(routeId),
       auditStatement(env, "delete", "category", routeId)
-    ]);
+    ], `删除分类：${routeId}`);
     return json({ ok: true, revision });
   }
   return errorResponse("不支持的分类操作。", 405, "METHOD_NOT_ALLOWED");
@@ -795,8 +969,24 @@ async function handleHiddenSettings(request, env) {
   const revision = await runContentMutation(request, env, [
     ...statements,
     auditStatement(env, "update", "settings", "hidden-section", { name: settings.hidden_name })
-  ]);
+  ], `更新隐藏板块：${settings.hidden_name}`);
   return json({ ok: true, revision });
+}
+
+async function handleAnnouncementSettings(request, env) {
+  await requireAdmin(env, request, true);
+  const announcement = validateAnnouncementPayload(await readJson(request, 16 * 1024));
+  const values = {
+    announcement_text: announcement.text,
+    announcement_enabled: announcement.enabled ? "1" : "0",
+    announcement_starts_at: announcement.startsAt,
+    announcement_ends_at: announcement.endsAt
+  };
+  const revision = await runContentMutation(request, env, [
+    ...Object.entries(values).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
+    auditStatement(env, "update", "announcement", "current", { enabled: announcement.enabled, scheduled: Boolean(announcement.startsAt || announcement.endsAt) })
+  ], announcement.enabled ? "更新并启用临时公告" : "更新并停用临时公告");
+  return json({ ok: true, announcement, revision });
 }
 
 async function handleReorder(request, env) {
@@ -813,24 +1003,25 @@ async function handleReorder(request, env) {
   const revision = await runContentMutation(request, env, [
     ...ids.map((id, index) => env.DB.prepare(`UPDATE ${table} SET sort_order=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(index, id)),
     auditStatement(env, "reorder", entity === "sites" ? "site" : "category", "multiple", { count: ids.length })
-  ]);
+  ], entity === "sites" ? `调整 ${ids.length} 张卡片排序` : `调整 ${ids.length} 个分类排序`);
   return json({ ok: true, revision });
 }
 
 function backupFromAdminData(data) {
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     categories: data.categories,
     sites: data.sites.map(({ createdAt, updatedAt, ...site }) => site),
-    hiddenSection: data.hiddenSection
+    hiddenSection: data.hiddenSection,
+    announcement: data.announcement
   };
 }
 
 async function handleImport(request, env) {
   await requireAdmin(env, request, true);
   const payload = await readJson(request, 1024 * 1024);
-  if (payload?.version !== 1 || !Array.isArray(payload.categories) || !Array.isArray(payload.sites)) throw new ApiError("备份文件格式不正确。 ");
+  if (![1, 2].includes(payload?.version) || !Array.isArray(payload.categories) || !Array.isArray(payload.sites)) throw new ApiError("备份文件格式不正确。 ");
   if (payload.categories.length > MAX_CATEGORY_COUNT || payload.sites.length > MAX_SITE_COUNT) throw new ApiError("备份中的数据量超过限制。 ");
   const categories = payload.categories.map(validateCategoryPayload);
   const categoryIds = new Set(categories.map((category) => category.id));
@@ -853,20 +1044,121 @@ async function handleImport(request, env) {
     hidden_enabled: hidden.enabled === false ? "0" : "1"
   };
   if (!ICON_PATTERN.test(hiddenSettings.hidden_icon)) throw new ApiError("隐藏板块图标必须使用 fa-* 格式。");
+  const announcement = payload.version >= 2 ? validateAnnouncementPayload(payload.announcement || {}) : null;
+  const announcementSettings = announcement ? {
+    announcement_text: announcement.text,
+    announcement_enabled: announcement.enabled ? "1" : "0",
+    announcement_starts_at: announcement.startsAt,
+    announcement_ends_at: announcement.endsAt
+  } : {};
   const statements = [
     env.DB.prepare("DELETE FROM sites"),
     env.DB.prepare("DELETE FROM categories"),
     ...categories.map((category) => env.DB.prepare("INSERT INTO categories(id, name, icon, sort_order, is_visible) VALUES (?, ?, ?, ?, ?)").bind(category.id, category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0)),
     ...sites.map((site) => siteStatement(env, site)),
     ...Object.entries(hiddenSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
+    ...Object.entries(announcementSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
     env.DB.prepare("INSERT INTO audit_logs(action, entity_type, entity_id, details_json) VALUES ('import', 'backup', 'all', ?)").bind(JSON.stringify({ categories: categories.length, sites: sites.length }))
   ];
-  const revision = await runContentMutation(request, env, statements);
+  const revision = await runContentMutation(request, env, statements, `导入备份：${sites.length} 张卡片`);
   return json({ ok: true, categories: categories.length, sites: sites.length, revision });
+}
+
+function validateVersionSnapshot(snapshot) {
+  if (snapshot?.version !== 1 || !Array.isArray(snapshot.categories) || !Array.isArray(snapshot.sites)) {
+    throw new ApiError("历史版本内容已损坏，无法恢复。", 409, "INVALID_CONTENT_VERSION");
+  }
+  if (snapshot.categories.length > MAX_CATEGORY_COUNT || snapshot.sites.length > MAX_SITE_COUNT) {
+    throw new ApiError("历史版本的数据量超过当前限制。", 409, "INVALID_CONTENT_VERSION");
+  }
+  const categories = snapshot.categories.map(validateCategoryPayload);
+  const categoryIds = new Set(categories.map((category) => category.id));
+  if (categoryIds.size !== categories.length
+    || new Set(categories.map((category) => category.name.toLocaleLowerCase("zh-CN"))).size !== categories.length) {
+    throw new ApiError("历史版本包含重复分类。", 409, "INVALID_CONTENT_VERSION");
+  }
+  const sites = snapshot.sites.map((site) => validateSitePayload(site, categoryIds));
+  const names = sites.map((site) => site.name.toLocaleLowerCase("zh-CN"));
+  const urls = sites.flatMap((site) => [site.url, site.secondaryUrl].filter(Boolean));
+  if (new Set(sites.map((site) => site.id)).size !== sites.length
+    || new Set(names).size !== names.length
+    || new Set(urls).size !== urls.length) {
+    throw new ApiError("历史版本包含重复卡片或链接。", 409, "INVALID_CONTENT_VERSION");
+  }
+  const hidden = snapshot.hiddenSection || {};
+  const hiddenSettings = {
+    hidden_id: validateId(hidden.id || "new-world", "隐藏板块 ID"),
+    hidden_name: requireString(hidden.name, "隐藏板块名称", 30),
+    hidden_icon: requireString(hidden.icon, "隐藏板块图标", 64),
+    hidden_welcome: requireString(hidden.welcome, "欢迎词", 80),
+    hidden_enabled: hidden.enabled === false ? "0" : "1"
+  };
+  if (!ICON_PATTERN.test(hiddenSettings.hidden_icon)) throw new ApiError("历史版本的隐藏板块图标不正确。", 409, "INVALID_CONTENT_VERSION");
+  const announcement = validateAnnouncementPayload(snapshot.announcement || {});
+  return { categories, sites, hiddenSettings, announcement };
+}
+
+async function handleContentVersions(request, env, pathname) {
+  const restoreMatch = pathname.match(/^\/api\/admin\/versions\/(\d+)\/restore$/);
+  if (request.method === "GET" && pathname === "/api/admin/versions") {
+    await requireAdmin(env, request);
+    const result = await env.DB.prepare("SELECT id, revision, summary, snapshot_json, created_at FROM content_versions ORDER BY id DESC LIMIT ?").bind(CONTENT_VERSION_LIMIT).all();
+    const versions = (result.results || []).map((row) => {
+      let snapshot = {};
+      try { snapshot = JSON.parse(row.snapshot_json); } catch (_) { snapshot = {}; }
+      return {
+        id: row.id,
+        revision: row.revision,
+        summary: row.summary,
+        siteCount: Array.isArray(snapshot.sites) ? snapshot.sites.length : 0,
+        categoryCount: Array.isArray(snapshot.categories) ? snapshot.categories.length : 0,
+        createdAt: row.created_at
+      };
+    });
+    return json({ ok: true, data: { versions, limit: CONTENT_VERSION_LIMIT } });
+  }
+  if (request.method === "POST" && restoreMatch) {
+    await requireAdmin(env, request, true);
+    const versionId = Number(restoreMatch[1]);
+    const row = await env.DB.prepare("SELECT id, revision, summary, snapshot_json FROM content_versions WHERE id=?").bind(versionId).first();
+    if (!row) throw new ApiError("没有找到这个历史版本。", 404, "NOT_FOUND");
+    let snapshot;
+    try { snapshot = JSON.parse(row.snapshot_json); } catch (_) { throw new ApiError("历史版本内容已损坏，无法恢复。", 409, "INVALID_CONTENT_VERSION"); }
+    const restored = validateVersionSnapshot(snapshot);
+    const announcementSettings = {
+      announcement_text: restored.announcement.text,
+      announcement_enabled: restored.announcement.enabled ? "1" : "0",
+      announcement_starts_at: restored.announcement.startsAt,
+      announcement_ends_at: restored.announcement.endsAt
+    };
+    const statements = [
+      env.DB.prepare("DELETE FROM sites"),
+      env.DB.prepare("DELETE FROM categories"),
+      ...restored.categories.map((category) => env.DB.prepare("INSERT INTO categories(id, name, icon, sort_order, is_visible) VALUES (?, ?, ?, ?, ?)").bind(category.id, category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0)),
+      ...restored.sites.map((site) => siteStatement(env, site)),
+      ...Object.entries(restored.hiddenSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
+      ...Object.entries(announcementSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
+      auditStatement(env, "restore", "content-version", String(versionId), { sourceRevision: row.revision, summary: row.summary })
+    ];
+    const revision = await runContentMutation(request, env, statements, `恢复历史版本：修订 ${row.revision}`);
+    return json({ ok: true, restoredVersion: versionId, revision });
+  }
+  return errorResponse("不支持的历史版本操作。", 405, "METHOD_NOT_ALLOWED");
 }
 
 async function handlePublic(request, env, pathname, ctx) {
   if (request.method === "GET" && pathname === "/api/public/data") return json({ ok: true, data: await publicData(env) });
+  if (request.method === "POST" && pathname === "/api/public/click") {
+    requireSameOrigin(request, true);
+    const payload = await readJson(request, 2048);
+    const siteId = validateId(payload?.siteId, "卡片 ID");
+    const task = recordSiteClick(env, siteId).catch((error) => {
+      console.error(JSON.stringify({ message: "site click write failed", error: error instanceof Error ? error.message : String(error) }));
+    });
+    if (typeof ctx?.waitUntil === "function") ctx.waitUntil(task);
+    else await task;
+    return noContent();
+  }
   if (request.method === "POST" && pathname === "/api/public/visit") {
     requireSameOrigin(request, true);
     const visit = validateVisitPayload(await readJson(request, 4096));
@@ -911,6 +1203,24 @@ async function clearAnalytics(request, env) {
   return json({ ok: true, deleted: Number(result.meta?.changes || 0) });
 }
 
+async function handleClickAnalyticsSettings(request, env) {
+  await requireAdmin(env, request, true);
+  const payload = await readJson(request, 4096);
+  if (typeof payload?.enabled !== "boolean") throw new ApiError("点击统计开关状态不正确。", 400, "INVALID_ANALYTICS_SETTINGS");
+  await env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES ('click_analytics_enabled', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP")
+    .bind(payload.enabled ? "1" : "0").run();
+  await insertAudit(env, "update", "analytics", "site-clicks", { enabled: payload.enabled });
+  return json({ ok: true, enabled: payload.enabled });
+}
+
+async function clearClickAnalytics(request, env) {
+  await requireAdmin(env, request, true);
+  const result = await env.DB.prepare("DELETE FROM site_click_daily").run();
+  await env.DB.prepare("DELETE FROM site_click_minute").run();
+  await insertAudit(env, "clear", "analytics", "site-clicks", { count: Number(result.meta?.changes || 0) });
+  return json({ ok: true, deleted: Number(result.meta?.changes || 0) });
+}
+
 async function handleAdmin(request, env, pathname) {
   if (request.method === "POST" && pathname === "/api/admin/login") return handleLogin(request, env);
   if (request.method === "POST" && pathname === "/api/admin/logout") {
@@ -931,6 +1241,8 @@ async function handleAdmin(request, env, pathname) {
   }
   if (request.method === "PUT" && pathname === "/api/admin/analytics/settings") return handleAnalyticsSettings(request, env);
   if (request.method === "DELETE" && pathname === "/api/admin/analytics") return clearAnalytics(request, env);
+  if (request.method === "PUT" && pathname === "/api/admin/click-analytics/settings") return handleClickAnalyticsSettings(request, env);
+  if (request.method === "DELETE" && pathname === "/api/admin/click-analytics") return clearClickAnalytics(request, env);
   if (request.method === "GET" && pathname === "/api/admin/export") {
     await requireAdmin(env, request);
     const backup = backupFromAdminData(await adminData(env));
@@ -939,6 +1251,9 @@ async function handleAdmin(request, env, pathname) {
   if (request.method === "POST" && pathname === "/api/admin/import") return handleImport(request, env);
   if (request.method === "POST" && pathname === "/api/admin/reorder") return handleReorder(request, env);
   if (request.method === "PUT" && pathname === "/api/admin/hidden-settings") return handleHiddenSettings(request, env);
+  if (request.method === "PUT" && pathname === "/api/admin/announcement") return handleAnnouncementSettings(request, env);
+  if (pathname === "/api/admin/sites/batch") return handleBatchSiteCreate(request, env);
+  if (pathname === "/api/admin/versions" || /^\/api\/admin\/versions\/\d+\/restore$/.test(pathname)) return handleContentVersions(request, env, pathname);
   if (/^\/api\/admin\/sites(?:\/[a-z0-9-]+)?$/.test(pathname)) return handleSiteMutation(request, env, pathname);
   if (/^\/api\/admin\/categories(?:\/[a-z0-9-]+)?$/.test(pathname)) return handleCategoryMutation(request, env, pathname);
   return errorResponse("接口不存在。", 404, "NOT_FOUND");
