@@ -442,14 +442,15 @@ test("the public access notice stays compact and responds to available width", (
   const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
 
-  assert.match(homepage, /class="access-notice access-notice--compact"[^>]*data-access-notice>[\s\S]*?class="fas fa-info-circle access-notice-icon"[\s\S]*?class="access-notice-copy"[\s\S]*?class="access-notice-item"[\s\S]*?class="access-notice-item"/);
+  assert.match(homepage, /class="access-notice access-notice--compact"[^>]*data-access-notice>[\s\S]*?class="fas fa-info-circle access-notice-icon"[\s\S]*?class="access-notice-copy"[\s\S]*?class="access-notice-item">部分站点可能受网络环境或失效影响，可尝试使用代理访问；本站仅提供导航，请勿轻信第三方广告，并自行判断内容风险。<\/span>/);
   assert.equal((homepage.match(/access-notice-icon/g) || []).length, 1);
+  assert.equal((homepage.match(/access-notice-item/g) || []).length, 1);
   assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 14px;/s);
   assert.match(stylesheet, /\.access-notice--compact\s*\{[^}]*width:\s*fit-content;[^}]*max-width:\s*min\(100%, 920px\);[^}]*margin-bottom:\s*8px;[^}]*padding:\s*9px 14px;[^}]*font-size:\s*13px;/s);
-  assert.match(stylesheet, /\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex:\s*0 1 auto;[^}]*gap:\s*3px;/s);
+  assert.match(stylesheet, /\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex:\s*0 1 auto;[^}]*gap:\s*0;/s);
   assert.match(stylesheet, /\.content-utilities\s*\{[^}]*margin:\s*0 auto 18px;/s);
-  assert.match(stylesheet, /@media \(min-width:\s*769px\)[\s\S]*?\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex-flow:\s*row wrap;[^}]*gap:\s*4px 24px;/s);
-  assert.match(stylesheet, /@media \(min-width:\s*1024px\)[\s\S]*?\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex-wrap:\s*nowrap;/s);
+  assert.match(stylesheet, /@media \(min-width:\s*769px\)[\s\S]*?\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex-flow:\s*row wrap;[^}]*gap:\s*0;/s);
+  assert.match(stylesheet, /@media \(min-width:\s*1024px\)[\s\S]*?\.access-notice--compact \.access-notice-item\s*\{[^}]*white-space:\s*nowrap;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.content-section \.access-notice\s*\{[^}]*font-size:\s*12px;[^}]*line-height:\s*1\.55;/s);
 });
 

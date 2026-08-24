@@ -888,7 +888,7 @@ select {
 
 .access-notice--compact .access-notice-copy {
   flex: 0 1 auto;
-  gap: 3px;
+  gap: 0;
 }
 
 .access-notice-item {
@@ -905,17 +905,13 @@ select {
     align-items: center;
     justify-content: center;
     flex-flow: row wrap;
-    gap: 4px 24px;
-  }
-
-  .access-notice--compact .access-notice-item {
-    white-space: nowrap;
+    gap: 0;
   }
 }
 
 @media (min-width: 1024px) {
-  .access-notice--compact .access-notice-copy {
-    flex-wrap: nowrap;
+  .access-notice--compact .access-notice-item {
+    white-space: nowrap;
   }
 }
 
