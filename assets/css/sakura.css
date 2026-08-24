@@ -24,6 +24,8 @@
   --glass-shadow: 0 10px 32px rgba(45, 38, 77, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.76);
   --layer-border: rgba(37, 35, 56, 0.14);
   --card-bg: #ffffff;
+  --card-border: rgba(37, 35, 56, 0.06);
+  --card-shadow: 0 8px 24px rgba(37, 35, 56, 0.06);
   --control-bg: rgba(255, 255, 255, 0.94);
   --control-bg-hover: #f1f3f6;
   --progress-track: rgba(37, 35, 56, 0.14);
@@ -71,7 +73,9 @@
   --glass-highlight: rgba(255, 255, 255, 0.12);
   --glass-shadow: 0 12px 34px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   --layer-border: rgba(229, 224, 255, 0.14);
-  --card-bg: #1c1f28;
+  --card-bg: #2c2c2e;
+  --card-border: rgba(255, 255, 255, 0.04);
+  --card-shadow: none;
   --control-bg: rgba(33, 36, 49, 0.94);
   --control-bg-hover: #292d38;
   --progress-track: rgba(229, 224, 255, 0.16);
@@ -1232,10 +1236,10 @@ select {
   gap: 16px;
   padding: 16px;
   overflow: hidden;
-  border: 1px solid var(--layer-border);
+  border: 1px solid var(--card-border);
   border-radius: var(--apple-corner-card);
   background: var(--card-bg);
-  box-shadow: none;
+  box-shadow: var(--card-shadow);
 }
 
 .site-card-link::after {
@@ -1746,7 +1750,8 @@ select {
   bottom: 16px;
   width: 44px;
   height: 44px;
-  padding: 3px;
+  padding: 2px;
+  overflow: hidden;
   border: 0;
   border-radius: 50%;
   color: var(--muted);
@@ -1763,7 +1768,7 @@ select {
 .back-to-top::before {
   position: absolute;
   z-index: 0;
-  inset: 3px;
+  inset: 2px;
   border: 1px solid var(--layer-border);
   border-radius: 50%;
   background: var(--control-bg);
@@ -2174,7 +2179,7 @@ select {
   .nav-link,
   .color-theme-panel,
   .color-theme-option,
-  .icon-button,
+  .icon-button:not(.back-to-top),
   .access-notice,
   .hidden-world-title-icon,
   .hidden-world-welcome,
@@ -2587,7 +2592,9 @@ select {
   }
 
   .site-card-link {
-    box-shadow: none;
+    border-color: var(--card-border);
+    background: var(--card-bg);
+    box-shadow: var(--card-shadow);
   }
 
   .site-card-action {

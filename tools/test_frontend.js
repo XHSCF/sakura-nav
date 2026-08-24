@@ -308,7 +308,7 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
   assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*136px;[^}]*align-items:\s*center;[^}]*padding:\s*16px;/s);
-  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--card-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*var\(--card-shadow\);/s);
   assert.doesNotMatch(stylesheet, /\.site-card-link\s*\{[^}]*transition:\s*background-color/s);
   assert.doesNotMatch(stylesheet, /\.site-card-link\s*\{[^}]*box-shadow:\s*0 1px 0/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*136px;/);
@@ -358,7 +358,8 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
 
   assert.match(stylesheet, /:root\s*\{[^}]*--glass-bg:\s*rgba\(255, 255, 255, 0\.58\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
   assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--glass-bg:\s*rgba\(33, 36, 49, 0\.6\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
-  assert.match(stylesheet, /:root\s*\{[^}]*--layer-border:\s*rgba\(37, 35, 56, 0\.14\);[^}]*--card-bg:\s*#ffffff;[^}]*--control-bg:/s);
+  assert.match(stylesheet, /:root\s*\{[^}]*--layer-border:\s*rgba\(37, 35, 56, 0\.14\);[^}]*--card-bg:\s*#ffffff;[^}]*--card-border:\s*rgba\(37, 35, 56, 0\.06\);[^}]*--card-shadow:\s*0 8px 24px rgba\(37, 35, 56, 0\.06\);[^}]*--control-bg:/s);
+  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--card-bg:\s*#2c2c2e;[^}]*--card-border:\s*rgba\(255, 255, 255, 0\.04\);[^}]*--card-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-header\s*\{[^}]*border-bottom:\s*1px solid var\(--layer-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*box-shadow:\s*inset 0 1px 0 var\(--glass-highlight\);[^}]*backdrop-filter:\s*blur\(22px\) saturate\(155%\);/s);
   assert.match(stylesheet, /\.site-nav\s*\{[^}]*color-mix\(in srgb, var\(--surface-solid\) 94%, var\(--glass-bg-strong\)\);/s);
   assert.match(stylesheet, /\.nav-link\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface-solid\) 90%, var\(--glass-bg-strong\)\);/s);
@@ -384,6 +385,7 @@ test("public styles keep a complete Android baseline without modern color mixing
   assert.match(fallback, /\.site-header,[\s\S]*?\.icon-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
   assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*var\(--surface-soft\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.site-card-action\s*\{[^}]*border-color:\s*var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.match(fallback, /\.site-card-link\s*\{[^}]*border-color:\s*var\(--card-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*var\(--card-shadow\);/s);
   assert.match(fallback, /\.site-card-description,[\s\S]*?\.category-bar \.filter-chip\s*\{[^}]*color:\s*var\(--muted\);/s);
   assert.match(fallback, /--category-icon-bg:\s*var\(--surface-soft\);[^}]*--category-icon-border:\s*var\(--layer-border\);/s);
 });
@@ -418,7 +420,7 @@ test("cards and square controls use responsive Apple-style continuous corners", 
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border-radius:\s*var\(--apple-corner-card\);/s);
   assert.match(stylesheet, /\.icon-button\s*\{[^}]*border-radius:\s*var\(--apple-corner-control\);/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)\s*\{[\s\S]*?:root\s*\{[^}]*--apple-corner-card:\s*22px;[^}]*--apple-corner-panel:\s*22px;[^}]*--apple-corner-control:\s*13px;[^}]*--apple-corner-icon:\s*17px;/);
-  assert.match(stylesheet, /@supports \(corner-shape:\s*squircle\)\s*\{[\s\S]*?\.site-card-link,[\s\S]*?\.site-icon,[\s\S]*?\.prose-card,[\s\S]*?\.button\s*\{\s*corner-shape:\s*squircle;/);
+  assert.match(stylesheet, /@supports \(corner-shape:\s*squircle\)\s*\{[\s\S]*?\.icon-button:not\(\.back-to-top\),[\s\S]*?\.site-card-link,[\s\S]*?\.site-icon,[\s\S]*?\.prose-card,[\s\S]*?\.button\s*\{\s*corner-shape:\s*squircle;/);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border-radius:\s*999px;/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border-radius:\s*999px;/s);
 });
@@ -546,8 +548,8 @@ test("public pages share a compact non-repeating footer", () => {
   assert.match(stylesheet, /\.footer-compact\s*\{[^}]*max-width:\s*760px;/s);
   assert.match(stylesheet, /\.site-runtime\s*\{[^}]*min-height:\s*30px;[^}]*padding:\s*6px 10px;[^}]*border-radius:\s*999px;/s);
   assert.match(stylesheet, /\.footer-bottom\s*\{[^}]*width:\s*min\(100%, 640px\);[^}]*margin-top:\s*14px;[^}]*padding-top:\s*12px;/s);
-  assert.match(stylesheet, /\.back-to-top\s*\{[^}]*--scroll-progress:\s*0deg;[^}]*width:\s*44px;[^}]*height:\s*44px;[^}]*border-radius:\s*50%;[^}]*conic-gradient\(from -90deg, var\(--primary\) var\(--scroll-progress\), var\(--progress-track\) 0\);[^}]*box-shadow:\s*none;/s);
-  assert.match(stylesheet, /\.back-to-top::before\s*\{[^}]*inset:\s*3px;[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);/s);
+  assert.match(stylesheet, /\.back-to-top\s*\{[^}]*--scroll-progress:\s*0deg;[^}]*width:\s*44px;[^}]*height:\s*44px;[^}]*padding:\s*2px;[^}]*overflow:\s*hidden;[^}]*border-radius:\s*50%;[^}]*conic-gradient\(from -90deg, var\(--primary\) var\(--scroll-progress\), var\(--progress-track\) 0\);[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.back-to-top::before\s*\{[^}]*inset:\s*2px;[^}]*border:\s*1px solid var\(--layer-border\);[^}]*border-radius:\s*50%;[^}]*background:\s*var\(--control-bg\);/s);
   assert.match(application, /const scrollableHeight = Math\.max\(pageHeight - window\.innerHeight, 0\);[\s\S]*backToTop\.style\.setProperty\("--scroll-progress", `\$\{progress \* 360\}deg`\);[\s\S]*scrollableHeight > 0 && window\.scrollY > 520/);
   assert.match(application, /const scheduleBackToTopUpdate = \(\) => \{[\s\S]*window\.requestAnimationFrame\(updateBackToTop\);/);
   assert.match(application, /window\.addEventListener\("scroll", scheduleBackToTopUpdate, \{ passive: true \}\);/);
