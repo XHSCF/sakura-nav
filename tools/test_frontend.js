@@ -428,6 +428,18 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.doesNotMatch(application, /categoryScroll|scrollCategories|updateCategoryScrollControls|scheduleCategoryScrollControls/);
 });
 
+test("the public access notice stays compact and responds to available width", () => {
+  const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+
+  assert.match(homepage, /class="access-notice access-notice--compact"[^>]*data-access-notice>[\s\S]*?class="fas fa-info-circle access-notice-icon"[\s\S]*?class="access-notice-copy"[\s\S]*?class="access-notice-item"[\s\S]*?class="access-notice-item"/);
+  assert.equal((homepage.match(/access-notice-icon/g) || []).length, 1);
+  assert.match(stylesheet, /\.access-notice--compact\s*\{[^}]*width:\s*min\(100%, 1040px\);[^}]*margin-bottom:\s*10px;[^}]*padding:\s*9px 14px;[^}]*font-size:\s*13px;/s);
+  assert.match(stylesheet, /@media \(min-width:\s*769px\)[\s\S]*?\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex-flow:\s*row wrap;[^}]*gap:\s*4px 24px;/s);
+  assert.match(stylesheet, /@media \(min-width:\s*1024px\)[\s\S]*?\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex-wrap:\s*nowrap;/s);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.content-section \.access-notice\s*\{[^}]*font-size:\s*12px;[^}]*line-height:\s*1\.55;/s);
+});
+
 test("restoring all sites does not focus the search input", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8").replace(/\r\n?/g, "\n");
   const handlerStart = application.indexOf('resetFilters?.addEventListener("click"');
