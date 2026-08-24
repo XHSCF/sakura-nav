@@ -5,7 +5,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "downloads", name: "资源下载", icon: "fa-cloud-download-alt" },
     { id: "ios", name: "iOS专区", icon: "fa-mobile-alt" },
     { id: "android", name: "安卓专区", icon: "fa-robot" },
-    { id: "software", name: "PC专区", icon: "fa-laptop-code" },
+    { id: "software", name: "PC专区", icon: "fa-desktop" },
     { id: "tools", name: "在线工具", icon: "fa-tools" },
     { id: "games", name: "游戏专区", icon: "fa-gamepad" }
   ],

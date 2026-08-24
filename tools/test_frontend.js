@@ -191,6 +191,11 @@ test("browser data and core scripts expose the expected globals", () => {
   assert.ok(Array.isArray(data.sites));
   assert.ok(data.categories.length > 0);
   assert.ok(data.sites.length > 0);
+  assert.deepEqual(data.categories.find((category) => category.id === "software"), {
+    id: "software",
+    name: "PC专区",
+    icon: "fa-desktop"
+  });
   data.sites.forEach((site) => {
     assert.ok([1, 2].includes(core.siteActions(site).length));
   });

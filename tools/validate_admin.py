@@ -39,6 +39,12 @@ def main() -> int:
         if category_count <= 0 or public_count <= 0 or hidden_count <= 0:
             errors.append("D1 种子数据缺少分类、公开卡片或隐藏卡片")
 
+        software_category = connection.execute(
+            "SELECT name, icon FROM categories WHERE id = 'software'"
+        ).fetchone()
+        if software_category != ("PC专区", "fa-desktop"):
+            errors.append("D1 的 PC专区必须保留 software ID 并使用 fa-desktop 图标")
+
         duplicate_ids = connection.execute("SELECT id FROM sites GROUP BY id HAVING COUNT(*)>1").fetchall()
         duplicate_names = connection.execute("SELECT lower(name) FROM sites GROUP BY lower(name) HAVING COUNT(*)>1").fetchall()
         if duplicate_ids:

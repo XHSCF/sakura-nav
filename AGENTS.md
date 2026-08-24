@@ -26,7 +26,7 @@
 - 资源下载 → `downloads` → `fa-cloud-download-alt`
 - iOS专区 → `ios` → `fa-mobile-alt`
 - 安卓专区 → `android` → `fa-robot`
-- PC专区 → `software` → `fa-laptop-code`
+- PC专区 → `software` → `fa-desktop`
 - 在线工具 → `tools` → `fa-tools`
 - 游戏专区 → `games` → `fa-gamepad`
 
