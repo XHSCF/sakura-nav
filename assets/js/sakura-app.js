@@ -226,8 +226,24 @@
 
     const backToTop = document.querySelector("[data-back-to-top]");
     if (backToTop) {
-      const updateBackToTop = () => backToTop.classList.toggle("is-visible", window.scrollY > 520);
-      window.addEventListener("scroll", updateBackToTop, { passive: true });
+      let backToTopFrame = 0;
+      const updateBackToTop = () => {
+        backToTopFrame = 0;
+        const pageHeight = Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight || 0);
+        const scrollableHeight = Math.max(pageHeight - window.innerHeight, 0);
+        const progress = scrollableHeight > 0
+          ? Math.min(1, Math.max(0, window.scrollY / scrollableHeight))
+          : 0;
+        backToTop.style.setProperty("--scroll-progress", `${progress * 360}deg`);
+        backToTop.classList.toggle("is-visible", scrollableHeight > 0 && window.scrollY > 520);
+      };
+      const scheduleBackToTopUpdate = () => {
+        if (backToTopFrame) return;
+        backToTopFrame = window.requestAnimationFrame(updateBackToTop);
+      };
+      window.addEventListener("scroll", scheduleBackToTopUpdate, { passive: true });
+      window.addEventListener("resize", scheduleBackToTopUpdate);
+      window.addEventListener("load", scheduleBackToTopUpdate, { once: true });
       updateBackToTop();
       backToTop.addEventListener("click", () => {
         window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });

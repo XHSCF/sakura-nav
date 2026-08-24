@@ -308,7 +308,7 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
   assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*136px;[^}]*align-items:\s*center;[^}]*padding:\s*16px;/s);
-  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--line\);[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*none;[^}]*transition:\s*background-color/s);
   assert.doesNotMatch(stylesheet, /\.site-card-link\s*\{[^}]*box-shadow:\s*0 1px 0/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*136px;/);
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*100px;/s);
@@ -323,11 +323,11 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /function pressCardIcon\(event\)[\s\S]*event\.target\.closest\?\.\("\.site-card-link"\)[\s\S]*cardBody\.classList\.add\("is-icon-pressed"\)/);
   assert.match(application, /document\.addEventListener\("pointerdown", pressCardIcon\);[\s\S]*document\.addEventListener\("pointerup", clearPressedCardIcon\);[\s\S]*document\.addEventListener\("pointercancel", clearPressedCardIcon\);/);
   assert.match(application, /document\.addEventListener\("touchstart", pressCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchend", clearPressedCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchcancel", clearPressedCardIcon, \{ passive: true \}\);/);
-  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 22%, var\(--glass-border\)\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg-strong\)[^}]*box-shadow:\s*0 0 9px/s);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*none;/s);
   assert.doesNotMatch(stylesheet, /\.site-card-action\s*\{[^}]*box-shadow:[^}]*inset 0 [1-9]px 0/s);
-  assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-action:hover\s*\{[^}]*0 0 13px/s);
+  assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-action:hover\s*\{[^}]*background:\s*var\(--control-bg-hover\);[^}]*box-shadow:\s*none;[^}]*transform:\s*none;/s);
   assert.doesNotMatch(stylesheet, /\.site-card-action:hover\s*,\s*\.site-card-action:focus-visible/);
-  assert.doesNotMatch(stylesheet, /\.site-card-link:hover\s*\{/);
+  assert.match(stylesheet, /\.site-card-link:hover\s*\{[^}]*background:\s*var\(--card-bg-hover\);/s);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*94px;[\s\S]*?\.site-card-title\s*\{[^}]*font-size:\s*17px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*14px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*gap:\s*10px;[^}]*padding:\s*12px;[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*76px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*84px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*52px;/);
@@ -357,11 +357,13 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
 
   assert.match(stylesheet, /:root\s*\{[^}]*--glass-bg:\s*rgba\(255, 255, 255, 0\.58\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
   assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--glass-bg:\s*rgba\(33, 36, 49, 0\.6\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
-  assert.match(stylesheet, /\.site-header\s*\{[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(22px\) saturate\(155%\);/s);
+  assert.match(stylesheet, /:root\s*\{[^}]*--layer-border:\s*rgba\(37, 35, 56, 0\.14\);[^}]*--card-bg:\s*#ffffff;[^}]*--control-bg:/s);
+  assert.match(stylesheet, /\.site-header\s*\{[^}]*border-bottom:\s*1px solid var\(--layer-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*box-shadow:\s*inset 0 1px 0 var\(--glass-highlight\);[^}]*backdrop-filter:\s*blur\(22px\) saturate\(155%\);/s);
   assert.match(stylesheet, /\.site-nav\s*\{[^}]*color-mix\(in srgb, var\(--surface-solid\) 94%, var\(--glass-bg-strong\)\);/s);
   assert.match(stylesheet, /\.nav-link\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface-solid\) 90%, var\(--glass-bg-strong\)\);/s);
-  assert.match(stylesheet, /\.icon-button\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\)/s);
-  assert.match(stylesheet, /\.category-bar\s*\{[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
+  assert.match(stylesheet, /\.icon-button\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--control-bg\);[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\)/s);
+  assert.match(stylesheet, /\.icon-button:hover\s*\{[^}]*background:\s*linear-gradient\([^}]*var\(--control-bg-hover\);[^}]*box-shadow:\s*inset[^}]*transform:\s*none;/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-header,[\s\S]*?\.category-bar\s*\{[^}]*backdrop-filter:\s*blur\(14px\) saturate\(135%\);/);
   assert.match(stylesheet, /@supports not \(\(backdrop-filter:\s*blur\(1px\)\) or \(-webkit-backdrop-filter:\s*blur\(1px\)\)\)[\s\S]*?background:\s*var\(--glass-bg-fallback\);/);
   assert.match(stylesheet, /@media \(prefers-reduced-transparency:\s*reduce\)[\s\S]*?backdrop-filter:\s*none;/);
@@ -380,9 +382,9 @@ test("public styles keep a complete Android baseline without modern color mixing
   assert.match(fallback, /body\s*\{[^}]*background:\s*var\(--bg\);/s);
   assert.match(fallback, /\.site-header,[\s\S]*?\.icon-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
   assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*var\(--surface-soft\);[^}]*box-shadow:\s*none;/s);
-  assert.match(fallback, /\.site-card-action\s*\{[^}]*border-color:\s*var\(--primary\);[^}]*background:\s*var\(--surface-solid\);/s);
+  assert.match(fallback, /\.site-card-action\s*\{[^}]*border-color:\s*var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.site-card-description,[\s\S]*?\.category-bar \.filter-chip\s*\{[^}]*color:\s*var\(--muted\);/s);
-  assert.match(fallback, /--category-icon-bg:\s*var\(--surface-solid\);[^}]*--category-icon-border:\s*var\(--primary\);/s);
+  assert.match(fallback, /--category-icon-bg:\s*var\(--surface-soft\);[^}]*--category-icon-border:\s*var\(--layer-border\);/s);
 });
 
 test("content cards reveal once on scroll with accessible motion fallbacks", () => {
@@ -437,7 +439,7 @@ test("segmented controls use one sliding indicator without bounce", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
   assert.doesNotMatch(stylesheet, /\.hero::before\s*\{/);
-  assert.match(stylesheet, /\.category-bar\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\);/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*box-shadow:\s*var\(--neutral-lift\), inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\);/s);
   assert.doesNotMatch(stylesheet, /\.category-bar\s*\{[^}]*0 8px 24px/s);
   assert.match(stylesheet, /\.filter-chip-count,\s*\.group-count\s*\{[^}]*min-width:\s*22px;[^}]*height:\s*22px;[^}]*font-variant-numeric:\s*tabular-nums;/s);
   assert.match(stylesheet, /\.filter-chip-count\s*\{[^}]*margin-left:\s*6px;/s);
@@ -446,8 +448,8 @@ test("segmented controls use one sliding indicator without bounce", () => {
   assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*width:\s*var\(--segmented-indicator-width, 0px\);[^}]*transform:\s*translate3d\(var\(--segmented-indicator-x, 0px\), 0, 0\);[^}]*width 240ms[^}]*transform 240ms/s);
   assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 10%, transparent\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 10%, var\(--surface-solid\)\);[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
-  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*0 0 9px color-mix\(in srgb, var\(--primary\) 7%, transparent\);/s);
-  assert.match(stylesheet, /\.site-card-action:focus-visible\s*\{[^}]*0 0 13px color-mix\(in srgb, var\(--primary\) 16%, transparent\);/s);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.site-card-action:focus-visible\s*\{[^}]*box-shadow:\s*none;[^}]*outline:\s*3px solid color-mix\(in srgb, var\(--primary\) 24%, transparent\);/s);
   assert.match(application, /function ensureSegmentedIndicator\(container\)[\s\S]*container\.prepend\(indicator\)/);
   assert.match(application, /indicator\.style\.setProperty\("--segmented-indicator-x", `\$\{active\.offsetLeft\}px`\)/);
   assert.match(application, /const shouldAnimate = animate && !reducedMotion/);
@@ -493,7 +495,7 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(homepage, /class="container category-summary"[\s\S]*data-search-result/);
   assert.match(homepage, /<h2 id="collection-title">网站分类<\/h2>/);
   assert.match(stylesheet, /\.search-wrap\s*\{[^}]*max-width:\s*1040px;/s);
-  assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--glass-border\);[^}]*background:\s*var\(--surface-solid\);[^}]*background:\s*color-mix\([^}]*box-shadow:\s*inset 0 0 0 1px/s);
+  assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*var\(--neutral-lift\), inset 0 0 0 1px/s);
   assert.match(stylesheet, /\.category-slider\s*\{[^}]*width:\s*min\(100%, 1040px\);/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*min-height:\s*46px;[^}]*padding:\s*2px;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*font-size:\s*14px;[^}]*font-weight:\s*720;/s);
@@ -543,8 +545,11 @@ test("public pages share a compact non-repeating footer", () => {
   assert.match(stylesheet, /\.footer-compact\s*\{[^}]*max-width:\s*760px;/s);
   assert.match(stylesheet, /\.site-runtime\s*\{[^}]*min-height:\s*30px;[^}]*padding:\s*6px 10px;[^}]*border-radius:\s*999px;/s);
   assert.match(stylesheet, /\.footer-bottom\s*\{[^}]*width:\s*min\(100%, 640px\);[^}]*margin-top:\s*14px;[^}]*padding-top:\s*12px;/s);
-  assert.match(stylesheet, /\.back-to-top\s*\{[^}]*width:\s*38px;[^}]*height:\s*38px;/s);
-  assert.match(application, /backToTop\.classList\.toggle\("is-visible", window\.scrollY > 520\)/);
+  assert.match(stylesheet, /\.back-to-top\s*\{[^}]*--scroll-progress:\s*0deg;[^}]*width:\s*44px;[^}]*height:\s*44px;[^}]*border-radius:\s*50%;[^}]*conic-gradient\(from -90deg, var\(--primary\) var\(--scroll-progress\), var\(--progress-track\) 0\);[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.back-to-top::before\s*\{[^}]*inset:\s*3px;[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);/s);
+  assert.match(application, /const scrollableHeight = Math\.max\(pageHeight - window\.innerHeight, 0\);[\s\S]*backToTop\.style\.setProperty\("--scroll-progress", `\$\{progress \* 360\}deg`\);[\s\S]*scrollableHeight > 0 && window\.scrollY > 520/);
+  assert.match(application, /const scheduleBackToTopUpdate = \(\) => \{[\s\S]*window\.requestAnimationFrame\(updateBackToTop\);/);
+  assert.match(application, /window\.addEventListener\("scroll", scheduleBackToTopUpdate, \{ passive: true \}\);/);
 });
 
 test("restoring all sites does not focus the search input", () => {
