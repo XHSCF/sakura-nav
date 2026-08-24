@@ -357,9 +357,9 @@ test("page background uses continuous theme ambience without isolated fixed spot
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
   const bodyBlock = stylesheet.match(/\nbody\s*\{([\s\S]*?)\n\}/)?.[1] || "";
 
-  assert.match(stylesheet, /:root\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 5%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*1\.5%[^}]*--page-ambient-tint-soft:[^}]*0\.8%/s);
-  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 7%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*2\.5%[^}]*--page-ambient-tint-soft:[^}]*1\.2%/s);
-  assert.match(bodyBlock, /background:\s*var\(--bg\);[\s\S]*radial-gradient\(ellipse 90% 30rem at 50% 0%, var\(--page-ambient-glow\), transparent 78%\),[\s\S]*linear-gradient\(180deg, var\(--page-ambient-tint-strong\) 0%, var\(--bg\) 36%, var\(--page-ambient-tint-soft\) 70%, var\(--bg\) 100%\);/s);
+  assert.match(stylesheet, /:root\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 5%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*2\.4%[^}]*--page-ambient-tint-middle:[^}]*1\.8%[^}]*--page-ambient-tint-lower:[^}]*1\.4%/s);
+  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--page-ambient-glow:\s*color-mix\(in srgb, var\(--primary\) 7%, transparent\);[^}]*--page-ambient-tint-strong:[^}]*4\.5%[^}]*--page-ambient-tint-middle:[^}]*3\.4%[^}]*--page-ambient-tint-lower:[^}]*2\.6%/s);
+  assert.match(bodyBlock, /background:\s*var\(--bg\);[\s\S]*radial-gradient\(ellipse 90% 30rem at 50% 0%, var\(--page-ambient-glow\), transparent 78%\),[\s\S]*linear-gradient\(180deg,[\s\S]*var\(--page-ambient-tint-strong\) 0%,[\s\S]*var\(--bg\) 20%,[\s\S]*var\(--page-ambient-tint-middle\) 40%,[\s\S]*var\(--bg\) 60%,[\s\S]*var\(--page-ambient-tint-lower\) 80%,[\s\S]*var\(--bg\) 100%\);/s);
   assert.match(bodyBlock, /background-repeat:\s*no-repeat;[\s\S]*background-size:\s*100% 100%;/s);
   assert.doesNotMatch(bodyBlock, /circle at 10% 10%|circle at 90% 25%|rgba\(233, 133, 167/);
 });
@@ -431,7 +431,7 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(stylesheet, /\.category-bar \.filter-chip-count\s*\{[^}]*font-size:\s*12px;/s);
   assert.match(stylesheet, /@media \(min-width:\s*1024px\)\s*\{\s*\.category-bar\s*\{[^}]*overflow-x:\s*hidden;[^}]*\}\s*\.category-bar \.filter-chip\s*\{[^}]*flex:\s*1 1 0;[^}]*min-width:\s*0;[^}]*padding-inline:\s*6px;/s);
   assert.match(stylesheet, /\.category-bar\s*\{\s*--segmented-indicator-inset:\s*3px;/s);
-  assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 24px;[^}]*text-align:\s*center;/s);
+  assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 14px;[^}]*text-align:\s*center;/s);
   assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length\)/);
   assert.doesNotMatch(homepage, /data-category-scroll|category-scroll-button/);
   assert.doesNotMatch(stylesheet, /category-scroll-button/);
@@ -444,7 +444,10 @@ test("the public access notice stays compact and responds to available width", (
 
   assert.match(homepage, /class="access-notice access-notice--compact"[^>]*data-access-notice>[\s\S]*?class="fas fa-info-circle access-notice-icon"[\s\S]*?class="access-notice-copy"[\s\S]*?class="access-notice-item"[\s\S]*?class="access-notice-item"/);
   assert.equal((homepage.match(/access-notice-icon/g) || []).length, 1);
-  assert.match(stylesheet, /\.access-notice--compact\s*\{[^}]*width:\s*min\(100%, 1040px\);[^}]*margin-bottom:\s*10px;[^}]*padding:\s*9px 14px;[^}]*font-size:\s*13px;/s);
+  assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 14px;/s);
+  assert.match(stylesheet, /\.access-notice--compact\s*\{[^}]*width:\s*fit-content;[^}]*max-width:\s*min\(100%, 920px\);[^}]*margin-bottom:\s*8px;[^}]*padding:\s*9px 14px;[^}]*font-size:\s*13px;/s);
+  assert.match(stylesheet, /\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex:\s*0 1 auto;[^}]*gap:\s*3px;/s);
+  assert.match(stylesheet, /\.content-utilities\s*\{[^}]*margin:\s*0 auto 18px;/s);
   assert.match(stylesheet, /@media \(min-width:\s*769px\)[\s\S]*?\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex-flow:\s*row wrap;[^}]*gap:\s*4px 24px;/s);
   assert.match(stylesheet, /@media \(min-width:\s*1024px\)[\s\S]*?\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex-wrap:\s*nowrap;/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.content-section \.access-notice\s*\{[^}]*font-size:\s*12px;[^}]*line-height:\s*1\.55;/s);
