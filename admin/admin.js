@@ -35,6 +35,8 @@
   const adminCore = window.SAKURA_ADMIN_CORE;
   const themeKey = "sakura-theme";
   const colorThemeKey = "sakura-color-theme";
+  const sessionDraftKey = "sakura-admin-session-draft-v1";
+  const sessionDraftMaximumAge = 24 * 60 * 60 * 1000;
   const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
   const numberFormatter = new Intl.NumberFormat("zh-CN");
   let countryFormatter = null;
@@ -249,6 +251,112 @@
     return trackedForms.some((form) => isFormDirty(form));
   }
 
+  function formFieldChanged(form, name) {
+    try {
+      const baseline = new Map(JSON.parse(formBaselines.get(form) || "[]"));
+      return baseline.get(name) !== form.elements[name]?.value;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function formDraftValues(form) {
+    const values = {};
+    Array.from(form.elements).forEach((field) => {
+      if (!field.name || ["button", "submit", "file", "password"].includes(field.type)) return;
+      if (field.type === "radio") {
+        if (field.checked) values[field.name] = field.value;
+        return;
+      }
+      values[field.name] = field.type === "checkbox" ? field.checked : field.value;
+    });
+    return values;
+  }
+
+  function applyFormDraft(form, values) {
+    if (!form || !values || typeof values !== "object") return;
+    Object.entries(values).forEach(([name, value]) => {
+      const fields = Array.from(form.elements).filter((field) => field.name === name);
+      fields.forEach((field) => {
+        if (field.type === "radio") field.checked = field.value === value;
+        else if (field.type === "checkbox") field.checked = Boolean(value);
+        else field.value = String(value ?? "");
+      });
+    });
+  }
+
+  function clearSessionDraft() {
+    try { window.sessionStorage.removeItem(sessionDraftKey); } catch (_) { /* The current page still keeps its form state. */ }
+  }
+
+  function captureSessionDraft() {
+    const draft = { version: 1, savedAt: Date.now() };
+    if (siteDialog?.open && isFormDirty(siteForm)) {
+      draft.site = { editingId: state.editingSiteId, values: formDraftValues(siteForm) };
+    }
+    if (categoryDialog?.open && isFormDirty(categoryForm)) {
+      draft.category = { editingId: state.editingCategoryId, values: formDraftValues(categoryForm) };
+    }
+    if (isFormDirty(hiddenSettingsForm)) {
+      draft.settings = {
+        values: formDraftValues(hiddenSettingsForm),
+        passphraseOmitted: formFieldChanged(hiddenSettingsForm, "passphrase")
+      };
+    }
+    if (!draft.site && !draft.category && !draft.settings) return false;
+    try {
+      window.sessionStorage.setItem(sessionDraftKey, JSON.stringify(draft));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function readSessionDraft() {
+    try {
+      const draft = JSON.parse(window.sessionStorage.getItem(sessionDraftKey) || "null");
+      if (!draft || draft.version !== 1 || !Number.isFinite(draft.savedAt) || Date.now() - draft.savedAt > sessionDraftMaximumAge) {
+        clearSessionDraft();
+        return null;
+      }
+      return draft;
+    } catch (_) {
+      clearSessionDraft();
+      return null;
+    }
+  }
+
+  function restoreSessionDraft() {
+    const draft = readSessionDraft();
+    if (!draft) return null;
+    let restored = false;
+    if (draft.settings?.values) {
+      applyFormDraft(hiddenSettingsForm, draft.settings.values);
+      if (draft.settings.passphraseOmitted) hiddenSettingsForm.elements.passphrase.value = "";
+      updateUnsavedIndicator(hiddenSettingsForm);
+      restored = true;
+    }
+    if (draft.site?.values) {
+      const existing = draft.site.editingId ? state.data.sites.find((site) => site.id === draft.site.editingId) : null;
+      openSiteDialog(existing || null);
+      if (draft.site.editingId && !existing) state.editingSiteId = null;
+      applyFormDraft(siteForm, draft.site.values);
+      updateSiteFormVisibility();
+      updateCardPreview();
+      updateUnsavedIndicator(siteForm);
+      restored = true;
+    } else if (draft.category?.values) {
+      const existing = draft.category.editingId ? categoryById(draft.category.editingId) : null;
+      openCategoryDialog(existing || null);
+      if (draft.category.editingId && !existing) state.editingCategoryId = null;
+      applyFormDraft(categoryForm, draft.category.values);
+      updateUnsavedIndicator(categoryForm);
+      restored = true;
+    }
+    clearSessionDraft();
+    return restored ? { passphraseOmitted: Boolean(draft.settings?.passphraseOmitted) } : null;
+  }
+
   function syncDialogScrollLock() {
     const hasOpenDialog = [siteDialog, categoryDialog, confirmDialog].some((dialog) => Boolean(dialog?.open));
     root.classList.toggle("has-open-dialog", hasOpenDialog);
@@ -282,7 +390,10 @@
     const type = response.headers.get("Content-Type") || "";
     const payload = type.includes("application/json") ? await response.json() : null;
     if (!response.ok) {
-      if (response.status === 401 && path !== "/api/admin/login") showLogin();
+      if (response.status === 401 && path !== "/api/admin/login") {
+        const preserved = captureSessionDraft();
+        showLogin(preserved ? "登录已失效。重新登录后会恢复未保存的内容。" : "");
+      }
       const error = new Error(payload?.error || `请求失败（${response.status}）`);
       error.code = payload?.code;
       error.status = response.status;
@@ -1029,6 +1140,8 @@
       loginForm.elements.password.value = "";
       await loadData();
       showApp();
+      const restored = restoreSessionDraft();
+      if (restored) showToast(restored.passphraseOmitted ? "未保存内容已恢复；为安全起见，新的入口口令需要重新填写。" : "未保存内容已恢复，请确认后继续保存。");
     } catch (error) {
       showLogin(error.message);
     } finally {
@@ -1039,6 +1152,7 @@
   document.querySelector("[data-logout]")?.addEventListener("click", async () => {
     if (hasUnsavedChanges() && !(await confirmAction("放弃未保存修改", "退出后台会丢失尚未保存的修改，确定退出吗？"))) return;
     try { await api("/api/admin/logout", { method: "POST" }); } catch (_) { /* Cookie is cleared by re-login if needed. */ }
+    clearSessionDraft();
     showLogin("已安全退出后台。 ");
   });
   setupAdminThemeControls();
@@ -1109,6 +1223,8 @@
       state.user = payload.user;
       await loadData();
       showApp();
+      const restored = restoreSessionDraft();
+      if (restored) showToast(restored.passphraseOmitted ? "未保存内容已恢复；为安全起见，新的入口口令需要重新填写。" : "未保存内容已恢复，请确认后继续保存。");
     } catch (error) {
       showLogin(error.code === "ADMIN_NOT_CONFIGURED" ? error.message : "");
     }

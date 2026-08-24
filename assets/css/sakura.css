@@ -1329,18 +1329,18 @@ select {
   min-height: 76px;
   justify-content: center;
   flex-direction: column;
-  padding-right: 108px;
+  padding-right: 100px;
 }
 
 .site-card-title {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
   color: var(--text);
   font-size: 18px;
   font-weight: 760;
   line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .search-mark {
@@ -2003,7 +2003,7 @@ select {
   }
 
   .site-card-copy {
-    padding-right: 102px;
+    padding-right: 94px;
   }
 
   .site-card-title {
@@ -2123,6 +2123,36 @@ select {
   .site-card-link {
     min-height: 136px;
     align-items: center;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .site-card-actions {
+    right: 12px;
+    width: 76px;
+  }
+
+  .site-card-copy {
+    padding-right: 84px;
+  }
+
+  .site-icon {
+    flex-basis: 52px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .site-icon i {
+    font-size: 23px;
+  }
+
+  .site-card-title {
+    font-size: 16.5px;
+  }
+
+  .site-card-description {
+    font-size: 13.5px;
+    line-height: 1.4;
   }
 
   .site-card-action {
@@ -2136,6 +2166,41 @@ select {
 @media (max-width: 350px) {
   .header-inner {
     gap: 8px;
+  }
+
+  .site-card-link {
+    gap: 8px;
+  }
+
+  .site-card-actions {
+    width: 70px;
+  }
+
+  .site-card-copy {
+    padding-right: 78px;
+  }
+
+  .site-icon {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .site-icon i {
+    font-size: 21px;
+  }
+
+  .site-card-title {
+    font-size: 16px;
+  }
+
+  .site-card-description {
+    font-size: 13px;
+  }
+
+  .site-card-action {
+    padding-inline: 7px;
+    font-size: 11.5px;
   }
 
   .brand {

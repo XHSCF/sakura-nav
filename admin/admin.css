@@ -279,7 +279,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .admin-card-preview.has-overflow-warning { border-color: color-mix(in srgb, var(--danger) 38%, var(--line)); }
 .preview-icon { display: grid; width: 64px; height: 64px; place-items: center; border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--line)); border-radius: 18px; color: var(--primary); background: var(--primary-soft); font-size: 25px; }
 .preview-copy { display: grid; min-width: 0; align-content: center; }
-.preview-copy strong { display: block; min-width: 0; overflow: hidden; font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
+.preview-copy strong { display: -webkit-box; min-width: 0; overflow: hidden; font-size: 17px; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .preview-copy p { display: -webkit-box; min-height: 42px; margin: 5px 0 3px; overflow: hidden; color: var(--muted); font-size: 14px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .preview-copy small { color: var(--primary-strong); font-size: 10px; font-weight: 750; }
 .preview-actions { display: grid; gap: 7px; }
@@ -368,12 +368,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .dialog-footer { gap: 8px; }
   .dialog-footer { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
   .dialog-scroll { padding: 21px 16px 30px; scrollbar-gutter: auto; }
-  .admin-card-preview { grid-template-columns: 58px minmax(0, 1fr) 88px; gap: 11px; padding: 14px; }
-  .preview-icon { width: 58px; height: 58px; }
+  .admin-card-preview { grid-template-columns: 52px minmax(0, 1fr) 76px; gap: 10px; padding: 12px; }
+  .preview-icon { width: 52px; height: 52px; }
   .preview-copy strong { font-size: 15px; }
-  .preview-copy p { font-size: 12px; }
+  .preview-copy p { font-size: 12.5px; }
   .dialog-footer .unsaved-indicator { padding: 4px 8px; font-size: 10px; }
   .login-card { padding: 26px 22px; border-radius: 24px; }
+}
+
+@media (max-width: 380px) {
+  .admin-card-preview { grid-template-columns: 48px minmax(0, 1fr) 70px; gap: 8px; }
+  .preview-icon { width: 48px; height: 48px; font-size: 21px; }
+  .preview-copy strong { font-size: 14px; }
+  .preview-copy p { font-size: 12px; line-height: 1.4; }
+  .preview-actions span { padding-inline: 5px; font-size: 10.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

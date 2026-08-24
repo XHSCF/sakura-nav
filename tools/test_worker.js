@@ -56,8 +56,9 @@ class TestD1Database {
   }
 }
 
-function request(pathname, { method = "GET", body, cookie, csrf, userAgent, cf } = {}) {
-  const headers = { Accept: "application/json", Origin: "https://example.com" };
+function request(pathname, { method = "GET", body, cookie, csrf, userAgent, cf, origin = "https://example.com" } = {}) {
+  const headers = { Accept: "application/json" };
+  if (origin) headers.Origin = origin;
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (cookie) headers.Cookie = cookie;
   if (csrf) headers["X-Sakura-CSRF"] = csrf;
@@ -201,7 +202,8 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     ASSETS: { fetch: async () => new Response("asset") },
     ADMIN_USERNAME: "admin",
     ADMIN_PASSWORD: "correct horse battery staple",
-    ADMIN_SESSION_SECRET: "a-test-session-secret-that-is-longer-than-32-characters"
+    ADMIN_SESSION_SECRET: "a-test-session-secret-that-is-longer-than-32-characters",
+    PUBLIC_VISIT_LIMIT_PER_MINUTE: "30"
   };
 
   const loginResponse = await module.default.fetch(request("/api/admin/login", {
@@ -307,12 +309,29 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     method: "POST", body: { visitorId: "anonymous-visitor-three", path: "/admin/" }
   }), env);
   assert.equal(invalidVisit.status, 400);
+  const missingOriginVisit = await module.default.fetch(request("/api/public/visit", {
+    method: "POST", body: { visitorId: "anonymous-without-origin", path: "/" }, origin: null
+  }), env);
+  assert.equal(missingOriginVisit.status, 403);
+  const missingOriginUnlock = await module.default.fetch(request("/api/public/hidden", {
+    method: "POST", body: { passphrase: "开门" }, origin: null
+  }), env);
+  assert.equal(missingOriginUnlock.status, 403);
+
+  for (let index = 0; index < 35; index += 1) {
+    const cappedVisit = await module.default.fetch(request("/api/public/visit", {
+      method: "POST",
+      body: { visitorId: `capped-anonymous-visitor-${String(index).padStart(2, "0")}`, path: "/" },
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36"
+    }), env);
+    assert.equal(cappedVisit.status, 204);
+  }
 
   const analyticsResponse = await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env);
   assert.equal(analyticsResponse.status, 200);
   const analytics = (await analyticsResponse.json()).data;
-  assert.equal(Number(analytics.summary.page_views), 2);
-  assert.equal(Number(analytics.summary.visitors), 2);
+  assert.equal(Number(analytics.summary.page_views), 30);
+  assert.equal(Number(analytics.summary.visitors), 30);
   assert.equal(Number(analytics.summary.countries), 2);
   assert.ok(analytics.locations.some((location) => location.country_code === "CN" && location.region === "广东省"));
   assert.deepEqual(new Set(analytics.devices.map((device) => device.label)), new Set(["mobile", "desktop"]));
@@ -329,11 +348,11 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   }), env)).status, 204);
   const analyticsAfterDisable = (await (await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env)).json()).data;
   assert.equal(analyticsAfterDisable.enabled, false);
-  assert.equal(Number(analyticsAfterDisable.summary.page_views), 2);
+  assert.equal(Number(analyticsAfterDisable.summary.page_views), 30);
 
   const clearAnalytics = await module.default.fetch(request("/api/admin/analytics", { method: "DELETE", cookie, csrf: login.csrf }), env);
   assert.equal(clearAnalytics.status, 200);
-  assert.equal((await clearAnalytics.json()).deleted, 2);
+  assert.equal((await clearAnalytics.json()).deleted, 30);
   const analyticsAfterClear = (await (await module.default.fetch(request("/api/admin/analytics?days=7", { cookie }), env)).json()).data;
   assert.equal(Number(analyticsAfterClear.summary.page_views), 0);
 

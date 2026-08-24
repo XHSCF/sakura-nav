@@ -108,6 +108,51 @@ test("application guard waits for navigation data before revealing an initializa
   assert.equal(await fallbackHidden(false), false);
 });
 
+test("database loader accepts legitimate empty data and sanitizes bundled hidden fallback data", async () => {
+  const source = fs.readFileSync(path.join(repositoryRoot, "assets/js/data-loader.js"), "utf8");
+  const bundled = {
+    categories: [{ id: "tools", name: "在线工具", icon: "fa-tools" }],
+    sites: [{ id: "example", name: "示例", url: "https://example.com/", category: "tools" }],
+    hiddenSection: {
+      id: "new-world",
+      name: "新世界",
+      icon: "fa-door-open",
+      passphrase: "secret",
+      welcome: "欢迎",
+      sites: [{ id: "hidden", url: "https://hidden.example/" }]
+    }
+  };
+
+  async function loadWith(fetch) {
+    const window = {
+      SAKURA_DATA: bundled,
+      setTimeout,
+      clearTimeout
+    };
+    vm.runInNewContext(source, { window, fetch, AbortController, Object, console: { info() {} } });
+    return JSON.parse(JSON.stringify(await window.SAKURA_DATA_READY));
+  }
+
+  const remote = await loadWith(async () => new Response(JSON.stringify({
+    data: {
+      categories: [],
+      sites: [],
+      hiddenSection: { id: "new-world", name: "新世界", icon: "fa-door-open", welcome: "欢迎", unlockHash: "a".repeat(64) }
+    }
+  }), { status: 200, headers: { "Content-Type": "application/json" } }));
+  assert.equal(remote.source, "database");
+  assert.deepEqual(remote.categories, []);
+  assert.deepEqual(remote.sites, []);
+
+  const fallback = await loadWith(async () => { throw new Error("database offline"); });
+  assert.equal(fallback.source, "snapshot");
+  assert.equal(fallback.sites.length, 1);
+  assert.equal(fallback.hiddenSection.enabled, false);
+  assert.equal(Object.hasOwn(fallback.hiddenSection, "passphrase"), false);
+  assert.equal(Object.hasOwn(fallback.hiddenSection, "sites"), false);
+  assert.match(source, /const timeout = 2000/);
+});
+
 test("multi-keyword search normalizes whitespace and matches all terms", () => {
   const site = {
     name: "qBittorrent",
@@ -263,12 +308,12 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--line\);[^}]*box-shadow:\s*none;/s);
   assert.doesNotMatch(stylesheet, /\.site-card-link\s*\{[^}]*box-shadow:\s*0 1px 0/s);
   assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*min-height:\s*136px;/);
-  assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*108px;/s);
+  assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*100px;/s);
   assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*50%;[^}]*right:\s*16px;[^}]*width:\s*92px;[^}]*flex-direction:\s*column;[^}]*gap:\s*7px;[^}]*transform:\s*translateY\(-50%\);/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
   assert.match(stylesheet, /\.site-icon\s*\{[^}]*flex:\s*0 0 64px;[^}]*width:\s*64px;[^}]*height:\s*64px;[^}]*border-radius:\s*var\(--apple-corner-icon\);/s);
   assert.match(stylesheet, /\.site-icon i\s*\{[^}]*font-size:\s*28px;/s);
-  assert.match(stylesheet, /\.site-card-title\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
+  assert.match(stylesheet, /\.site-card-title\s*\{[^}]*display:\s*-webkit-box;[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;[^}]*-webkit-line-clamp:\s*2;/s);
   assert.match(stylesheet, /\.site-card-description\s*\{[^}]*min-height:\s*2\.84em;[^}]*color:\s*color-mix\(in srgb, var\(--text\) 76%, var\(--muted\)\);[^}]*font-size:\s*15px;[^}]*font-weight:\s*480;[^}]*-webkit-line-clamp:\s*2;/s);
   assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-link:hover \.site-icon\s*\{[^}]*translate3d\(0, -2px, 0\) rotate\(-4deg\) scale\(1\.07\);/);
   assert.match(stylesheet, /\.site-card-link\.is-icon-pressed \.site-icon,[\s\S]*?\.site-card-link:active \.site-icon\s*\{[^}]*translate3d\(0, -1px, 0\) rotate\(-4deg\) scale\(1\.07\);[^}]*transition-duration:\s*120ms;/s);
@@ -281,7 +326,9 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.doesNotMatch(stylesheet, /\.site-card-action:hover\s*,\s*\.site-card-action:focus-visible/);
   assert.doesNotMatch(stylesheet, /\.site-card-link:hover\s*\{/);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
-  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*102px;[\s\S]*?\.site-card-title\s*\{[^}]*font-size:\s*17px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*14px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-card-actions\s*\{[^}]*right:\s*14px;[^}]*width:\s*88px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*94px;[\s\S]*?\.site-card-title\s*\{[^}]*font-size:\s*17px;[\s\S]*?\.site-card-description\s*\{[^}]*font-size:\s*14px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*60px;[^}]*width:\s*60px;[^}]*height:\s*60px;/);
+  assert.match(stylesheet, /@media \(max-width:\s*470px\)[\s\S]*?\.site-card-link\s*\{[^}]*gap:\s*10px;[^}]*padding:\s*12px;[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*76px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*84px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*52px;/);
+  assert.match(stylesheet, /@media \(max-width:\s*350px\)[\s\S]*?\.site-card-actions\s*\{[^}]*width:\s*70px;[\s\S]*?\.site-card-copy\s*\{[^}]*padding-right:\s*78px;[\s\S]*?\.site-icon\s*\{[^}]*flex-basis:\s*48px;/);
   assert.doesNotMatch(application, /sakura-favorites|favorite-button|favorite-order|scheduleFavoriteFocus|toggleFavorite|moveFavorite/);
   assert.doesNotMatch(stylesheet, /favorite-button|favorite-order|has-order-controls|--favorite-foreground/);
 });
@@ -511,7 +558,7 @@ test("the configured Android dual-link card renders only its two action links", 
     urlLabel: "夸克网盘",
     secondaryUrl: "https://qiuyw.lanzouq.com/isrrM3spg3lc",
     secondaryUrlLabel: "蓝奏云",
-    description: "资源丰富的日漫追番软件，解锁会员免广告。",
+    description: "日漫追番软件，解锁会员免广告。",
     category: "android",
     keywords: ["次元城动漫", "次元城", "日漫", "追番软件", "安卓软件", "夸克", "蓝奏云"],
     addedAt: "2026-07-19"

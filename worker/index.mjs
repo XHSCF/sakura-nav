@@ -10,6 +10,7 @@ const SITE_STATUSES = new Set(["draft", "published"]);
 const ANALYTICS_RANGES = new Set([1, 7, 30, 90]);
 const ANALYTICS_RETENTION_DAYS = 90;
 const VISITOR_ID_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
+const DEFAULT_PUBLIC_VISIT_LIMIT_PER_MINUTE = 240;
 const encoder = new TextEncoder();
 
 function apiHeaders(extra = {}) {
@@ -228,8 +229,12 @@ async function recordVisit(request, env, visit) {
   const client = classifyClient(userAgent, request.headers.get("Sec-CH-UA-Mobile"));
   const geography = geographyFromRequest(request);
   const minuteBucket = new Date().toISOString().slice(0, 16);
-  await env.DB.prepare("INSERT OR IGNORE INTO visitor_events(visitor_hash, path, referrer_host, device_type, browser, operating_system, country_code, region, city, minute_bucket) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE COALESCE((SELECT value FROM settings WHERE key='analytics_enabled'), '1')='1'")
-    .bind(visitorHash, visit.path, visit.referrerHost, client.deviceType, client.browser, client.operatingSystem, geography.countryCode, geography.region, geography.city, minuteBucket).run();
+  const configuredLimit = Number(env.PUBLIC_VISIT_LIMIT_PER_MINUTE);
+  const visitLimit = Number.isInteger(configuredLimit) && configuredLimit >= 30 && configuredLimit <= 3000
+    ? configuredLimit
+    : DEFAULT_PUBLIC_VISIT_LIMIT_PER_MINUTE;
+  await env.DB.prepare("INSERT OR IGNORE INTO visitor_events(visitor_hash, path, referrer_host, device_type, browser, operating_system, country_code, region, city, minute_bucket) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE COALESCE((SELECT value FROM settings WHERE key='analytics_enabled'), '1')='1' AND (SELECT COUNT(*) FROM visitor_events WHERE minute_bucket=?)<?")
+    .bind(visitorHash, visit.path, visit.referrerHost, client.deviceType, client.browser, client.operatingSystem, geography.countryCode, geography.region, geography.city, minuteBucket, minuteBucket, visitLimit).run();
 }
 
 function sqliteTimestamp(value) {
@@ -507,8 +512,9 @@ function cookieHeader(request, token, maximumAge = SESSION_SECONDS) {
   return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maximumAge}${secure}`;
 }
 
-function requireSameOrigin(request) {
+function requireSameOrigin(request, required = false) {
   const origin = request.headers.get("Origin");
+  if (required && !origin) throw new ApiError("请求来源无效。", 403, "INVALID_ORIGIN");
   if (origin && origin !== new URL(request.url).origin) throw new ApiError("请求来源无效。", 403, "INVALID_ORIGIN");
 }
 
@@ -737,7 +743,7 @@ async function handleImport(request, env) {
 async function handlePublic(request, env, pathname, ctx) {
   if (request.method === "GET" && pathname === "/api/public/data") return json({ ok: true, data: await publicData(env) });
   if (request.method === "POST" && pathname === "/api/public/visit") {
-    requireSameOrigin(request);
+    requireSameOrigin(request, true);
     const visit = validateVisitPayload(await readJson(request, 4096));
     const task = recordVisit(request, env, visit);
     if (typeof ctx?.waitUntil === "function") {
@@ -750,6 +756,7 @@ async function handlePublic(request, env, pathname, ctx) {
     return noContent();
   }
   if (request.method === "POST" && pathname === "/api/public/hidden") {
+    requireSameOrigin(request, true);
     const settings = hiddenSettingsForAdmin(await readSettings(env));
     if (!settings.enabled) return errorResponse("隐藏板块当前未开放。", 404, "NOT_FOUND");
     const payload = await readJson(request, 2048);

@@ -20,7 +20,7 @@ window.SAKURA_DATA = Object.freeze({
 
     { id: "anime1", name: "Anime1", url: "https://anime1.me/", description: "页面简洁、更新较快的动画网站。", category: "anime", keywords: ["anime1", "动漫", "动画", "番剧"] },
     { id: "sorani", name: "青空次元", url: "https://www.sorani.net/", description: "动漫番剧内容网站。", category: "anime", keywords: ["青空次元", "sorani", "动漫", "番剧"] },
-    { id: "mycomic", name: "MYCOMIC", url: "https://mycomic.com/", description: "日漫、韩漫、美漫、国漫等，海量漫画免费看，无广告。", category: "anime", keywords: ["MYCOMIC", "mycomic", "日漫", "韩漫", "美漫", "国产漫画", "中文漫画", "免费漫画", "无广告"], addedAt: "2026-07-15" },
+    { id: "mycomic", name: "MYCOMIC", url: "https://mycomic.com/", description: "多地区漫画免费看，无广告。", category: "anime", keywords: ["MYCOMIC", "mycomic", "日漫", "韩漫", "美漫", "国产漫画", "中文漫画", "免费漫画", "无广告"], addedAt: "2026-07-15" },
 
     { id: "skrbt", name: "磁力搜索", url: "https://soskr.net/", description: "BT 磁力搜索。", category: "downloads", keywords: ["磁力搜索", "skrbt", "bt", "torrent"] },
     { id: "dmhy", name: "动漫花园", url: "https://share.dmhy.org/", description: "动漫资源与番剧下载。", category: "downloads", keywords: ["动漫花园", "dmhy", "bt", "番剧下载"] },
@@ -51,7 +51,7 @@ window.SAKURA_DATA = Object.freeze({
     { id: "ifixit", name: "iFixit", url: "https://zh.ifixit.com/", description: "免费的设备维修指南。", category: "tools", keywords: ["ifixit", "维修", "拆机", "指南"], addedAt: "2026-07-12" },
     { id: "resizeon", name: "Resizeon", url: "https://resizeon.com/zh-cn/", description: "在线调整图片尺寸。", category: "tools", keywords: ["resizeon", "图片尺寸", "resize", "缩放"], addedAt: "2026-07-12" },
     { id: "boce", name: "拨测", url: "https://www.boce.com/", description: "网站测速与网络检测平台。", category: "tools", keywords: ["拨测", "BOCE", "boce", "网站测速", "网络检测"], addedAt: "2026-07-13" },
-    { id: "gomusic", name: "GoMusic 音乐迁移", url: "https://music.unmeta.cn/", description: "将网易、汽水和QQ音乐歌单转换后迁移至其他音乐平台。", category: "tools", keywords: ["GoMusic", "音乐迁移", "unmeta", "歌单迁移", "网易云音乐", "汽水音乐", "QQ音乐"], addedAt: "2026-07-17" },
+    { id: "gomusic", name: "GoMusic 音乐迁移", url: "https://music.unmeta.cn/", description: "跨平台转换并迁移音乐歌单。", category: "tools", keywords: ["GoMusic", "音乐迁移", "unmeta", "歌单迁移", "网易云音乐", "汽水音乐", "QQ音乐"], addedAt: "2026-07-17" },
     { id: "squoosh", name: "Squoosh", url: "https://squoosh.app/", description: "在浏览器本地压缩和转换图片格式。", category: "tools", keywords: ["Squoosh", "squoosh", "图片压缩", "图片转换", "图像优化"], addedAt: "2026-07-17" },
     { id: "remove-bg", name: "remove.bg", url: "https://www.remove.bg/", description: "自动移除图片背景并生成透明背景。", category: "tools", keywords: ["remove.bg", "removebg", "抠图", "移除背景", "透明背景", "图片工具"], addedAt: "2026-07-17" },
     { id: "ustc-speedtest", name: "测网速", url: "https://test.ustc.edu.cn/", description: "测试网络延迟、抖动及上传下载速度。", category: "tools", keywords: ["测网速", "测速", "USTC", "test.ustc.edu.cn", "网络测速", "网络延迟", "下载速度", "上传速度"], addedAt: "2026-07-19" },
@@ -61,23 +61,23 @@ window.SAKURA_DATA = Object.freeze({
     { id: "ios-update-blocker", name: "iOS 屏蔽系统更新", url: "https://f.itsnebula.net/noota-26.mobileconfig", description: "用于屏蔽 iOS 系统更新的描述文件。", category: "ios", keywords: ["ios", "屏蔽更新", "描述文件", "mobileconfig"], addedAt: "2026-07-12" },
     { id: "applewalls", name: "iPhone 壁纸", url: "https://applewalls.com/", description: "iPhone 原图壁纸。", category: "ios", keywords: ["iphone", "applewalls", "壁纸", "wallpaper"], addedAt: "2026-07-12" },
     { id: "ios-icons", name: "图标下载", url: "https://jiejingku.net/icon/", description: "iOS 应用图标下载。", category: "ios", keywords: ["ios", "应用图标", "icon", "捷径库"], addedAt: "2026-07-12" },
-    { id: "douyin-parser", name: "抖音万能解析", url: "https://www.icloud.com/shortcuts/eb7052fb90d640ccafe843419c24fa6c", description: "解析并保存抖音无水印视频的 iOS 快捷指令。", category: "ios", keywords: ["抖音万能解析", "抖音解析", "douyin", "抖音去水印", "无水印视频", "iOS快捷指令"], addedAt: "2026-07-14" },
-    { id: "unfaird", name: "unfaird IPA 解密", url: "https://decrypt.34306.lol/", description: "提供 App Store 应用的 IPA 解密与下载服务。", category: "ios", keywords: ["unfaird", "IPA解密", "IPA下载", "App Store", "iOS应用"], addedAt: "2026-08-09" },
-    { id: "shadowrocket-apple-id", name: "小火箭 Apple ID 共享", url: "https://id.ruyie.de/", description: "提供已购 Shadowrocket 的共享Apple ID。", category: "ios", keywords: ["小火箭", "Shadowrocket", "Apple ID", "苹果账号", "美区ID", "ruyie"], addedAt: "2026-08-11" },
+    { id: "douyin-parser", name: "抖音万能解析", url: "https://www.icloud.com/shortcuts/eb7052fb90d640ccafe843419c24fa6c", description: "抖音无水印视频解析快捷指令。", category: "ios", keywords: ["抖音万能解析", "抖音解析", "douyin", "抖音去水印", "无水印视频", "iOS快捷指令"], addedAt: "2026-07-14" },
+    { id: "unfaird", name: "unfaird IPA 解密", url: "https://decrypt.34306.lol/", description: "App Store 应用 IPA 解密下载。", category: "ios", keywords: ["unfaird", "IPA解密", "IPA下载", "App Store", "iOS应用"], addedAt: "2026-08-09" },
+    { id: "shadowrocket-apple-id", name: "小火箭 Apple ID 共享", url: "https://id.ruyie.de/", description: "已购小火箭共享 Apple ID。", category: "ios", keywords: ["小火箭", "Shadowrocket", "Apple ID", "苹果账号", "美区ID", "ruyie"], addedAt: "2026-08-11" },
 
-    { id: "ciyuancheng-anime", name: "次元城动漫", url: "https://pan.quark.cn/s/a7d060249bb7", urlLabel: "夸克网盘", secondaryUrl: "https://qiuyw.lanzouq.com/isrrM3spg3lc", secondaryUrlLabel: "蓝奏云", description: "资源丰富的日漫追番软件，解锁会员免广告。", category: "android", keywords: ["次元城动漫", "次元城", "日漫", "追番软件", "安卓软件", "夸克", "蓝奏云"], addedAt: "2026-07-19" },
+    { id: "ciyuancheng-anime", name: "次元城动漫", url: "https://pan.quark.cn/s/a7d060249bb7", urlLabel: "夸克网盘", secondaryUrl: "https://qiuyw.lanzouq.com/isrrM3spg3lc", secondaryUrlLabel: "蓝奏云", description: "日漫追番软件，解锁会员免广告。", category: "android", keywords: ["次元城动漫", "次元城", "日漫", "追番软件", "安卓软件", "夸克", "蓝奏云"], addedAt: "2026-07-19" },
     { id: "ximalaya-pure", name: "喜马拉雅v9.4.83纯净版", url: "https://pan.quark.cn/s/d620239c2219", urlLabel: "夸克网盘", secondaryUrl: "https://pan.baidu.com/s/1IabO4gt8h2CbMO_gpGHwqw?pwd=ktsR", secondaryUrlLabel: "百度网盘", description: "听书、听课、听段子，尽在喜马拉雅。", category: "android", keywords: ["喜马拉雅", "Ximalaya", "v9.4.83.3", "纯净版", "听书", "听课", "段子", "夸克网盘", "百度网盘"], addedAt: "2026-07-19" },
     { id: "miaowu-comics", name: "喵呜漫画_v1.2.5去广告", url: "https://pan.quark.cn/s/e56b9e5ae33c", urlLabel: "夸克网盘", secondaryUrl: "https://qiuyw.lanzouq.com/i25Vf3s29dja", secondaryUrlLabel: "蓝奏云", description: "汇聚海量漫画资源，界面简洁清爽。", category: "android", keywords: ["喵呜漫画", "喵呜", "v1.2.5", "漫画资源", "去广告", "夸克网盘", "蓝奏云"], addedAt: "2026-07-19" },
     { id: "hongguo-short-drama", name: "红果短剧", url: "https://pan.quark.cn/s/ed5085d3fc9e", urlLabel: "夸克网盘", description: "解锁会员、去除广告弹窗、观影更流畅。", category: "android", keywords: ["红果短剧", "红果", "短剧", "解锁会员", "去广告", "观影", "夸克网盘"], addedAt: "2026-07-19" },
 
     { id: "kaboom-trainer", name: "瞬爆修改器", url: "http://kaboomtrainer.com/", description: "GTA V 单机模式修改工具。", category: "games", keywords: ["瞬爆", "kaboom", "gta5", "修改器"], addedAt: "2026-07-12" },
 
-    { id: "qbittorrent", name: "qBittorrent", url: "https://www.qbittorrent.org/", description: "开源、无广告的跨平台 BitTorrent 客户端。", category: "software", keywords: ["qBittorrent", "qbittorrent", "BitTorrent", "BT下载", "磁力链接", "下载工具"], addedAt: "2026-07-14" },
-    { id: "bitcomet", name: "BitComet", url: "https://www.bitcomet.com/en", description: "支持 BitTorrent、HTTP 与 FTP 的下载客户端。", category: "software", keywords: ["BitComet", "bitcomet", "比特彗星", "BitTorrent", "BT下载", "磁力链接"], addedAt: "2026-07-14" },
+    { id: "qbittorrent", name: "qBittorrent", url: "https://www.qbittorrent.org/", description: "免费开源的 BT 下载客户端。", category: "software", keywords: ["qBittorrent", "qbittorrent", "BitTorrent", "BT下载", "磁力链接", "下载工具"], addedAt: "2026-07-14" },
+    { id: "bitcomet", name: "BitComet", url: "https://www.bitcomet.com/en", description: "支持 BT、HTTP 与 FTP 下载。", category: "software", keywords: ["BitComet", "bitcomet", "比特彗星", "BitTorrent", "BT下载", "磁力链接"], addedAt: "2026-07-14" },
     { id: "trackerslist", name: "TrackersList", url: "https://trackerslist.com/#/zh", description: "两款 BT 客户端配套的公共 Tracker。", category: "software", keywords: ["TrackersList", "trackerslist", "BT Tracker", "Tracker列表", "公共Tracker", "qBittorrent", "BitComet", "BT下载"], addedAt: "2026-07-14" },
-    { id: "potplayer", name: "PotPlayer", url: "https://potplayer.tv/?lang=zh_CN", description: "支持多格式、字幕和硬件加速的 Windows 播放器。", category: "software", keywords: ["PotPlayer", "potplayer", "视频播放器", "影音播放", "字幕", "硬件加速"], addedAt: "2026-07-14" },
+    { id: "potplayer", name: "PotPlayer", url: "https://potplayer.tv/?lang=zh_CN", description: "支持多格式与硬件加速的播放器。", category: "software", keywords: ["PotPlayer", "potplayer", "视频播放器", "影音播放", "字幕", "硬件加速"], addedAt: "2026-07-14" },
     { id: "mpc-be", name: "MPC-BE", url: "https://sourceforge.net/projects/mpcbe/", description: "轻量开源的 Windows 音视频播放器。", category: "software", keywords: ["MPC-BE", "mpcbe", "Media Player Classic", "视频播放器", "音频播放器", "开源播放器"], addedAt: "2026-07-14" },
-    { id: "7-zip", name: "7-Zip", url: "https://www.7-zip.org/", description: "免费开源的高压缩率文件压缩与解压工具。", category: "software", keywords: ["7-Zip", "7zip", "压缩软件", "解压工具", "7z", "zip", "rar"], addedAt: "2026-07-14" }
+    { id: "7-zip", name: "7-Zip", url: "https://www.7-zip.org/", description: "免费开源的文件压缩与解压工具。", category: "software", keywords: ["7-Zip", "7zip", "压缩软件", "解压工具", "7z", "zip", "rar"], addedAt: "2026-07-14" }
   ],
   hiddenSection: {
     id: "new-world",
@@ -88,12 +88,12 @@ window.SAKURA_DATA = Object.freeze({
     sites: [
       { id: "jable", name: "Jable", url: "https://jable.tv/", description: "日本18+。", keywords: ["Jable", "jable", "日本", "18+"] },
       { id: "51chigua", name: "51吃瓜网", url: "https://zuzpayj.cc/", description: "全网更新最快最全的吃瓜网。", keywords: ["51吃瓜网", "51吃瓜", "zuzpayj", "吃瓜网"] },
-      { id: "heiliaowang", name: "黑料网", url: "https://hlwe7.com/", description: "吃瓜爆料，每日揭秘网红黑料与明星丑闻。", keywords: ["黑料网", "hlwe7", "吃瓜", "爆料", "网红黑料", "明星丑闻"] },
+      { id: "heiliaowang", name: "黑料网", url: "https://hlwe7.com/", description: "网红与明星黑料爆料。", keywords: ["黑料网", "hlwe7", "吃瓜", "爆料", "网红黑料", "明星丑闻"] },
       { id: "missav", name: "MissAV", url: "https://missav.ws/", description: "日本18+。", keywords: ["MissAV", "missav", "日本", "18+"] },
       { id: "netflav", name: "Netflav", url: "https://netflav.com/", description: "日本18+。", keywords: ["Netflav", "netflav", "日本", "18+"] },
       { id: "asmr-one", name: "ASMR", url: "https://www.asmr.one/", description: "懂得都懂。", keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"] },
-      { id: "91douyin", name: "91抖阴_v5.2.0", url: "https://qiuyw.lanzouq.com/iioFW3x8fb7i", urlLabel: "蓝奏云", secondaryUrl: "https://pan.baidu.com/s/1vKqZD4i0YIlqBDVFf_MV-A?pwd=nrj7", secondaryUrlLabel: "百度网盘", description: "已去除广告，所有内容免费看，微仿DY式短视频看片。", keywords: ["91抖阴", "91douyin", "短视频", "去广告", "免费观看", "DY"] },
-      { id: "jinman-tiantang", name: "禁漫天堂", url: "https://tz.mmlt.top/r.php?c=X2ZC4pH", urlLabel: "蓝奏云", secondaryUrl: "https://pan.baidu.com/s/1vrK4xz_SqVnHs9bMDJ2mjA?pwd=x9bc", secondaryUrlLabel: "百度网盘", description: "去广告、美化高级版、内置模块。解压密码：qiuyuezt", keywords: ["禁漫天堂", "jinman", "漫画", "去广告", "内置模块"] },
+      { id: "91douyin", name: "91抖阴_v5.2.0", url: "https://qiuyw.lanzouq.com/iioFW3x8fb7i", urlLabel: "蓝奏云", secondaryUrl: "https://pan.baidu.com/s/1vKqZD4i0YIlqBDVFf_MV-A?pwd=nrj7", secondaryUrlLabel: "百度网盘", description: "去广告、内容免费看的短视频应用。", keywords: ["91抖阴", "91douyin", "短视频", "去广告", "免费观看", "DY"] },
+      { id: "jinman-tiantang", name: "禁漫天堂", url: "https://tz.mmlt.top/r.php?c=X2ZC4pH", urlLabel: "蓝奏云", secondaryUrl: "https://pan.baidu.com/s/1vrK4xz_SqVnHs9bMDJ2mjA?pwd=x9bc", secondaryUrlLabel: "百度网盘", description: "去广告美化版；密码 qiuyuezt。", keywords: ["禁漫天堂", "jinman", "漫画", "去广告", "内置模块"] },
       { id: "whos-tv", name: "图片搜AV", url: "https://whos.tv/", description: "日本AV识图搜索引擎，精准、高效。", keywords: ["图片搜AV", "whos.tv", "AV识图", "图片搜索"] }
     ]
   }

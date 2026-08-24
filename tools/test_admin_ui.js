@@ -28,6 +28,8 @@ test("card editor keeps clear sections and a single explicit scroll region", () 
   assert.doesNotMatch(html, /<fieldset class="wide-field radio-field"/);
   assert.match(css, /html\.has-open-dialog, body\.has-open-dialog/);
   assert.match(css, /\.admin-dialog, \.confirm-dialog[^}]*overflow: visible;/s);
+  assert.match(css, /\.preview-copy strong \{[^}]*display: -webkit-box;[^}]*-webkit-line-clamp: 2;/s);
+  assert.match(css, /@media \(max-width: 380px\)[\s\S]*?\.admin-card-preview \{ grid-template-columns: 48px minmax\(0, 1fr\) 70px;/);
 });
 
 test("admin analytics UI exposes responsive privacy, location and history views", () => {
@@ -42,6 +44,19 @@ test("admin analytics UI exposes responsive privacy, location and history views"
   assert.match(application, /\/api\/admin\/analytics/);
   assert.match(css, /\.analytics-dashboard-grid/);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.analytics-dashboard-grid \{ grid-template-columns: 1fr;/);
+});
+
+test("expired admin sessions preserve non-sensitive unsaved form drafts in the current tab", () => {
+  const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
+  assert.match(application, /const sessionDraftKey = "sakura-admin-session-draft-v1"/);
+  assert.match(application, /function captureSessionDraft\(/);
+  assert.match(application, /function restoreSessionDraft\(/);
+  assert.match(application, /window\.sessionStorage\.setItem\(sessionDraftKey/);
+  assert.match(application, /window\.sessionStorage\.removeItem\(sessionDraftKey/);
+  assert.match(application, /\["button", "submit", "file", "password"\]\.includes\(field\.type\)/);
+  assert.match(application, /response\.status === 401[\s\S]*?captureSessionDraft\(\)[\s\S]*?showLogin\(/);
+  assert.match(application, /await loadData\(\);\s*showApp\(\);\s*const restored = restoreSessionDraft\(\);/);
+  assert.match(application, /passphraseOmitted[\s\S]*?elements\.passphrase\.value = ""/);
 });
 
 test("admin styles remain usable without color-mix or backdrop-filter", () => {
