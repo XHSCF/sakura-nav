@@ -95,6 +95,11 @@ def main() -> int:
         ).fetchone()
         if custom != ("后台自定义卡片", "https://example.test/custom"):
             errors.append("增量 migration 覆盖或删除了后台自定义卡片")
+        pc_category = production.execute(
+            "SELECT icon FROM categories WHERE id='software'"
+        ).fetchone()
+        if not pc_category or pc_category[0] != "fa-desktop":
+            errors.append("PC专区图标未统一更新为 fa-desktop")
         required_settings = dict(
             production.execute(
                 "SELECT key, value FROM settings WHERE key IN ('content_revision', 'audit_retention_days', 'click_analytics_enabled', 'announcement_enabled')"
@@ -104,7 +109,7 @@ def main() -> int:
             "announcement_enabled": "0",
             "audit_retention_days": "180",
             "click_analytics_enabled": "1",
-            "content_revision": "1",
+            "content_revision": "2",
         }:
             errors.append("第五轮 migration 缺少内容版本、公告或点击统计设置")
         site_columns = {row[1] for row in production.execute("PRAGMA table_info(sites)")}
@@ -119,7 +124,7 @@ def main() -> int:
         production.execute(
             "INSERT OR REPLACE INTO content_revision_guard(id, valid) VALUES "
             "(1, COALESCE((SELECT CASE WHEN CAST(value AS INTEGER)=? THEN 1 ELSE 0 END FROM settings WHERE key='content_revision'), 0))",
-            (1,),
+            (2,),
         )
         production.execute("UPDATE sites SET description='版本 1' WHERE id='custom-production-card'")
         production.execute(

@@ -228,9 +228,9 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const initialData = (await dataResponse.json()).data;
   assert.ok(initialData.categories.length > 0);
   assert.ok(initialData.sites.length > 0);
-  assert.equal(initialData.revision, 1);
+  assert.equal(initialData.revision, 2);
   assert.equal(initialData.systemStatus.schemaVersion, 7);
-  assert.equal(initialData.systemStatus.contentRevision, 1);
+  assert.equal(initialData.systemStatus.contentRevision, 2);
   assert.equal(initialData.systemStatus.siteCount, initialData.sites.length);
   assert.equal(initialData.systemStatus.categoryCount, initialData.categories.length);
   assert.equal(initialData.systemStatus.siteLimit, 500);

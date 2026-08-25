@@ -5,5 +5,6 @@
   "0004_update_pc_category_icon.sql": "0637f046ff66ce718d4001435314e33ffe23ad7d9caa0c71bca4dc0087f0e84c",
   "0005_first_round_hardening.sql": "181df192ec5945e6ab30f299559f9e66f7dc0906c3d2d8c94a9929455457aeac",
   "0006_safe_maintenance.sql": "32bc8d4ee03387af10315cf6a63f7bd018c7f420b4857f7ab4ce4ccff2e5ec69",
-  "0007_fifth_round_features.sql": "c157242e474dc0d59a232d673263205cde6e6593103c2de3c9221ffc58502601"
+  "0007_fifth_round_features.sql": "c157242e474dc0d59a232d673263205cde6e6593103c2de3c9221ffc58502601",
+  "0008_enforce_pc_category_icon.sql": "535e4eb32f4c6dc8704656498f8f1e1f6bf5d555b42aeb1c4c24867b5fada880"
 }
