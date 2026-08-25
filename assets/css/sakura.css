@@ -1407,8 +1407,17 @@ select {
   padding-right: 100px;
 }
 
+.site-card-title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+}
+
 .site-card-title {
   display: -webkit-box;
+  max-width: 100%;
   overflow: hidden;
   color: var(--text);
   font-size: 18px;
@@ -1469,10 +1478,7 @@ select {
 }
 
 .site-card-new {
-  position: absolute;
-  z-index: 2;
-  top: 8px;
-  right: 16px;
+  flex: 0 0 auto;
   padding: 3px 8px;
   border: 0;
   border-radius: 999px;
@@ -1787,18 +1793,19 @@ select {
 
 .back-to-top {
   --scroll-progress: 0deg;
+  --back-to-top-progress: var(--primary);
   position: fixed;
   z-index: 60;
   right: 16px;
   bottom: 16px;
   width: 44px;
   height: 44px;
-  padding: 2px;
-  overflow: hidden;
+  padding: 0;
+  overflow: visible;
   border: 0;
   border-radius: 50%;
   color: var(--muted);
-  background: conic-gradient(from -90deg, var(--primary) var(--scroll-progress), var(--progress-track) 0);
+  background: transparent;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -1811,11 +1818,24 @@ select {
 .back-to-top::before {
   position: absolute;
   z-index: 0;
-  inset: 2px;
-  border: 1px solid var(--layer-border);
+  inset: 0;
+  border: 2px solid var(--progress-track);
   border-radius: 50%;
-  background: var(--control-bg);
+  background: transparent;
   content: "";
+  pointer-events: none;
+}
+
+@supports ((-webkit-mask: linear-gradient(#000 0 0)) or (mask: linear-gradient(#000 0 0))) {
+  .back-to-top::before {
+    padding: 2px;
+    border: 0;
+    background: conic-gradient(from -90deg, var(--back-to-top-progress) var(--scroll-progress), var(--progress-track) 0);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
 }
 
 .back-to-top i {
@@ -1824,15 +1844,17 @@ select {
 }
 
 .back-to-top:hover {
+  --back-to-top-progress: var(--primary-strong);
   border: 0;
   color: var(--primary-strong);
-  background: conic-gradient(from -90deg, var(--primary) var(--scroll-progress), var(--progress-track) 0);
+  background: transparent;
   box-shadow: none;
   transform: translateY(0);
 }
 
-.back-to-top:hover::before {
-  background: var(--control-bg-hover);
+.back-to-top:active {
+  --back-to-top-progress: var(--primary-strong);
+  color: var(--primary-strong);
 }
 
 .back-to-top:focus-visible {
@@ -2156,10 +2178,6 @@ select {
     width: 88px;
   }
 
-  .site-card-new {
-    right: 14px;
-  }
-
   .site-card-copy {
     padding-right: 94px;
   }
@@ -2286,10 +2304,6 @@ select {
   .site-card-actions {
     right: 12px;
     width: 76px;
-  }
-
-  .site-card-new {
-    right: 12px;
   }
 
   .site-card-copy {

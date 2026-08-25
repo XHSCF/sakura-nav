@@ -607,6 +607,8 @@
 
       const copy = document.createElement("div");
       copy.className = "site-card-copy";
+      const titleRow = document.createElement("div");
+      titleRow.className = "site-card-title-row";
       const title = document.createElement("strong");
       title.className = "site-card-title";
       appendHighlightedText(title, site.name);
@@ -634,7 +636,9 @@
         maintenanceBadge.textContent = site.maintenanceStatus === "review" ? "待复查" : "临时失效";
         meta.appendChild(maintenanceBadge);
       }
-      copy.append(title, description);
+      titleRow.appendChild(title);
+      if (newBadge) titleRow.appendChild(newBadge);
+      copy.append(titleRow, description);
       if (meta.childElementCount) copy.appendChild(meta);
       if (hasCardActions) {
         const actions = document.createElement("div");
@@ -659,7 +663,6 @@
         copy.appendChild(actions);
       }
       cardBody.append(iconBox, copy);
-      if (newBadge) cardBody.appendChild(newBadge);
       article.appendChild(cardBody);
       return article;
     }
