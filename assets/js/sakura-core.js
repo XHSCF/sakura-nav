@@ -36,6 +36,7 @@
   }
 
   const colorThemes = Object.freeze([
+    Object.freeze({ id: "default", name: "默认", color: "#007AFF" }),
     Object.freeze({ id: "miku", name: "初音绿", color: "#39C5BB" }),
     Object.freeze({ id: "purple", name: "经典紫", color: "#7565D9" }),
     Object.freeze({ id: "ocean", name: "海洋蓝", color: "#2484E4" }),
@@ -47,7 +48,7 @@
   ]);
 
   function normalizeColorTheme(value) {
-    return colorThemes.some((theme) => theme.id === value) ? value : "miku";
+    return colorThemes.some((theme) => theme.id === value) ? value : "default";
   }
 
   function cleanRecentVisits(value, validIds, limit) {

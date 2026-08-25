@@ -42,10 +42,11 @@ test("theme mode follows the expected three-state cycle", () => {
   assert.equal(core.nextThemeMode("dark"), "auto");
 });
 
-test("color themes include every requested palette and default to Miku green", () => {
+test("color themes include every requested palette and default to Apple blue", () => {
   assert.deepEqual(
     core.colorThemes.map((theme) => [theme.id, theme.name, theme.color]),
     [
+      ["default", "默认", "#007AFF"],
       ["miku", "初音绿", "#39C5BB"],
       ["purple", "经典紫", "#7565D9"],
       ["ocean", "海洋蓝", "#2484E4"],
@@ -56,8 +57,8 @@ test("color themes include every requested palette and default to Miku green", (
       ["teal", "青绿色", "#089E98"]
     ]
   );
-  assert.equal(core.normalizeColorTheme(null), "miku");
-  assert.equal(core.normalizeColorTheme("unknown"), "miku");
+  assert.equal(core.normalizeColorTheme(null), "default");
+  assert.equal(core.normalizeColorTheme("unknown"), "default");
   assert.equal(core.normalizeColorTheme("purple"), "purple");
 });
 
@@ -77,9 +78,9 @@ test("theme initialization applies saved and system preferences before paint", (
     return dataset;
   }
 
-  assert.deepEqual(initialize(null, null, true), { themeMode: "auto", theme: "dark", colorTheme: "miku" });
+  assert.deepEqual(initialize(null, null, true), { themeMode: "auto", theme: "dark", colorTheme: "default" });
   assert.deepEqual(initialize("light", "purple", true), { themeMode: "light", theme: "light", colorTheme: "purple" });
-  assert.deepEqual(initialize("dark", "invalid", false), { themeMode: "dark", theme: "dark", colorTheme: "miku" });
+  assert.deepEqual(initialize("dark", "invalid", false), { themeMode: "dark", theme: "dark", colorTheme: "default" });
 });
 
 test("application guard waits for navigation data before revealing an initialization fallback", async () => {
@@ -315,8 +316,8 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*100px;/s);
   assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*50%;[^}]*right:\s*16px;[^}]*width:\s*92px;[^}]*flex-direction:\s*column;[^}]*gap:\s*7px;[^}]*transform:\s*translateY\(-50%\);/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
-  assert.match(stylesheet, /\.site-icon\s*\{[^}]*flex:\s*0 0 64px;[^}]*width:\s*64px;[^}]*height:\s*64px;[^}]*border-radius:\s*var\(--apple-corner-icon\);/s);
-  assert.match(stylesheet, /\.site-icon i\s*\{[^}]*font-size:\s*28px;/s);
+  assert.match(stylesheet, /\.site-icon\s*\{[^}]*flex:\s*0 0 64px;[^}]*width:\s*64px;[^}]*height:\s*64px;[^}]*border:\s*0;[^}]*border-radius:\s*0;[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.site-icon i\s*\{[^}]*font-size:\s*40px;/s);
   assert.match(stylesheet, /\.site-card-title\s*\{[^}]*display:\s*-webkit-box;[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;[^}]*-webkit-line-clamp:\s*2;/s);
   assert.match(stylesheet, /\.site-card-description\s*\{[^}]*min-height:\s*2\.84em;[^}]*color:\s*color-mix\(in srgb, var\(--text\) 76%, var\(--muted\)\);[^}]*font-size:\s*15px;[^}]*font-weight:\s*480;[^}]*-webkit-line-clamp:\s*2;/s);
   assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-link:hover \.site-icon\s*\{[^}]*translate3d\(0, -2px, 0\) rotate\(-4deg\) scale\(1\.07\);/);
@@ -324,9 +325,10 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /function pressCardIcon\(event\)[\s\S]*event\.target\.closest\?\.\("\.site-card-link"\)[\s\S]*cardBody\.classList\.add\("is-icon-pressed"\)/);
   assert.match(application, /document\.addEventListener\("pointerdown", pressCardIcon\);[\s\S]*document\.addEventListener\("pointerup", clearPressedCardIcon\);[\s\S]*document\.addEventListener\("pointercancel", clearPressedCardIcon\);/);
   assert.match(application, /document\.addEventListener\("touchstart", pressCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchend", clearPressedCardIcon, \{ passive: true \}\);[\s\S]*document\.addEventListener\("touchcancel", clearPressedCardIcon, \{ passive: true \}\);/);
-  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border:\s*0;[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--action-bg\);[^}]*box-shadow:\s*none;/s);
   assert.doesNotMatch(stylesheet, /\.site-card-action\s*\{[^}]*box-shadow:[^}]*inset 0 [1-9]px 0/s);
-  assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-action:hover\s*\{[^}]*background:\s*var\(--control-bg-hover\);[^}]*box-shadow:\s*none;[^}]*transform:\s*none;/s);
+  assert.match(stylesheet, /@media \(hover:\s*hover\) and \(pointer:\s*fine\)\s*\{[\s\S]*?\.site-card-action:hover\s*\{[^}]*background:\s*var\(--action-bg-hover\);[^}]*box-shadow:\s*none;[^}]*transform:\s*none;/s);
+  assert.match(stylesheet, /\.site-card-action:active\s*\{[^}]*background:\s*var\(--action-bg-active\);[^}]*transform:\s*none;/s);
   assert.doesNotMatch(stylesheet, /\.site-card-action:hover\s*,\s*\.site-card-action:focus-visible/);
   assert.doesNotMatch(stylesheet, /\.site-card-link:hover\s*\{[^}]*background:/s);
   assert.match(stylesheet, /\.site-card-link:active\s*\{[^}]*transform:\s*none;/s);
@@ -360,13 +362,13 @@ test("navigation controls use lightweight Liquid Glass with accessible fallbacks
   assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--glass-bg:\s*rgba\(33, 36, 49, 0\.6\);[^}]*--glass-border:[^}]*--glass-shadow:/s);
   assert.match(stylesheet, /:root\s*\{[^}]*--layer-border:\s*rgba\(37, 35, 56, 0\.14\);[^}]*--card-bg:\s*#ffffff;[^}]*--card-border:\s*rgba\(37, 35, 56, 0\.06\);[^}]*--card-shadow:\s*0 8px 24px rgba\(37, 35, 56, 0\.06\);[^}]*--control-bg:/s);
   assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--card-bg:\s*#2c2c2e;[^}]*--card-border:\s*rgba\(255, 255, 255, 0\.04\);[^}]*--card-shadow:\s*none;/s);
-  assert.match(stylesheet, /\.site-header\s*\{[^}]*border-bottom:\s*1px solid var\(--layer-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--glass-bg\);[^}]*box-shadow:\s*inset 0 1px 0 var\(--glass-highlight\);[^}]*backdrop-filter:\s*blur\(22px\) saturate\(155%\);/s);
-  assert.match(stylesheet, /\.site-nav\s*\{[^}]*color-mix\(in srgb, var\(--surface-solid\) 94%, var\(--glass-bg-strong\)\);/s);
+  assert.match(stylesheet, /\.site-header\s*\{[^}]*border-bottom:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--header-bg\);[^}]*box-shadow:\s*none;[^}]*backdrop-filter:\s*blur\(24px\) saturate\(120%\);/s);
+  assert.match(stylesheet, /\.site-nav\s*\{[^}]*background:\s*var\(--popup-bg\);[^}]*backdrop-filter:\s*blur\(24px\) saturate\(120%\);/s);
   assert.match(stylesheet, /\.nav-link\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--surface-solid\) 90%, var\(--glass-bg-strong\)\);/s);
-  assert.match(stylesheet, /\.icon-button\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*linear-gradient\([^}]*var\(--control-bg\);[^}]*box-shadow:\s*inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\)/s);
-  assert.match(stylesheet, /\.icon-button:hover\s*\{[^}]*background:\s*linear-gradient\([^}]*var\(--control-bg-hover\);[^}]*box-shadow:\s*inset[^}]*transform:\s*none;/s);
+  assert.match(stylesheet, /\.icon-button\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--glass-control-bg\);[^}]*box-shadow:\s*none;[^}]*backdrop-filter:\s*blur\(16px\) saturate\(120%\);/s);
+  assert.match(stylesheet, /\.icon-button:hover\s*\{[^}]*background:\s*var\(--glass-control-bg-hover\);[^}]*box-shadow:\s*none;[^}]*transform:\s*none;/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border:\s*1px solid var\(--layer-border\);[^}]*backdrop-filter:\s*blur\(18px\) saturate\(150%\);/s);
-  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-header,[\s\S]*?\.category-bar\s*\{[^}]*backdrop-filter:\s*blur\(14px\) saturate\(135%\);/);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.site-header,[\s\S]*?\.color-theme-panel\s*\{[^}]*backdrop-filter:\s*blur\(18px\) saturate\(120%\);[\s\S]*?\.category-bar\s*\{[^}]*backdrop-filter:\s*blur\(14px\) saturate\(135%\);/);
   assert.match(stylesheet, /@supports not \(\(backdrop-filter:\s*blur\(1px\)\) or \(-webkit-backdrop-filter:\s*blur\(1px\)\)\)[\s\S]*?background:\s*var\(--glass-bg-fallback\);/);
   assert.match(stylesheet, /@media \(prefers-reduced-transparency:\s*reduce\)[\s\S]*?backdrop-filter:\s*none;/);
 });
@@ -378,15 +380,17 @@ test("public styles keep a complete Android baseline without modern color mixing
   const fallback = stylesheet.slice(fallbackStart, reducedTransparencyStart);
 
   assert.match(stylesheet, /html\s*\{[^}]*-webkit-text-size-adjust:\s*100%;[^}]*text-size-adjust:\s*100%;/s);
-  assert.match(stylesheet, /:root\s*\{[^}]*--muted:\s*#6d697d;[^}]*--primary-strong:\s*#14756f;/s);
+  assert.match(stylesheet, /:root\s*\{[^}]*--muted:\s*#6d697d;[^}]*--primary:\s*#007aff;[^}]*--primary-strong:\s*#0066cc;/s);
   assert.notEqual(fallbackStart, -1);
   assert.notEqual(reducedTransparencyStart, -1);
   assert.match(fallback, /body\s*\{[^}]*background:\s*var\(--bg\);/s);
-  assert.match(fallback, /\.site-header,[\s\S]*?\.icon-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
+  assert.match(fallback, /\.category-bar,\s*\.icon-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
+  assert.match(fallback, /\.site-header\s*\{[^}]*background:\s*var\(--header-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.match(fallback, /\.site-nav,[\s\S]*?\.color-theme-panel\s*\{[^}]*background:\s*var\(--popup-bg\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.category-bar\s*\{[^}]*background:\s*var\(--category-track-bg\);[^}]*box-shadow:\s*var\(--control-surface-shadow\);/s);
   assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*var\(--notice-border\);[^}]*background:\s*var\(--category-selected-bg\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.access-notice\s*\{[^}]*border-color:\s*var\(--notice-border\);[^}]*background:\s*var\(--notice-bg\);[^}]*box-shadow:\s*none;/s);
-  assert.match(fallback, /\.site-card-action\s*\{[^}]*border-color:\s*var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.match(fallback, /\.site-card-action\s*\{[^}]*border:\s*0;[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.site-card-link\s*\{[^}]*border-color:\s*var\(--card-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*var\(--card-shadow\);/s);
   assert.match(fallback, /\.site-card-description,[\s\S]*?\.category-bar \.filter-chip\s*\{[^}]*color:\s*var\(--muted\);/s);
   assert.match(fallback, /--category-icon-bg:\s*var\(--surface-soft\);[^}]*--category-icon-border:\s*var\(--layer-border\);/s);
@@ -422,7 +426,8 @@ test("cards and square controls use responsive Apple-style continuous corners", 
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border-radius:\s*var\(--apple-corner-card\);/s);
   assert.match(stylesheet, /\.icon-button\s*\{[^}]*border-radius:\s*var\(--apple-corner-control\);/s);
   assert.match(stylesheet, /@media \(max-width:\s*768px\)\s*\{[\s\S]*?:root\s*\{[^}]*--apple-corner-card:\s*22px;[^}]*--apple-corner-panel:\s*22px;[^}]*--apple-corner-control:\s*13px;[^}]*--apple-corner-icon:\s*17px;/);
-  assert.match(stylesheet, /@supports \(corner-shape:\s*squircle\)\s*\{[\s\S]*?\.icon-button:not\(\.back-to-top\),[\s\S]*?\.site-card-link,[\s\S]*?\.site-icon,[\s\S]*?\.prose-card,[\s\S]*?\.button\s*\{\s*corner-shape:\s*squircle;/);
+  assert.match(stylesheet, /@supports \(corner-shape:\s*squircle\)\s*\{[\s\S]*?\.icon-button:not\(\.back-to-top\),[\s\S]*?\.site-card-link,[\s\S]*?\.prose-card,[\s\S]*?\.button\s*\{\s*corner-shape:\s*squircle;/);
+  assert.doesNotMatch(stylesheet.match(/@supports \(corner-shape:\s*squircle\)[\s\S]*?\n\}/)?.[0] || "", /\.site-icon/);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*border-radius:\s*999px;/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*border-radius:\s*999px;/s);
 });
@@ -456,7 +461,7 @@ test("segmented controls use one sliding indicator without bounce", () => {
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-card-action:focus-visible\s*\{[^}]*box-shadow:\s*none;[^}]*outline:\s*3px solid color-mix\(in srgb, var\(--primary\) 24%, transparent\);/s);
   assert.match(application, /function ensureSegmentedIndicator\(container\)[\s\S]*container\.prepend\(indicator\)/);
-  assert.match(application, /indicator\.style\.setProperty\("--segmented-indicator-x", `\$\{active\.offsetLeft\}px`\)/);
+  assert.match(application, /const edgeInset = Math\.max\([\s\S]*?--segmented-indicator-edge-inset[\s\S]*?indicator\.style\.setProperty\("--segmented-indicator-x", `\$\{active\.offsetLeft \+ edgeInset\}px`\)[\s\S]*?indicator\.style\.setProperty\("--segmented-indicator-width", `\$\{Math\.max\(0, active\.offsetWidth - edgeInset \* 2\)\}px`\)/);
   assert.match(application, /const shouldAnimate = animate && !reducedMotion/);
   assert.doesNotMatch(stylesheet, /is-bouncing|segmented-control-bounce/);
   assert.doesNotMatch(application, /is-bouncing|animationend/);
@@ -508,7 +513,8 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*font-size:\s*14px;[^}]*font-weight:\s*720;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip-count\s*\{[^}]*font-size:\s*12px;/s);
   assert.match(stylesheet, /@media \(min-width:\s*1024px\)\s*\{\s*\.category-bar\s*\{[^}]*overflow-x:\s*hidden;[^}]*\}\s*\.category-bar \.filter-chip\s*\{[^}]*flex:\s*1 1 0;[^}]*min-width:\s*0;[^}]*padding-inline:\s*6px;/s);
-  assert.match(stylesheet, /\.category-bar\s*\{\s*--segmented-indicator-inset:\s*3px;/s);
+  assert.match(stylesheet, /\.category-bar\s*\{\s*--segmented-indicator-inset:\s*3px;\s*--segmented-indicator-edge-inset:\s*1px;/s);
+  assert.match(application, /const edgeInset = Math\.max\([\s\S]*?--segmented-indicator-edge-inset[\s\S]*?active\.offsetLeft \+ edgeInset[\s\S]*?active\.offsetWidth - edgeInset \* 2/s);
   assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 14px;[^}]*text-align:\s*center;/s);
   assert.match(application, /const categorySummary = result\?\.closest\("\.category-summary"\);/);
   assert.match(application, /function activeResultTarget\(\)\s*\{[\s\S]*?if \(state\.view === "history" && contentUtilities\) return contentUtilities;[\s\S]*?if \(categorySummary\) return categorySummary;[\s\S]*?if \(accessNotice\) return accessNotice;/s);

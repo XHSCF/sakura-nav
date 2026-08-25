@@ -161,7 +161,7 @@ def main() -> int:
         interaction_rules = {
             "会话验证加载态": "data-session-loading" in admin_html and 'data-login-page hidden' in admin_html,
             "明暗模式切换": "data-theme-toggle" in admin_html and "function applyAdminTheme(" in admin_js,
-            "八套配色选择": "data-color-theme-panel" in admin_html and "themeCore.colorThemes.map" in admin_js,
+            "九套配色选择": "data-color-theme-panel" in admin_html and "themeCore.colorThemes.map" in admin_js,
             "前后台主题设置同步": 'const themeKey = "sakura-theme"' in admin_js and 'const colorThemeKey = "sakura-color-theme"' in admin_js,
             "卡片编辑器内容分区": admin_html.count('class="form-section"') >= 4 and "site-basic-heading" in admin_html,
             "卡片位置标题独立间距": 'class="wide-field radio-field" role="group"' in admin_html and '<fieldset class="wide-field radio-field"' not in admin_html,

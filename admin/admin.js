@@ -107,7 +107,7 @@
     const selectedTheme = themeCore.colorThemes.find((theme) => theme.id === validThemeId);
     root.dataset.colorTheme = validThemeId;
     if (persist) {
-      if (validThemeId === "miku") removeTextStorage(colorThemeKey);
+      if (validThemeId === "default") removeTextStorage(colorThemeKey);
       else writeTextStorage(colorThemeKey, validThemeId);
     }
 

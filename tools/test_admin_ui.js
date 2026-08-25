@@ -115,9 +115,10 @@ test("admin styles remain usable without color-mix or backdrop-filter", () => {
   const fallback = css.slice(fallbackStart);
 
   assert.match(css, /html\s*\{[^}]*-webkit-text-size-adjust:\s*100%;[^}]*text-size-adjust:\s*100%;/s);
-  assert.match(css, /:root\s*\{[^}]*--primary-strong:\s*#14756f;/s);
+  assert.match(css, /:root\s*\{[^}]*--primary:\s*#007aff;[^}]*--primary-strong:\s*#0066cc;[^}]*--accent-foreground:\s*#003b73;/s);
   assert.match(css, /:root\s*\{[^}]*--bg:\s*#f7f8fa;/s);
   assert.match(css, /:root\[data-theme="dark"\]\s*\{[^}]*--bg:\s*#0d0f14;/s);
+  assert.match(css, /\.color-theme-panel\s*\{[^}]*background:\s*var\(--popup-bg\);[^}]*backdrop-filter:\s*blur\(24px\) saturate\(120%\);/s);
   assert.doesNotMatch(css, /\.admin-atmosphere|radial-gradient\(circle at 12% 8%/);
   assert.match(css, /@supports not \(\(backdrop-filter: blur\(1px\)\) or \(-webkit-backdrop-filter: blur\(1px\)\)\)[\s\S]*?background:\s*var\(--surface-solid\);/);
   assert.notEqual(fallbackStart, -1);

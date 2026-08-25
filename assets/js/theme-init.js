@@ -9,10 +9,10 @@
   } catch (_) {}
 
   const mode = saved === "light" || saved === "dark" ? saved : "auto";
-  const colorThemes = ["miku", "purple", "ocean", "apple", "sakura", "amber", "black-gold", "teal"];
+  const colorThemes = ["default", "miku", "purple", "ocean", "apple", "sakura", "amber", "black-gold", "teal"];
   document.documentElement.dataset.themeMode = mode;
   document.documentElement.dataset.theme = mode === "auto"
     ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
     : mode;
-  document.documentElement.dataset.colorTheme = colorThemes.includes(savedColorTheme) ? savedColorTheme : "miku";
+  document.documentElement.dataset.colorTheme = colorThemes.includes(savedColorTheme) ? savedColorTheme : "default";
 })();

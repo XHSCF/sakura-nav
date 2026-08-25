@@ -65,7 +65,7 @@
     root.dataset.colorTheme = validThemeId;
 
     if (persist) {
-      if (validThemeId === "miku") removeTextStorage(colorThemeKey);
+      if (validThemeId === "default") removeTextStorage(colorThemeKey);
       else writeTextStorage(colorThemeKey, validThemeId);
     }
 
@@ -420,8 +420,12 @@
 
       const shouldAnimate = animate && !reducedMotion && container.classList.contains("has-segmented-indicator");
       indicator.classList.toggle("is-snapping", !shouldAnimate);
-      indicator.style.setProperty("--segmented-indicator-x", `${active.offsetLeft}px`);
-      indicator.style.setProperty("--segmented-indicator-width", `${active.offsetWidth}px`);
+      const edgeInset = Math.max(
+        0,
+        Number.parseFloat(getComputedStyle(container).getPropertyValue("--segmented-indicator-edge-inset")) || 0
+      );
+      indicator.style.setProperty("--segmented-indicator-x", `${active.offsetLeft + edgeInset}px`);
+      indicator.style.setProperty("--segmented-indicator-width", `${Math.max(0, active.offsetWidth - edgeInset * 2)}px`);
       container.classList.add("has-segmented-indicator");
       if (!shouldAnimate) {
         void indicator.offsetWidth;
