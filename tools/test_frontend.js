@@ -383,7 +383,9 @@ test("public styles keep a complete Android baseline without modern color mixing
   assert.notEqual(reducedTransparencyStart, -1);
   assert.match(fallback, /body\s*\{[^}]*background:\s*var\(--bg\);/s);
   assert.match(fallback, /\.site-header,[\s\S]*?\.icon-button\s*\{[^}]*background:\s*var\(--glass-bg-fallback\);/s);
-  assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*var\(--surface-soft\);[^}]*box-shadow:\s*none;/s);
+  assert.match(fallback, /\.category-bar\s*\{[^}]*background:\s*var\(--category-track-bg\);[^}]*box-shadow:\s*var\(--control-surface-shadow\);/s);
+  assert.match(fallback, /\.segmented-indicator\s*\{[^}]*border-color:\s*var\(--notice-border\);[^}]*background:\s*var\(--category-selected-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.match(fallback, /\.access-notice\s*\{[^}]*border-color:\s*var\(--notice-border\);[^}]*background:\s*var\(--notice-bg\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.site-card-action\s*\{[^}]*border-color:\s*var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*none;/s);
   assert.match(fallback, /\.site-card-link\s*\{[^}]*border-color:\s*var\(--card-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*var\(--card-shadow\);/s);
   assert.match(fallback, /\.site-card-description,[\s\S]*?\.category-bar \.filter-chip\s*\{[^}]*color:\s*var\(--muted\);/s);
@@ -442,14 +444,14 @@ test("segmented controls use one sliding indicator without bounce", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
 
   assert.doesNotMatch(stylesheet, /\.hero::before\s*\{/);
-  assert.match(stylesheet, /\.category-bar\s*\{[^}]*box-shadow:\s*var\(--neutral-lift\), inset 0 0 0 1px color-mix\(in srgb, var\(--glass-highlight\) 48%, transparent\);/s);
+  assert.match(stylesheet, /\.category-bar\s*\{[^}]*background:\s*var\(--category-track-bg\);[^}]*box-shadow:\s*var\(--control-surface-shadow\);/s);
   assert.doesNotMatch(stylesheet, /\.category-bar\s*\{[^}]*0 8px 24px/s);
   assert.match(stylesheet, /\.filter-chip-count,\s*\.group-count\s*\{[^}]*min-width:\s*22px;[^}]*height:\s*22px;[^}]*font-variant-numeric:\s*tabular-nums;/s);
   assert.match(stylesheet, /\.filter-chip-count\s*\{[^}]*margin-left:\s*6px;/s);
   assert.match(stylesheet, /\.group-count\s*\{[^}]*min-width:\s*24px;[^}]*margin-left:\s*-4px;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*width:\s*var\(--segmented-indicator-width, 0px\);[^}]*transform:\s*translate3d\(var\(--segmented-indicator-x, 0px\), 0, 0\);[^}]*width 240ms[^}]*transform 240ms/s);
-  assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*border:\s*1px solid color-mix\(in srgb, var\(--primary\) 10%, transparent\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 10%, var\(--surface-solid\)\);[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.segmented-indicator\s*\{[^}]*border:\s*1px solid var\(--notice-border\);[^}]*background:\s*var\(--category-selected-bg\);[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\.is-active,[\s\S]*?\.category-bar \.filter-chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-card-action:focus-visible\s*\{[^}]*box-shadow:\s*none;[^}]*outline:\s*3px solid color-mix\(in srgb, var\(--primary\) 24%, transparent\);/s);
@@ -498,7 +500,9 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(homepage, /class="container category-summary"[\s\S]*data-search-result/);
   assert.match(homepage, /<h2 id="collection-title">网站分类<\/h2>/);
   assert.match(stylesheet, /\.search-wrap\s*\{[^}]*max-width:\s*1040px;/s);
-  assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--control-bg\);[^}]*box-shadow:\s*var\(--neutral-lift\), inset 0 0 0 1px/s);
+  assert.match(stylesheet, /:root\s*\{[^}]*--search-bg:\s*#e8e8ea;[^}]*--category-track-bg:\s*#ffffff;[^}]*--category-selected-bg:\s*#e2e2e5;[^}]*--notice-bg:\s*#ededef;[^}]*--control-surface-shadow:\s*0 6px 18px rgba\(45, 38, 77, 0\.05\);/s);
+  assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--search-bg:\s*#2c2c2e;[^}]*--category-track-bg:\s*#1c1c1e;[^}]*--category-selected-bg:\s*#444446;[^}]*--notice-bg:\s*#242426;[^}]*--control-surface-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--search-bg\);[^}]*box-shadow:\s*var\(--control-surface-shadow\);/s);
   assert.match(stylesheet, /\.category-slider\s*\{[^}]*width:\s*min\(100%, 1040px\);/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*min-height:\s*46px;[^}]*padding:\s*2px;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*font-size:\s*14px;[^}]*font-weight:\s*720;/s);
@@ -524,6 +528,8 @@ test("the public access notice stays compact and responds to available width", (
   assert.match(homepage, /class="access-notice access-notice--compact"[^>]*data-access-notice>[\s\S]*?class="fas fa-info-circle access-notice-icon"[\s\S]*?class="access-notice-copy"[\s\S]*?class="access-notice-item">部分站点可能受网络环境或失效影响，可尝试使用代理访问；本站仅提供导航，请勿轻信第三方广告，并自行判断内容风险。<\/span>/);
   assert.equal((homepage.match(/access-notice-icon/g) || []).length, 1);
   assert.equal((homepage.match(/access-notice-item/g) || []).length, 1);
+  assert.match(stylesheet, /\.access-notice\s*\{[^}]*border:\s*1px solid var\(--notice-border\);[^}]*background:\s*var\(--notice-bg\);[^}]*box-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.access-notice i\s*\{[^}]*color:\s*var\(--primary\);/s);
   assert.match(stylesheet, /\.category-summary\s*\{[^}]*margin:\s*7px auto 14px;/s);
   assert.match(stylesheet, /\.access-notice--compact\s*\{[^}]*width:\s*fit-content;[^}]*max-width:\s*min\(100%, 920px\);[^}]*margin-bottom:\s*8px;[^}]*padding:\s*9px 14px;[^}]*font-size:\s*13px;/s);
   assert.match(stylesheet, /\.access-notice--compact \.access-notice-copy\s*\{[^}]*flex:\s*0 1 auto;[^}]*gap:\s*0;/s);
