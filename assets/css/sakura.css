@@ -40,9 +40,9 @@
   --category-track-bg-fallback: #ffffff;
   --category-track-border: rgba(37, 35, 56, 0.1);
   --category-track-shadow: 0 10px 28px rgba(37, 35, 56, 0.08);
-  --category-selected-bg: rgba(255, 255, 255, 0.74);
+  --category-selected-bg: rgba(226, 226, 229, 0.9);
   --category-selected-bg-fallback: #e2e2e5;
-  --category-selected-border: rgba(255, 255, 255, 0.78);
+  --category-selected-border: rgba(255, 255, 255, 0.88);
   --notice-bg: #ededef;
   --notice-border: rgba(37, 35, 56, 0.08);
   --control-surface-shadow: 0 6px 18px rgba(45, 38, 77, 0.05);
