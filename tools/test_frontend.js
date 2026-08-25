@@ -307,6 +307,8 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(application, /if \(!hiddenCard\) actionLink\.addEventListener\("click", \(\) => \{ trackVisit\(site\.id\); reportSiteClick\(site\.id\); \}\)/);
   assert.match(application, /if \(!hiddenCard\) \{\s*const category = document\.createElement\("span"\)/);
   assert.match(application, /if \(meta\.childElementCount\) copy\.appendChild\(meta\)/);
+  assert.match(application, /let newBadge = null;[\s\S]*newBadge\.textContent = "NEW";[\s\S]*if \(newBadge\) cardBody\.appendChild\(newBadge\)/);
+  assert.doesNotMatch(application, /meta\.appendChild\(newBadge\)/);
   assert.match(stylesheet, /\.site-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*min-height:\s*136px;[^}]*align-items:\s*center;[^}]*padding:\s*16px;/s);
   assert.match(stylesheet, /\.site-card-link\s*\{[^}]*border:\s*1px solid var\(--card-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*var\(--card-shadow\);/s);
@@ -316,6 +318,7 @@ test("all normal and hidden cards render actions with the expected visit behavio
   assert.match(stylesheet, /\.site-card-copy\s*\{[^}]*display:\s*flex;[^}]*flex:\s*1 1 0;[^}]*justify-content:\s*center;[^}]*flex-direction:\s*column;[^}]*padding-right:\s*100px;/s);
   assert.match(stylesheet, /\.site-card-actions\s*\{[^}]*position:\s*absolute;[^}]*top:\s*50%;[^}]*right:\s*16px;[^}]*width:\s*92px;[^}]*flex-direction:\s*column;[^}]*gap:\s*7px;[^}]*transform:\s*translateY\(-50%\);/s);
   assert.match(stylesheet, /\.site-card-action\s*\{[^}]*min-height:\s*36px;[^}]*border-radius:\s*999px;[^}]*font-size:\s*12px;/s);
+  assert.match(stylesheet, /\.site-card-new\s*\{[^}]*position:\s*absolute;[^}]*top:\s*8px;[^}]*right:\s*16px;[^}]*border:\s*0;[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--action-bg\);[^}]*box-shadow:\s*none;[^}]*font-size:\s*10px;/s);
   assert.match(stylesheet, /\.site-icon\s*\{[^}]*flex:\s*0 0 64px;[^}]*width:\s*64px;[^}]*height:\s*64px;[^}]*border:\s*0;[^}]*border-radius:\s*0;[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(stylesheet, /\.site-icon i\s*\{[^}]*font-size:\s*40px;/s);
   assert.match(stylesheet, /\.site-card-title\s*\{[^}]*display:\s*-webkit-box;[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;[^}]*-webkit-line-clamp:\s*2;/s);

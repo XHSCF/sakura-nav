@@ -1469,15 +1469,21 @@ select {
 }
 
 .site-card-new {
-  padding: 2px 6px;
-  border: 1px solid color-mix(in srgb, var(--pink) 38%, transparent);
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 16px;
+  padding: 3px 8px;
+  border: 0;
   border-radius: 999px;
-  color: color-mix(in srgb, var(--pink) 82%, var(--text));
-  background: color-mix(in srgb, var(--pink) 10%, var(--surface));
-  font-size: 8px;
+  color: var(--primary-strong);
+  background: var(--action-bg);
+  box-shadow: none;
+  font-size: 10px;
   font-weight: 850;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .site-card-maintenance {
@@ -2150,6 +2156,10 @@ select {
     width: 88px;
   }
 
+  .site-card-new {
+    right: 14px;
+  }
+
   .site-card-copy {
     padding-right: 94px;
   }
@@ -2276,6 +2286,10 @@ select {
   .site-card-actions {
     right: 12px;
     width: 76px;
+  }
+
+  .site-card-new {
+    right: 12px;
   }
 
   .site-card-copy {
@@ -2656,10 +2670,6 @@ select {
   .site-card-new {
     color: var(--primary-strong);
     background: var(--surface-soft);
-  }
-
-  .site-card-new {
-    border-color: var(--primary);
   }
 
   .site-card-link {

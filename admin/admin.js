@@ -524,7 +524,7 @@
     return true;
   }
 
-  function showLogin(message = "") {
+  function showLogin(message = "", tone = "error") {
     trackedForms.forEach((form) => setFormBaseline(form));
     [siteDialog, categoryDialog, confirmDialog].forEach((dialog) => {
       if (dialog?.open) {
@@ -539,6 +539,7 @@
     loginPage.hidden = false;
     loginError.hidden = !message;
     loginError.textContent = message;
+    loginError.dataset.tone = tone;
     loginForm?.querySelector("[name='username']")?.focus();
   }
 
@@ -1553,7 +1554,7 @@
     if (hasUnsavedChanges() && !(await confirmAction("放弃未保存修改", "退出后台会丢失尚未保存的修改，确定退出吗？"))) return;
     try { await api("/api/admin/logout", { method: "POST" }); } catch (_) { /* Cookie is cleared by re-login if needed. */ }
     clearSessionDraft();
-    showLogin("已安全退出后台。 ");
+    showLogin("已安全退出后台。", "status");
   });
   setupAdminThemeControls();
   document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => selectTab(button.dataset.tab)));

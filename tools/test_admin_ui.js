@@ -127,3 +127,13 @@ test("admin styles remain usable without color-mix or backdrop-filter", () => {
   assert.match(fallback, /\.analytics-trend-bar,[\s\S]*?\.analytics-breakdown-fill\s*\{[^}]*background:\s*var\(--primary\);/s);
   assert.match(fallback, /button:focus-visible,[\s\S]*?a:focus-visible\s*\{[^}]*outline:\s*3px solid var\(--primary\);/s);
 });
+
+test("admin login card uses a compact neutral panel and flat theme controls", () => {
+  const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");
+  const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
+  assert.match(css, /\.login-card\s*\{[^}]*width:\s*min\(420px, 100%\);[^}]*padding:\s*30px;[^}]*background:\s*var\(--login-surface\);[^}]*box-shadow:\s*var\(--login-shadow\);/s);
+  assert.match(css, /\.login-form \.primary-button\s*\{[^}]*border:\s*0;[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 13%, var\(--login-surface\)\);[^}]*box-shadow:\s*none;[^}]*transform:\s*none;/s);
+  assert.match(css, /@media \(max-width: 680px\)[\s\S]*?\.login-page\s*\{[^}]*padding:\s*16px;[\s\S]*?\.login-card\s*\{[^}]*padding:\s*24px 20px;/s);
+  assert.match(application, /function showLogin\(message = "", tone = "error"\)[\s\S]*loginError\.dataset\.tone = tone;/);
+  assert.match(application, /showLogin\("已安全退出后台。", "status"\)/);
+});

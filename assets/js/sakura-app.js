@@ -621,12 +621,12 @@
         category.textContent = siteCategory?.name || site.category;
         meta.appendChild(category);
       }
+      let newBadge = null;
       if (!hiddenCard && core.isNewSite(site.addedAt, currentDay, 14)) {
-        const newBadge = document.createElement("span");
+        newBadge = document.createElement("span");
         newBadge.className = "site-card-new";
         newBadge.textContent = "NEW";
         newBadge.setAttribute("aria-label", "最近收录");
-        meta.appendChild(newBadge);
       }
       if (site.maintenanceStatus === "review" || site.maintenanceStatus === "unavailable") {
         const maintenanceBadge = document.createElement("span");
@@ -659,6 +659,7 @@
         copy.appendChild(actions);
       }
       cardBody.append(iconBox, copy);
+      if (newBadge) cardBody.appendChild(newBadge);
       article.appendChild(cardBody);
       return article;
     }
