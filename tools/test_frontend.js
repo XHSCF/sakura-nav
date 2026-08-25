@@ -517,6 +517,7 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(stylesheet, /:root\s*\{[^}]*--search-bg:\s*#e8e8ea;[^}]*--category-track-bg:\s*rgba\(255, 255, 255, 0\.82\);[^}]*--category-track-bg-fallback:\s*#ffffff;[^}]*--category-selected-bg:\s*rgba\(226, 226, 229, 0\.9\);[^}]*--category-selected-bg-fallback:\s*#e2e2e5;[^}]*--notice-bg:\s*#ededef;[^}]*--control-surface-shadow:\s*0 6px 18px rgba\(45, 38, 77, 0\.05\);/s);
   assert.match(stylesheet, /:root\[data-theme="dark"\]\s*\{[^}]*--search-bg:\s*#2c2c2e;[^}]*--category-track-bg:\s*rgba\(24, 24, 27, 0\.84\);[^}]*--category-track-bg-fallback:\s*#1c1c1e;[^}]*--category-selected-bg:\s*rgba\(255, 255, 255, 0\.13\);[^}]*--category-selected-bg-fallback:\s*#444446;[^}]*--notice-bg:\s*#242426;[^}]*--control-surface-shadow:\s*none;/s);
   assert.match(stylesheet, /\.search-input\s*\{[^}]*height:\s*56px;[^}]*border:\s*1px solid var\(--layer-border\);[^}]*background:\s*var\(--search-bg\);[^}]*box-shadow:\s*var\(--control-surface-shadow\);/s);
+  assert.match(stylesheet, /@media \(max-width:\s*768px\)[\s\S]*?\.search-input\s*\{[^}]*height:\s*50px;[^}]*font-size:\s*16px;/);
   assert.match(stylesheet, /\.category-slider\s*\{[^}]*width:\s*min\(100%, 1040px\);/s);
   assert.match(stylesheet, /\.category-bar\s*\{[^}]*width:\s*100%;[^}]*min-height:\s*46px;[^}]*padding:\s*2px;/s);
   assert.match(stylesheet, /\.category-bar \.filter-chip\s*\{[^}]*font-size:\s*14px;[^}]*font-weight:\s*720;/s);
