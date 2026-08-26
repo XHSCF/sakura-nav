@@ -313,6 +313,7 @@
     const hiddenWelcome = document.querySelector("[data-hidden-section-welcome]");
     const hiddenCount = document.querySelector("[data-hidden-section-count]");
     const hiddenEyebrow = document.querySelector("[data-hidden-section-eyebrow]");
+    const hiddenTitleIcon = document.querySelector("[data-hidden-section-title-icon]");
     const hiddenExitLabel = document.querySelector("[data-hidden-section-exit-label]");
     const hiddenEmptyTitle = document.querySelector("[data-hidden-section-empty-title]");
     const hiddenEmptyMessage = document.querySelector("[data-hidden-section-empty-message]");
@@ -854,9 +855,7 @@
         updatePressed(privateTypeFilter, "privateType", state.privateType, animatePrivateType && !shouldRebuildFilter);
       }
       if (privateResultSummary) privateResultSummary.textContent = isPrivate ? `显示 ${sites.length} / ${allSites.length} 项` : "";
-      document.querySelectorAll("[data-hidden-section-icon]").forEach((icon) => {
-        icon.className = `fas ${hiddenConfig.icon || "fa-door-open"}`;
-      });
+      if (hiddenTitleIcon) hiddenTitleIcon.className = `fas ${hiddenConfig.icon || "fa-door-open"}`;
     }
 
     async function unlockHiddenSection(value) {

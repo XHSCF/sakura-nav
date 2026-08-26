@@ -1022,8 +1022,7 @@ select {
   gap: 13px;
 }
 
-.hidden-world-title-icon,
-.hidden-world-welcome-icon {
+.hidden-world-title-icon {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
@@ -1070,48 +1069,24 @@ select {
 }
 
 .hidden-world-welcome {
-  position: relative;
   justify-content: center;
-  gap: 16px;
   max-width: 920px;
-  min-height: 104px;
+  min-height: 76px;
   margin: 0 auto 14px;
-  padding: 22px 28px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--primary) 34%, var(--line));
+  padding: 16px 24px;
+  border: 1px solid var(--card-border);
   border-radius: var(--apple-corner-panel);
   color: var(--text);
-  background:
-    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--pink) 20%, transparent), transparent 34%),
-    linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, var(--surface-solid)), var(--surface));
-  box-shadow: var(--shadow-md);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
   text-align: center;
 }
 
-.hidden-world-welcome::after {
-  position: absolute;
-  width: 170px;
-  height: 170px;
-  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
-  border-radius: 50%;
-  content: "";
-  right: -62px;
-  bottom: -112px;
-}
-
-.hidden-world-welcome-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--apple-corner-icon);
-  font-size: 23px;
-}
-
 .hidden-world-welcome strong {
-  position: relative;
-  z-index: 1;
-  font-size: clamp(21px, 2.4vw, 28px);
-  font-weight: 820;
-  letter-spacing: -0.025em;
+  font-size: clamp(17px, 1.8vw, 20px);
+  font-weight: 720;
+  letter-spacing: -0.012em;
+  line-height: 1.45;
 }
 
 .hidden-world-notice {
@@ -2087,21 +2062,13 @@ select {
   }
 
   .hidden-world-welcome {
-    min-height: 92px;
-    gap: 11px;
-    padding: 18px 16px;
+    min-height: 66px;
+    padding: 14px 16px;
     border-radius: var(--apple-corner-panel);
   }
 
-  .hidden-world-welcome-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--apple-corner-control);
-    font-size: 19px;
-  }
-
   .hidden-world-welcome strong {
-    font-size: clamp(18px, 5.3vw, 22px);
+    font-size: clamp(16px, 4.4vw, 18px);
   }
 
   .hidden-world-notice {
@@ -2310,7 +2277,6 @@ select {
   .access-notice,
   .hidden-world-title-icon,
   .hidden-world-welcome,
-  .hidden-world-welcome-icon,
   .hidden-world-empty,
   .app-fallback,
   .site-card-link,
@@ -2732,20 +2698,9 @@ select {
     box-shadow: none;
   }
 
-  .hidden-world-title-icon,
-  .hidden-world-welcome-icon {
+  .hidden-world-title-icon {
     border-color: var(--primary);
     background: var(--surface-solid);
-  }
-
-  .hidden-world-welcome {
-    border-color: var(--primary);
-    background: var(--surface);
-    box-shadow: var(--shadow-md);
-  }
-
-  .hidden-world-welcome::after {
-    border-color: var(--primary);
   }
 
   .search-mark,

@@ -259,6 +259,8 @@ test("private collection keeps only its managed type filter and App Store region
   assert.doesNotMatch(html, /data-private-search|搜索私人收藏/);
   assert.match(html, /class="category-bar private-type-filter" data-private-type-filter/);
   assert.match(html, /data-hidden-section-notice/);
+  assert.match(html, /data-hidden-section-title-icon/);
+  assert.doesNotMatch(html, /hidden-world-welcome-icon|data-hidden-section-icon/);
   assert.doesNotMatch(application, /hiddenTerms|privateSearch/);
   assert.match(application, /privateType:\s*"all"/);
   assert.match(application, /已购应用/);
@@ -271,6 +273,8 @@ test("private collection keeps only its managed type filter and App Store region
   assert.match(stylesheet, /\.private-collection-tools\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
   assert.match(stylesheet, /\.hidden-world-notice\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
   assert.match(stylesheet, /\.site-card-private-meta\s*\{[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--action-bg\);/s);
+  assert.match(stylesheet, /\.hidden-world-welcome\s*\{[^}]*border:\s*1px solid var\(--card-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*var\(--card-shadow\);/s);
+  assert.doesNotMatch(stylesheet, /\.hidden-world-welcome-icon|\.hidden-world-welcome::after/);
   assert.doesNotMatch(stylesheet, /\.private-type-button/);
   assert.doesNotMatch(application, /privateStatus|lastVerifiedAt|状态未设置|确认于/);
   assert.match(application, /privateTypeFilter\.dataset\.privateTypeSignature/);
