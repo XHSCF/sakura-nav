@@ -1093,10 +1093,10 @@
     }
 
     if (categoryBar) {
-      categoryBar.appendChild(createButton("全部站点", "all", "category", data.sites.length, "fa-layer-group"));
+      categoryBar.appendChild(createButton("全部站点", "all", "category", data.sites.length));
       data.categories.forEach((category) => {
         const count = data.sites.filter((site) => site.category === category.id).length;
-        categoryBar.appendChild(createButton(category.name, category.id, "category", count, category.icon || "fa-link"));
+        categoryBar.appendChild(createButton(category.name, category.id, "category", count));
       });
       categoryBar.addEventListener("click", (event) => {
         const button = event.target.closest("[data-category]");

@@ -509,8 +509,8 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(application, /const categorySummary = result\?\.closest\("\.category-summary"\);/);
   assert.match(application, /function activeResultTarget\(\)\s*\{[\s\S]*?if \(state\.view === "history" && contentUtilities\) return contentUtilities;[\s\S]*?if \(categorySummary\) return categorySummary;[\s\S]*?if \(accessNotice\) return accessNotice;/s);
   assert.match(application, /const visualGap = 10;[\s\S]*?visibleStickyHeight\(siteHeader\) \+ visibleStickyHeight\(categoryShell\) \+ visualGap;/s);
-  assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length,\s*"fa-layer-group"\)/);
-  assert.match(application, /createButton\(category\.name,\s*category\.id,\s*"category",\s*count,\s*category\.icon \|\| "fa-link"\)/);
+  assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length\)/);
+  assert.match(application, /createButton\(category\.name,\s*category\.id,\s*"category",\s*count\)/);
   assert.match(application, /countDescription\.className = "sr-only";[\s\S]*countDescription\.textContent = " 个网站";[\s\S]*countLabel\.appendChild\(countDescription\)/);
   assert.doesNotMatch(application, /setAttribute\("aria-label", `\$\{label\}，\$\{count\} 个网站`\)/);
   assert.doesNotMatch(homepage, /data-category-scroll|category-scroll-button/);
