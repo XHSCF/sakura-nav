@@ -303,8 +303,6 @@
     const accessNotice = document.querySelector("[data-access-notice]");
     const siteAnnouncement = document.querySelector("[data-site-announcement]");
     const siteAnnouncementText = document.querySelector("[data-site-announcement-text]");
-    const copyView = document.querySelector("[data-copy-view]");
-    const copyViewLabel = document.querySelector("[data-copy-view-label]");
     const utilityStatus = document.querySelector("[data-utility-status]");
     let hiddenConfig = null;
     const hiddenPanel = document.querySelector("[data-hidden-section]");
@@ -320,14 +318,13 @@
     const hiddenEmptyMessage = document.querySelector("[data-hidden-section-empty-message]");
     const hiddenNotice = document.querySelector("[data-hidden-section-notice]");
     const privateTools = document.querySelector("[data-private-collection-tools]");
-    const privateSearch = document.querySelector("[data-private-search]");
     const privateTypeFilter = document.querySelector("[data-private-type-filter]");
     const privateResultSummary = document.querySelector("[data-private-result-summary]");
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
-    const state = { terms: [], category: "all", view: "all", hidden: false, hiddenTerms: [], privateType: "all" };
+    const state = { terms: [], category: "all", view: "all", hidden: false, privateType: "all" };
     const defaultPrivateTypes = [
       { id: "all", name: "全部", icon: "fa-layer-group" },
       { id: "app", name: "已购应用", icon: "fa-mobile-alt" },
@@ -335,7 +332,6 @@
       { id: "resource", name: "备用资源", icon: "fa-archive" },
       { id: "other", name: "未分类", icon: "fa-tags" }
     ];
-    const privateStatusNames = { purchased: "已购", unlocked: "已解锁内购", frequent: "常用", backup: "备用" };
     const appStoreRegionNames = { cn: "国区", us: "美区" };
     let scrollRequestToken = 0;
     let hiddenTransitionToken = 0;
@@ -653,12 +649,9 @@
         category.textContent = siteCategory?.name || site.category;
         meta.appendChild(category);
       } else if (options.privateCollection === true) {
-        const metadata = [
-          privateTypeDefinition(site.privateType || "other")?.name || "未分类",
-          privateStatusNames[site.privateStatus] || "状态未设置",
-          site.privateType === "app" ? appStoreRegionNames[site.appStoreRegion] || "地区未设置" : null,
-          site.lastVerifiedAt ? `确认于 ${site.lastVerifiedAt}` : null
-        ].filter(Boolean);
+        const metadata = site.privateType === "app"
+          ? [appStoreRegionNames[site.appStoreRegion] || "地区未设置"]
+          : [];
         metadata.forEach((label) => {
           const badge = document.createElement("span");
           badge.className = "site-card-private-meta";
@@ -810,6 +803,7 @@
       const showHistoryControls = state.view === "history";
       if (returnHome) returnHome.hidden = !showHistoryControls;
       if (clearRecent) clearRecent.hidden = !showHistoryControls || recentVisits.length === 0;
+      syncContentUtilities();
       if (result) {
         const matchedCategories = new Set(sites.map((site) => site.category)).size;
         result.textContent = state.terms.length || state.category !== "all" || state.view !== "all"
@@ -823,8 +817,7 @@
       const allSites = Array.isArray(hiddenConfig.sites) ? hiddenConfig.sites : [];
       const isPrivate = hiddenConfig.id === "private-collection";
       const privateTypes = privateTypeDefinitions();
-      const sites = allSites.filter((site) => (!isPrivate || state.privateType === "all" || (site.privateType || "other") === state.privateType)
-        && (!isPrivate || !state.hiddenTerms.length || core.siteMatchesTerms(site, hiddenConfig.name, state.hiddenTerms)));
+      const sites = allSites.filter((site) => !isPrivate || state.privateType === "all" || (site.privateType || "other") === state.privateType);
       const fragment = document.createDocumentFragment();
       sites.forEach((site, index) => {
         const category = isPrivate ? privateTypeDefinition(site.privateType || "other") : hiddenConfig;
@@ -911,9 +904,7 @@
       normalScrollY = window.scrollY;
       state.hidden = true;
       state.terms = [];
-      state.hiddenTerms = [];
       state.privateType = "all";
-      if (privateSearch) privateSearch.value = "";
       window.clearTimeout(hiddenUnlockTimer);
       hiddenTransitionToken += 1;
       scrollRequestToken += 1;
@@ -937,7 +928,6 @@
           const offset = visibleStickyHeight(siteHeader) + 18;
           const top = window.scrollY + hiddenPanel.getBoundingClientRect().top - offset;
           window.scrollTo({ top: Math.max(0, top), behavior: reducedMotion ? "auto" : "smooth" });
-          hiddenExit?.focus({ preventScroll: true });
         });
       });
     }
@@ -946,9 +936,7 @@
       if (!state.hidden) return;
       state.hidden = false;
       state.terms = [];
-      state.hiddenTerms = [];
       state.privateType = "all";
-      if (privateSearch) privateSearch.value = "";
       if (privateTools) {
         privateTools.hidden = true;
         privateTools.setAttribute("aria-hidden", "true");
@@ -975,15 +963,10 @@
         window.requestAnimationFrame(() => {
           if (state.hidden || token !== hiddenTransitionToken) return;
           window.scrollTo({ top: Math.max(0, normalScrollY), behavior: reducedMotion ? "auto" : "smooth" });
-          categoryBar?.querySelector(`[data-category="${state.category}"]`)?.focus({ preventScroll: true });
         });
       });
     }
 
-    privateSearch?.addEventListener("input", () => {
-      state.hiddenTerms = core.queryTerms(privateSearch.value);
-      renderHiddenSection();
-    });
     privateTypeFilter?.addEventListener("click", (event) => {
       const button = event.target.closest("[data-private-type]");
       if (!button) return;
@@ -1079,50 +1062,21 @@
       navigateToPrimaryView(view);
     }
 
-    function fallbackCopyText(value) {
-      const textarea = document.createElement("textarea");
-      textarea.value = value;
-      textarea.className = "copy-fallback-input";
-      textarea.setAttribute("readonly", "");
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        return document.execCommand("copy");
-      } finally {
-        textarea.remove();
-      }
-    }
-
-    async function copyCurrentView() {
-      let copied = false;
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(window.location.href);
-          copied = true;
-        } else {
-          copied = fallbackCopyText(window.location.href);
-        }
-      } catch (_) {
-        try {
-          copied = fallbackCopyText(window.location.href);
-        } catch (_) {}
-      }
-
-      const message = copied ? "当前板块链接已复制" : "复制失败，请手动复制地址栏链接";
-      if (copyViewLabel) copyViewLabel.textContent = copied ? "已复制当前板块" : "复制失败";
-      announceUtility(message);
-      window.setTimeout(() => {
-        if (copyViewLabel) copyViewLabel.textContent = "复制当前板块链接";
-      }, 1800);
-    }
-
     function announceUtility(message) {
       if (!utilityStatus) return;
       utilityStatus.textContent = message;
+      syncContentUtilities();
       window.clearTimeout(utilityResetTimer);
       utilityResetTimer = window.setTimeout(() => {
         utilityStatus.textContent = "";
+        syncContentUtilities();
       }, 3200);
+    }
+
+    function syncContentUtilities() {
+      if (!contentUtilities) return;
+      const hasVisibleButton = [returnHome, clearRecent].some((button) => button && !button.hidden);
+      contentUtilities.hidden = !hasVisibleButton && !utilityStatus?.textContent?.trim();
     }
 
     function clearPressedCardIcon() {
@@ -1139,10 +1093,10 @@
     }
 
     if (categoryBar) {
-      categoryBar.appendChild(createButton("全部站点", "all", "category", data.sites.length));
+      categoryBar.appendChild(createButton("全部站点", "all", "category", data.sites.length, "fa-layer-group"));
       data.categories.forEach((category) => {
         const count = data.sites.filter((site) => site.category === category.id).length;
-        categoryBar.appendChild(createButton(category.name, category.id, "category", count));
+        categoryBar.appendChild(createButton(category.name, category.id, "category", count, category.icon || "fa-link"));
       });
       categoryBar.addEventListener("click", (event) => {
         const button = event.target.closest("[data-category]");
@@ -1201,7 +1155,6 @@
     document.addEventListener("touchcancel", clearPressedCardIcon, { passive: true });
     window.addEventListener("blur", clearPressedCardIcon);
     hiddenExit?.addEventListener("click", exitHiddenSection);
-    copyView?.addEventListener("click", copyCurrentView);
     resetFilters?.addEventListener("click", () => {
       if (search) search.value = "";
       state.terms = [];

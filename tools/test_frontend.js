@@ -249,13 +249,13 @@ test("hidden collections unlock only through the server and clear client state o
   assert.doesNotMatch(loader, /hiddenSection|hiddenCollections|passphrase|unlockHash/);
 });
 
-test("private collection search and type filters stay in memory", () => {
+test("private collection keeps only its managed type filter and App Store region badge", () => {
   const html = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
-  assert.match(html, /data-private-search/);
+  assert.doesNotMatch(html, /data-private-search|搜索私人收藏/);
   assert.match(html, /class="category-bar private-type-filter" data-private-type-filter/);
   assert.match(html, /data-hidden-section-notice/);
-  assert.match(application, /hiddenTerms:\s*\[\]/);
+  assert.doesNotMatch(application, /hiddenTerms|privateSearch/);
   assert.match(application, /privateType:\s*"all"/);
   assert.match(application, /已购应用/);
   assert.match(application, /fa-layer-group[\s\S]*fa-mobile-alt[\s\S]*fa-globe[\s\S]*fa-archive[\s\S]*fa-tags/);
@@ -268,12 +268,11 @@ test("private collection search and type filters stay in memory", () => {
   assert.match(stylesheet, /\.hidden-world-notice\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
   assert.match(stylesheet, /\.site-card-private-meta\s*\{[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--action-bg\);/s);
   assert.doesNotMatch(stylesheet, /\.private-type-button/);
-  assert.match(application, /core\.siteMatchesTerms\(site, hiddenConfig\.name, state\.hiddenTerms\)/);
+  assert.doesNotMatch(application, /privateStatus|lastVerifiedAt|状态未设置|确认于/);
   assert.match(application, /privateTypeFilter\.dataset\.privateTypeSignature/);
   assert.match(application, /key\.replace\(\/\[A-Z\]\/g,[\s\S]*data-\$\{attributeKey\}/);
   assert.match(application, /privateTypeFilter\?\.addEventListener\("click",[\s\S]*renderHiddenSection\(true\)/);
-  assert.doesNotMatch(application, /setItem\([^\n]*hiddenTerms/);
-  assert.doesNotMatch(application, /URLSearchParams[^\n]*hiddenTerms/);
+  assert.doesNotMatch(html, /data-private-status|data-private-verified/);
 });
 
 test("all normal and hidden cards render actions with the expected visit behavior", () => {
@@ -510,12 +509,29 @@ test("search and categories use a compact Telegram-style hierarchy", () => {
   assert.match(application, /const categorySummary = result\?\.closest\("\.category-summary"\);/);
   assert.match(application, /function activeResultTarget\(\)\s*\{[\s\S]*?if \(state\.view === "history" && contentUtilities\) return contentUtilities;[\s\S]*?if \(categorySummary\) return categorySummary;[\s\S]*?if \(accessNotice\) return accessNotice;/s);
   assert.match(application, /const visualGap = 10;[\s\S]*?visibleStickyHeight\(siteHeader\) \+ visibleStickyHeight\(categoryShell\) \+ visualGap;/s);
-  assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length\)/);
+  assert.match(application, /createButton\("全部站点",\s*"all",\s*"category",\s*data\.sites\.length,\s*"fa-layer-group"\)/);
+  assert.match(application, /createButton\(category\.name,\s*category\.id,\s*"category",\s*count,\s*category\.icon \|\| "fa-link"\)/);
   assert.match(application, /countDescription\.className = "sr-only";[\s\S]*countDescription\.textContent = " 个网站";[\s\S]*countLabel\.appendChild\(countDescription\)/);
   assert.doesNotMatch(application, /setAttribute\("aria-label", `\$\{label\}，\$\{count\} 个网站`\)/);
   assert.doesNotMatch(homepage, /data-category-scroll|category-scroll-button/);
   assert.doesNotMatch(stylesheet, /category-scroll-button/);
   assert.doesNotMatch(application, /categoryScroll|scrollCategories|updateCategoryScrollControls|scheduleCategoryScrollControls/);
+});
+
+test("hidden collection transitions do not force focus and obsolete view copying is removed", () => {
+  const homepage = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
+
+  assert.doesNotMatch(homepage, /data-copy-view|复制当前板块链接/);
+  assert.doesNotMatch(application, /copyCurrentView|fallbackCopyText|copyViewLabel|当前板块链接已复制/);
+  assert.doesNotMatch(stylesheet, /copy-fallback-input/);
+  assert.match(homepage, /class="content-utilities"[^>]*hidden/);
+  assert.match(application, /function syncContentUtilities\(\)[\s\S]*contentUtilities\.hidden = !hasVisibleButton/);
+  assert.match(stylesheet, /\.content-utilities\[hidden\]\s*\{\s*display:\s*none;/);
+  assert.doesNotMatch(application, /hiddenExit\?\.focus\(\{\s*preventScroll/);
+  assert.doesNotMatch(application, /querySelector\(`\[data-category="\$\{state\.category\}"\]`\)\?\.focus/);
+  assert.match(stylesheet, /\.hidden-world-title \.group-count\s*\{[^}]*width:\s*28px;[^}]*height:\s*28px;[^}]*border-radius:\s*50%;/s);
 });
 
 test("the public access notice stays compact and responds to available width", () => {

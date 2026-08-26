@@ -32,6 +32,21 @@ test("card editor keeps clear sections and a single explicit scroll region", () 
   assert.match(css, /@media \(max-width: 380px\)[\s\S]*?\.admin-card-preview \{ grid-template-columns: 48px minmax\(0, 1fr\) 70px;/);
 });
 
+test("private collection admin keeps type and region controls without retired metadata", () => {
+  const html = fs.readFileSync(path.join(root, "admin", "index.html"), "utf8");
+  const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");
+  const application = fs.readFileSync(path.join(root, "admin", "admin.js"), "utf8");
+
+  assert.match(html, /data-site-private-type-filter/);
+  assert.match(html, /data-site-region-filter/);
+  assert.match(html, /data-private-type-settings/);
+  assert.doesNotMatch(html, /data-site-private-status-filter|data-private-status-field|data-private-verified-field|name="privateStatus"|name="lastVerifiedAt"/);
+  assert.doesNotMatch(application, /privateStatus|lastVerifiedAt|privateStatusNames/);
+  assert.match(css, /\.settings-grid\s*\{[^}]*align-items:\s*start;/s);
+  assert.match(css, /\.collection-settings-card\s*\{[^}]*align-self:\s*start;/s);
+  assert.match(html, /<details class="private-type-settings wide-field" data-private-type-settings>/);
+});
+
 test("admin analytics UI exposes responsive privacy, location and history views", () => {
   const html = fs.readFileSync(path.join(root, "admin", "index.html"), "utf8");
   const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");

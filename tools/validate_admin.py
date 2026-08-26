@@ -93,9 +93,9 @@ def main() -> int:
             errors.append("D1 卡片表缺少隐藏收藏关联字段")
         if "private_type" not in site_columns:
             errors.append("D1 卡片表缺少私人类型字段")
-        private_metadata_columns = {"private_status", "app_store_region", "last_verified_at"}
-        if private_metadata_columns - site_columns:
-            errors.append("D1 卡片表缺少私人状态、App Store 地区或最后确认日期字段")
+        compatibility_metadata_columns = {"private_status", "app_store_region", "last_verified_at"}
+        if compatibility_metadata_columns - site_columns:
+            errors.append("D1 卡片表缺少兼容元数据列或 App Store 地区字段")
         invalid_private_types = connection.execute(
             "SELECT COUNT(*) FROM sites WHERE "
             "(hidden_collection_id='private-collection' AND (private_type IS NULL OR private_type NOT IN ('app','website','resource','other'))) "
@@ -106,13 +106,10 @@ def main() -> int:
             errors.append("D1 卡片存在无效的私人类型")
         invalid_private_metadata = connection.execute(
             "SELECT COUNT(*) FROM sites WHERE "
-            "(hidden_collection_id<>'private-collection' AND (private_status IS NOT NULL OR app_store_region IS NOT NULL OR last_verified_at IS NOT NULL)) "
-            "OR (hidden_collection_id IS NULL AND (private_status IS NOT NULL OR app_store_region IS NOT NULL OR last_verified_at IS NOT NULL)) "
-            "OR (app_store_region IS NOT NULL AND (private_type<>'app' OR app_store_region NOT IN ('cn','us'))) "
-            "OR (private_status IS NOT NULL AND private_status NOT IN ('purchased','unlocked','frequent','backup'))"
+            "app_store_region IS NOT NULL AND (hidden_collection_id<>'private-collection' OR private_type<>'app' OR app_store_region NOT IN ('cn','us'))"
         ).fetchone()[0]
         if invalid_private_metadata:
-            errors.append("D1 卡片存在无效的私人状态、地区或确认日期")
+            errors.append("D1 卡片存在无效的 App Store 地区")
         click_columns = {row[1] for row in connection.execute("PRAGMA table_info(site_click_daily)")}
         if click_columns != {"site_id", "day", "clicks", "updated_at"}:
             errors.append("D1 卡片点击统计必须只保存卡片、日期、次数和更新时间")
@@ -201,7 +198,7 @@ def main() -> int:
             "卡片位置标题独立间距": 'class="wide-field radio-field" role="group"' in admin_html and '<fieldset class="wide-field radio-field"' not in admin_html,
             "私人类型编辑与筛选": "data-private-type-field" in admin_html and "data-site-private-type-filter" in admin_html and "privateType" in admin_js,
             "私人分类栏名称图标管理": "data-private-type-settings" in admin_html and "privateTypesFromForm" in admin_js and "privateTypeIcon_" in admin_js,
-            "私人状态地区日期与筛选": all(value in admin_html for value in ("data-private-status-field", "data-private-region-field", "data-private-verified-field", "data-site-private-status-filter", "data-site-region-filter")) and all(value in admin_js for value in ("privateStatus", "appStoreRegion", "lastVerifiedAt")),
+            "私人地区编辑与筛选": all(value in admin_html for value in ("data-private-region-field", "data-site-region-filter")) and "appStoreRegion" in admin_js and all(value not in admin_html for value in ("data-private-status-field", "data-private-verified-field", "data-site-private-status-filter")),
             "短ID优先使用网址域名": "adminCore?.preferredSiteId" in admin_js,
             "访问统计管理页面": "data-analytics-content" in admin_html and "function loadAnalytics(" in admin_js,
             "国家与大致地区展示": "data-analytics-locations" in admin_html and "function locationText(" in admin_js,

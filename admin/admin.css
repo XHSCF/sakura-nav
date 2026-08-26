@@ -189,8 +189,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .category-admin-copy span { color: var(--muted); font-size: 10.5px; }
 .category-count { color: var(--muted); font-size: 11px; }
 
-.settings-grid { display: grid; padding: 0; border: 0; background: transparent; box-shadow: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.settings-grid { display: grid; align-items: start; padding: 0; border: 0; background: transparent; box-shadow: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .full-settings-card { grid-column: 1 / -1; }
+.collection-settings-card { display: flex; min-width: 0; align-self: start; flex-direction: column; }
+.collection-settings-card .form-grid { gap: 16px; }
+.collection-settings-card .settings-save-row { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .form-grid { display: grid; gap: 22px; }
 .two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .form-grid.two-columns { column-gap: 20px; }
@@ -725,19 +728,34 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .private-type-settings {
   margin: 18px 0 0;
-  padding: 16px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-.private-type-settings > legend {
-  padding: 0 8px;
+.private-type-settings > summary {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 15px;
   color: var(--text);
   font-weight: 760;
+  background: var(--surface-soft);
+  cursor: pointer;
+  list-style: none;
 }
 
+.private-type-settings > summary::-webkit-details-marker { display: none; }
+.private-type-settings > summary::after { content: "\f078"; color: var(--primary-strong); font: 900 12px/1 "Font Awesome 5 Free"; transition: transform .2s ease; }
+.private-type-settings[open] > summary::after { transform: rotate(180deg); }
+.private-type-settings > summary small { margin-left: auto; color: var(--muted); font-size: 10.5px; font-weight: 700; }
+
 .private-type-settings > p {
-  margin: 0 0 14px;
+  margin: 0;
+  padding: 13px 15px 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.55;
@@ -746,28 +764,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .private-type-settings-grid {
   display: grid;
   gap: 10px;
+  padding: 13px 15px 15px;
 }
 
 .private-type-setting-row {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr);
   align-items: end;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   border-radius: var(--radius-md);
   background: var(--surface-soft);
 }
 
 .private-type-setting-row > i {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   align-self: center;
-  border-radius: 14px;
+  border-radius: 12px;
   color: var(--primary-strong);
   background: color-mix(in srgb, var(--primary) 10%, var(--surface-solid));
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .private-type-setting-row label {

@@ -132,11 +132,6 @@
         </div>
 
         <div class="private-collection-tools" data-private-collection-tools hidden>
-          <label class="private-collection-search">
-            <i class="fas fa-search" aria-hidden="true"></i>
-            <span class="sr-only">搜索私人收藏</span>
-            <input type="search" data-private-search placeholder="搜索私人收藏…" autocomplete="off" spellcheck="false">
-          </label>
           <div class="category-bar private-type-filter" data-private-type-filter role="group" aria-label="按私人类型筛选"></div>
           <p class="private-result-summary" data-private-result-summary aria-live="polite"></p>
         </div>
@@ -182,7 +177,7 @@
             <span class="access-notice-item">部分站点可能受网络环境或失效影响，可尝试使用代理访问；本站仅提供导航，请勿轻信第三方广告，并自行判断内容风险。</span>
           </div>
         </div>
-        <div class="content-utilities" role="group" aria-label="页面工具">
+        <div class="content-utilities" role="group" aria-label="页面工具" hidden>
           <button class="utility-button" type="button" data-return-home hidden>
             <i class="fas fa-home" aria-hidden="true"></i>
             <span>返回首页</span>
@@ -190,10 +185,6 @@
           <button class="utility-button history-clear-button" type="button" data-clear-recent hidden>
             <i class="fas fa-trash-alt" aria-hidden="true"></i>
             <span>清空最近访问</span>
-          </button>
-          <button class="utility-button" type="button" data-copy-view>
-            <i class="fas fa-link" aria-hidden="true"></i>
-            <span data-copy-view-label>复制当前板块链接</span>
           </button>
           <span class="utility-status" role="status" aria-live="polite" data-utility-status></span>
         </div>

@@ -155,7 +155,6 @@ def validate() -> tuple[list[str], list[str]]:
         index_html = index_path.read_text(encoding="utf-8")
         homepage_features = {
             "三档主题按钮": "data-theme-toggle",
-            "当前板块链接复制按钮": "复制当前板块链接",
             "无结果重置按钮": "data-reset-filters",
             "脚本异常提示": "data-app-fallback",
             "无脚本提示": "<noscript>",
@@ -173,7 +172,6 @@ def validate() -> tuple[list[str], list[str]]:
         app_features = {
             "三档主题逻辑": "preferredThemeMode",
             "共享纯逻辑模块": "window.SAKURA_CORE",
-            "当前板块复制反馈": "当前板块链接已复制",
             "搜索高亮逻辑": "appendHighlightedText",
             "匹配板块统计": "matchedCategories",
             "应用就绪状态": 'dataset.appReady = "true"',

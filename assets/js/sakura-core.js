@@ -80,7 +80,6 @@
 
   function siteMatchesTerms(site, categoryName, terms) {
     const privateTypeNames = { app: "已购应用", website: "私人网站", resource: "备用资源", other: "未分类" };
-    const privateStatusNames = { purchased: "已购", unlocked: "已解锁内购", frequent: "常用", backup: "备用" };
     const appStoreRegionNames = { cn: "国区", us: "美区" };
     const searchable = normalize([
       site.name,
@@ -93,11 +92,8 @@
       categoryName,
       site.privateType,
       privateTypeNames[site.privateType],
-      site.privateStatus,
-      privateStatusNames[site.privateStatus],
       site.appStoreRegion,
       appStoreRegionNames[site.appStoreRegion],
-      site.lastVerifiedAt,
       ...(Array.isArray(site.keywords) ? site.keywords : [])
     ].join(" "));
     return terms.every((term) => searchable.includes(term));

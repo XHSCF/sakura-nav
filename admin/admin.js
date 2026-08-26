@@ -55,7 +55,6 @@
     { id: "resource", name: "备用资源", icon: "fa-archive" },
     { id: "other", name: "未分类", icon: "fa-tags" }
   ];
-  const privateStatusNames = { purchased: "已购", unlocked: "已解锁内购", frequent: "常用", backup: "备用" };
   const appStoreRegionNames = { cn: "国区", us: "美区" };
 
   function createElement(tag, className, text) {
@@ -656,15 +655,13 @@
     const status = document.querySelector("[data-site-status-filter]").value;
     const maintenance = document.querySelector("[data-site-maintenance-filter]").value;
     const privateType = document.querySelector("[data-site-private-type-filter]").value;
-    const privateStatus = document.querySelector("[data-site-private-status-filter]").value;
     const appStoreRegion = document.querySelector("[data-site-region-filter]").value;
     return state.data.sites.filter((site) => {
-      const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, site.privateType, privateTypeName(site.privateType), site.privateStatus, privateStatusNames[site.privateStatus], site.appStoreRegion, appStoreRegionNames[site.appStoreRegion], site.lastVerifiedAt, ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
+      const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, site.privateType, privateTypeName(site.privateType), site.appStoreRegion, appStoreRegionNames[site.appStoreRegion], ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
       return (!query || searchable.includes(query))
         && (category === "all" || site.category === category)
         && (visibility === "all" || (visibility === "public" ? !site.isHidden : site.hiddenCollectionId === visibility))
         && (privateType === "all" || site.privateType === privateType)
-        && (privateStatus === "all" || (privateStatus === "unset" ? !site.privateStatus : site.privateStatus === privateStatus))
         && (appStoreRegion === "all" || (appStoreRegion === "unset" ? site.privateType === "app" && !site.appStoreRegion : site.appStoreRegion === appStoreRegion))
         && (status === "all" || site.status === status)
         && (maintenance === "all" || (site.maintenanceStatus || "normal") === maintenance);
@@ -705,9 +702,7 @@
         statusCell.appendChild(createElement("span", `table-badge maintenance-badge is-${site.maintenanceStatus}`, site.maintenanceStatus === "review" ? "待复查" : "临时失效"));
       }
       if (site.hiddenCollectionId === "private-collection") {
-        statusCell.appendChild(createElement("span", "table-badge private-metadata-badge", privateStatusNames[site.privateStatus] || "状态未设置"));
         if (site.privateType === "app") statusCell.appendChild(createElement("span", "table-badge private-metadata-badge", appStoreRegionNames[site.appStoreRegion] || "地区未设置"));
-        if (site.lastVerifiedAt) statusCell.appendChild(createElement("span", "table-badge private-metadata-badge", `确认于 ${site.lastVerifiedAt}`));
       }
 
       const actionCell = document.createElement("td");
@@ -1206,9 +1201,7 @@
     fields.maintenanceStatus.value = site?.maintenanceStatus || "normal";
     fields.location.value = site?.isHidden ? site.hiddenCollectionId || "new-world" : "public";
     fields.privateType.value = site?.privateType || "app";
-    fields.privateStatus.value = site?.privateStatus || "";
     fields.appStoreRegion.value = site?.appStoreRegion || "";
-    fields.lastVerifiedAt.value = site?.lastVerifiedAt || "";
     fields.cardType.value = site?.urlLabel ? "dual" : "single";
     fields.addedAt.value = site?.addedAt || localDateValue();
     if (site) {
@@ -1241,9 +1234,7 @@
     document.querySelector("[data-category-field]").hidden = hidden;
     document.querySelector("[data-added-field]").hidden = hidden;
     document.querySelector("[data-private-type-field]").hidden = !privateCollection;
-    document.querySelector("[data-private-status-field]").hidden = !privateCollection;
     document.querySelector("[data-private-region-field]").hidden = !privateCollection || fields.privateType.value !== "app";
-    document.querySelector("[data-private-verified-field]").hidden = !privateCollection;
     document.querySelector("[data-dual-fields]").hidden = !dual;
     fields.category.required = !hidden;
     fields.privateType.required = privateCollection;
@@ -1254,9 +1245,7 @@
       fields.secondaryUrlLabel.value = "";
     }
     if (!privateCollection) {
-      fields.privateStatus.value = "";
       fields.appStoreRegion.value = "";
-      fields.lastVerifiedAt.value = "";
     } else if (fields.privateType.value !== "app") {
       fields.appStoreRegion.value = "";
     }
@@ -1272,7 +1261,7 @@
     document.querySelector("[data-preview-name]").textContent = fields.name.value.trim() || "卡片名称";
     document.querySelector("[data-preview-description]").textContent = fields.description.value.trim() || "卡片描述会显示在这里。";
     const privateDetails = fields.location.value === "private-collection"
-      ? [privateTypeName(fields.privateType.value), privateStatusNames[fields.privateStatus.value], fields.privateType.value === "app" ? appStoreRegionNames[fields.appStoreRegion.value] || "地区未设置" : null, fields.lastVerifiedAt.value ? `确认于 ${fields.lastVerifiedAt.value}` : null].filter(Boolean)
+      ? [fields.privateType.value === "app" ? appStoreRegionNames[fields.appStoreRegion.value] || "地区未设置" : null].filter(Boolean)
       : [];
     document.querySelector("[data-preview-category]").textContent = hidden ? [hiddenCollection?.name || "隐藏收藏", ...privateDetails].join(" · ") : category?.name || "所属分类";
     document.querySelector("[data-description-count]").textContent = String(fields.description.value.length);
@@ -1318,9 +1307,7 @@
       isHidden: hidden,
       hiddenCollectionId: hidden ? fields.location.value : null,
       privateType: fields.location.value === "private-collection" ? fields.privateType.value : null,
-      privateStatus: fields.location.value === "private-collection" ? fields.privateStatus.value || null : null,
       appStoreRegion: fields.location.value === "private-collection" && fields.privateType.value === "app" ? fields.appStoreRegion.value || null : null,
-      lastVerifiedAt: fields.location.value === "private-collection" ? fields.lastVerifiedAt.value || null : null,
       url: fields.url.value,
       urlLabel: dual ? fields.urlLabel.value : null,
       secondaryUrl: secondaryUrl || null,
@@ -1414,15 +1401,8 @@
         if (row.hiddenCollectionId === "private-collection" && !new Set(["app", "website", "resource", "other"]).has(privateType)) throw new Error(`第 ${number} 条私人类型不正确。`);
         if (row.hiddenCollectionId !== "private-collection" && row.privateType != null) throw new Error(`第 ${number} 条只有私人收藏可设置私人类型。`);
         if (row.hiddenCollectionId === "private-collection" && !row.privateType) row.privateType = "other";
-        const privateStatuses = new Set(["purchased", "unlocked", "frequent", "backup"]);
-        if (row.hiddenCollectionId === "private-collection" && row.privateStatus != null && !privateStatuses.has(row.privateStatus)) throw new Error(`第 ${number} 条私人状态不正确。`);
-        if (row.hiddenCollectionId !== "private-collection" && (row.privateStatus != null || row.appStoreRegion != null || row.lastVerifiedAt != null)) throw new Error(`第 ${number} 条只有私人收藏可设置私人元数据。`);
+        if (row.hiddenCollectionId !== "private-collection" && row.appStoreRegion != null) throw new Error(`第 ${number} 条只有私人收藏应用可设置 App Store 地区。`);
         if (row.appStoreRegion != null && (row.privateType !== "app" || !new Set(["cn", "us"]).has(row.appStoreRegion))) throw new Error(`第 ${number} 条 App Store 地区不正确。`);
-        if (row.lastVerifiedAt != null) {
-          const verifiedAt = String(row.lastVerifiedAt);
-          const parsedVerifiedAt = new Date(`${verifiedAt}T00:00:00Z`);
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(verifiedAt) || Number.isNaN(parsedVerifiedAt.getTime()) || parsedVerifiedAt.toISOString().slice(0, 10) !== verifiedAt) throw new Error(`第 ${number} 条最后确认日期不正确。`);
-        }
         const urls = [row.url, row.secondaryUrl].filter(Boolean);
         urls.forEach((value) => {
           let parsed;
@@ -1459,7 +1439,7 @@
       const copy = createElement("div", "site-cell-copy");
       copy.append(createElement("strong", "", site.name), createElement("span", "", site.id));
       card.appendChild(copy);
-      const privateDetails = site.hiddenCollectionId === "private-collection" ? [privateTypeName(site.privateType), privateStatusNames[site.privateStatus], site.privateType === "app" ? appStoreRegionNames[site.appStoreRegion] || "地区未设置" : null].filter(Boolean) : [];
+      const privateDetails = site.hiddenCollectionId === "private-collection" ? [privateTypeName(site.privateType), site.privateType === "app" ? appStoreRegionNames[site.appStoreRegion] || "地区未设置" : null].filter(Boolean) : [];
       const categoryText = site.isHidden ? [hiddenCollectionById(site.hiddenCollectionId || "new-world")?.name || "隐藏收藏", ...privateDetails].join(" · ") : categoryById(site.category)?.name || site.category;
       const category = createElement("td", "", categoryText);
       category.dataset.label = "位置";
@@ -1714,12 +1694,12 @@
   document.querySelector("[data-batch-add]")?.addEventListener("click", openBatchDialog);
   document.querySelector("[data-add-category]")?.addEventListener("click", () => openCategoryDialog());
   document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => requestDialogClose(button.closest("dialog"))));
-  ["data-site-search", "data-site-category-filter", "data-site-visibility-filter", "data-site-private-type-filter", "data-site-private-status-filter", "data-site-region-filter", "data-site-status-filter", "data-site-maintenance-filter"].forEach((attribute) => {
+  ["data-site-search", "data-site-category-filter", "data-site-visibility-filter", "data-site-private-type-filter", "data-site-region-filter", "data-site-status-filter", "data-site-maintenance-filter"].forEach((attribute) => {
     const control = document.querySelector(`[${attribute}]`);
     control?.addEventListener(control.matches("input") ? "input" : "change", renderSites);
   });
   document.querySelector("[data-site-visibility-filter]")?.addEventListener("change", (event) => {
-    const filters = [document.querySelector("[data-site-private-type-filter]"), document.querySelector("[data-site-private-status-filter]"), document.querySelector("[data-site-region-filter]")];
+    const filters = [document.querySelector("[data-site-private-type-filter]"), document.querySelector("[data-site-region-filter]")];
     filters.forEach((filter) => {
       filter.hidden = event.target.value !== "private-collection";
       if (filter.hidden) filter.value = "all";

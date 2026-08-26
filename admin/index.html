@@ -107,7 +107,6 @@
             <select data-site-category-filter aria-label="按分类筛选"><option value="all">全部分类</option></select>
             <select data-site-visibility-filter aria-label="按位置筛选"><option value="all">全部位置</option><option value="public">仅普通分类</option><option value="new-world">仅新世界</option><option value="private-collection">仅私人收藏</option></select>
             <select data-site-private-type-filter aria-label="按私人类型筛选" hidden><option value="all">全部私人类型</option><option value="app">已购应用</option><option value="website">私人网站</option><option value="resource">备用资源</option><option value="other">未分类（旧数据）</option></select>
-            <select data-site-private-status-filter aria-label="按私人状态筛选" hidden><option value="all">全部私人状态</option><option value="unset">状态未设置</option><option value="purchased">已购</option><option value="unlocked">已解锁内购</option><option value="frequent">常用</option><option value="backup">备用</option></select>
             <select data-site-region-filter aria-label="按 App Store 地区筛选" hidden><option value="all">全部地区</option><option value="unset">地区未设置</option><option value="cn">国区</option><option value="us">美区</option></select>
             <select data-site-status-filter aria-label="按状态筛选"><option value="all">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option></select>
             <select data-site-maintenance-filter aria-label="按维护状态筛选"><option value="all">全部维护状态</option><option value="normal">正常</option><option value="review">待复查</option><option value="unavailable">临时失效</option></select>
@@ -193,7 +192,7 @@
             <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存临时公告</span></button></div>
           </form>
 
-          <form class="settings-card admin-form" data-hidden-settings-form data-collection-id="new-world">
+          <form class="settings-card collection-settings-card admin-form" data-hidden-settings-form data-collection-id="new-world">
             <div class="panel-heading compact-heading"><div><h2>新世界设置</h2><p>更改入口信息和搜索口令。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
             <div class="form-grid two-columns">
               <label><span>板块名称</span><input name="name" maxlength="30" required></label>
@@ -205,7 +204,7 @@
             <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存新世界设置</span></button></div>
           </form>
 
-          <form class="settings-card admin-form" data-hidden-settings-form data-collection-id="private-collection">
+          <form class="settings-card collection-settings-card admin-form" data-hidden-settings-form data-collection-id="private-collection">
             <div class="panel-heading compact-heading"><div><h2>私人收藏设置</h2><p>使用与新世界不同的独立入口暗号。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
             <div class="form-grid two-columns">
               <label><span>板块名称</span><input name="name" maxlength="30" required></label>
@@ -214,8 +213,8 @@
               <label class="wide-field"><span>入口暗号</span><input name="passphrase" type="password" maxlength="64" autocomplete="new-password" spellcheck="false"><small>请先设置独立暗号，再启用私人收藏。</small></label>
               <label class="wide-field"><span>欢迎词</span><input name="welcome" maxlength="80" required></label>
             </div>
-            <fieldset class="private-type-settings wide-field" data-private-type-settings>
-              <legend>私人收藏分类栏</legend>
+            <details class="private-type-settings wide-field" data-private-type-settings>
+              <summary><span>私人收藏分类栏</span><small>5 项配置</small></summary>
               <p>可以修改前台名称和本地图标；内部类型保持固定，已有卡片不会失去归类。</p>
               <div class="private-type-settings-grid">
                 <div class="private-type-setting-row" data-private-type-setting="all"><i class="fas fa-layer-group" data-private-type-icon-preview aria-hidden="true"></i><label><span>全部</span><input name="privateTypeName_all" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_all" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
@@ -224,7 +223,7 @@
                 <div class="private-type-setting-row" data-private-type-setting="resource"><i class="fas fa-archive" data-private-type-icon-preview aria-hidden="true"></i><label><span>备用资源</span><input name="privateTypeName_resource" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_resource" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
                 <div class="private-type-setting-row" data-private-type-setting="other"><i class="fas fa-tags" data-private-type-icon-preview aria-hidden="true"></i><label><span>未分类</span><input name="privateTypeName_other" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_other" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
               </div>
-            </fieldset>
+            </details>
             <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存私人收藏设置</span></button></div>
           </form>
 
@@ -284,9 +283,7 @@
             <label data-category-field><span>所属分类</span><select name="category" required></select></label>
             <label data-added-field><span>收录日期</span><span class="date-control"><input name="addedAt" type="date"></span></label>
             <label data-private-type-field hidden><span>私人类型</span><select name="privateType"><option value="app">已购应用</option><option value="website">私人网站</option><option value="resource">备用资源</option><option value="other" disabled>未分类（旧数据）</option></select><small>新卡片请选择三种正式类型之一。</small></label>
-            <label data-private-status-field hidden><span>私人状态</span><select name="privateStatus"><option value="">状态未设置</option><option value="purchased">已购</option><option value="unlocked">已解锁内购</option><option value="frequent">常用</option><option value="backup">备用</option></select></label>
             <label data-private-region-field hidden><span>App Store 地区</span><select name="appStoreRegion"><option value="">地区未设置</option><option value="cn">国区</option><option value="us">美区</option></select><small>只在“已购应用”卡片上显示。</small></label>
-            <label data-private-verified-field hidden><span>最后确认日期</span><span class="date-control"><input name="lastVerifiedAt" type="date"></span><small>记录你最后一次确认链接或内容的日期。</small></label>
             <label><span>卡片类型</span><select name="cardType"><option value="single">单按钮卡片</option><option value="dual">双按钮卡片</option></select></label>
             <label><span>发布状态</span><select name="status"><option value="published">立即发布</option><option value="draft">暂时下架（保存为草稿）</option></select><small>草稿仍保存在数据库中，可随时重新发布。</small></label>
             <label><span>维护状态</span><select name="maintenanceStatus"><option value="normal">正常</option><option value="review">待复查（前台提示）</option><option value="unavailable">临时失效（前台禁用按钮）</option></select><small>不会因一次联网失败自动改变。</small></label>
