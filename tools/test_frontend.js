@@ -247,6 +247,18 @@ test("hidden collections unlock only through the server and clear client state o
   assert.doesNotMatch(loader, /hiddenSection|hiddenCollections|passphrase|unlockHash/);
 });
 
+test("private collection search and type filters stay in memory", () => {
+  const html = fs.readFileSync(path.join(repositoryRoot, "index.html"), "utf8");
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  assert.match(html, /data-private-search/);
+  assert.match(html, /data-private-type-filter/);
+  assert.match(application, /hiddenTerms:\s*\[\]/);
+  assert.match(application, /privateType:\s*"all"/);
+  assert.match(application, /core\.siteMatchesTerms\(site, hiddenConfig\.name, state\.hiddenTerms\)/);
+  assert.doesNotMatch(application, /setItem\([^\n]*hiddenTerms/);
+  assert.doesNotMatch(application, /URLSearchParams[^\n]*hiddenTerms/);
+});
+
 test("all normal and hidden cards render actions with the expected visit behavior", () => {
   const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");

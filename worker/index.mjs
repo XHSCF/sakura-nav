@@ -14,7 +14,7 @@ const ANALYTICS_RETENTION_DAYS = 90;
 const CLICK_ANALYTICS_RETENTION_DAYS = 90;
 const AUDIT_RETENTION_DAYS = 180;
 const CONTENT_REVISION_HEADER = "X-Sakura-Revision";
-const DATABASE_SCHEMA_VERSION = 8;
+const DATABASE_SCHEMA_VERSION = 9;
 const MAX_SITE_COUNT = 500;
 const MAX_CATEGORY_COUNT = 50;
 const MAX_BATCH_SITE_COUNT = 50;
@@ -393,6 +393,10 @@ export function validateSitePayload(payload, categoryIds = new Set(), hiddenColl
   if (!hidden && !categoryIds.has(category)) throw new ApiError("请选择有效的所属分类。");
   const hiddenCollectionId = hidden ? validateId(payload?.hiddenCollectionId || "new-world", "隐藏收藏 ID") : null;
   if (hidden && !hiddenCollectionIds.has(hiddenCollectionId)) throw new ApiError("请选择有效的隐藏收藏。");
+  const privateTypes = new Set(["app", "website", "resource", "other"]);
+  const privateType = hiddenCollectionId === "private-collection" ? (payload?.privateType || "other") : null;
+  if (hiddenCollectionId === "private-collection" && !privateTypes.has(privateType)) throw new ApiError("请选择有效的私人类型。");
+  if (hiddenCollectionId !== "private-collection" && payload?.privateType != null) throw new ApiError("只有私人收藏卡片可以设置私人类型。");
   const urlLabel = optionalString(payload?.urlLabel, 20);
   const secondaryUrl = validateUrl(payload?.secondaryUrl, "第二个按钮链接", true);
   const secondaryUrlLabel = optionalString(payload?.secondaryUrlLabel, 20);
@@ -414,6 +418,7 @@ export function validateSitePayload(payload, categoryIds = new Set(), hiddenColl
     category,
     isHidden: hidden,
     hiddenCollectionId,
+    privateType,
     url,
     urlLabel,
     secondaryUrl,
@@ -437,7 +442,10 @@ function rowToSite(row) {
     keywords: Array.isArray(keywords) ? keywords : []
   };
   if (!row.is_hidden) site.category = row.category_id;
-  else site.hiddenCollectionId = row.hidden_collection_id || "new-world";
+  else {
+    site.hiddenCollectionId = row.hidden_collection_id || "new-world";
+    if (site.hiddenCollectionId === "private-collection") site.privateType = row.private_type || "other";
+  }
   if (row.primary_label) site.urlLabel = row.primary_label;
   if (row.secondary_url && row.secondary_label) {
     site.secondaryUrl = row.secondary_url;
@@ -678,15 +686,15 @@ async function ensureCategoryUnique(env, category, excludedId = "") {
 
 function siteStatement(env, site, update = false, originalId = site.id) {
   const values = [
-    site.name, site.description, site.category, site.isHidden ? 1 : 0, site.hiddenCollectionId, site.url, site.urlLabel,
+    site.name, site.description, site.category, site.isHidden ? 1 : 0, site.hiddenCollectionId, site.privateType, site.url, site.urlLabel,
     site.secondaryUrl, site.secondaryUrlLabel, JSON.stringify(site.keywords), site.addedAt,
     site.sortOrder, site.status, site.maintenanceStatus
   ];
   if (update) {
-    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, hidden_collection_id=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, maintenance_status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
+    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, hidden_collection_id=?, private_type=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, maintenance_status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
       .bind(...values, originalId);
   }
-  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, hidden_collection_id, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status, maintenance_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, hidden_collection_id, private_type, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status, maintenance_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .bind(site.id, ...values);
 }
 

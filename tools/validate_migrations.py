@@ -109,7 +109,7 @@ def main() -> int:
             "announcement_enabled": "0",
             "audit_retention_days": "180",
             "click_analytics_enabled": "1",
-            "content_revision": "3",
+            "content_revision": "4",
         }:
             errors.append("第五轮 migration 缺少内容版本、公告或点击统计设置")
         site_columns = {row[1] for row in production.execute("PRAGMA table_info(sites)")}
@@ -117,6 +117,8 @@ def main() -> int:
             errors.append("第五轮 migration 未添加卡片维护状态")
         if "hidden_collection_id" not in site_columns:
             errors.append("隐藏收藏 migration 未关联卡片所属收藏")
+        if "private_type" not in site_columns:
+            errors.append("私人收藏 migration 未添加私人类型")
         required_tables = {"content_versions", "site_click_daily", "site_click_minute", "site_click_guard", "hidden_collections"}
         actual_tables = {row[0] for row in production.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         if not required_tables.issubset(actual_tables):
@@ -126,7 +128,7 @@ def main() -> int:
         production.execute(
             "INSERT OR REPLACE INTO content_revision_guard(id, valid) VALUES "
             "(1, COALESCE((SELECT CASE WHEN CAST(value AS INTEGER)=? THEN 1 ELSE 0 END FROM settings WHERE key='content_revision'), 0))",
-            (3,),
+            (4,),
         )
         production.execute("UPDATE sites SET description='版本 1' WHERE id='custom-production-card'")
         production.execute(

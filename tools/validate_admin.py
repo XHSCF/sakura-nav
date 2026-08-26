@@ -88,6 +88,16 @@ def main() -> int:
             errors.append("D1 卡片表缺少独立维护状态")
         if "hidden_collection_id" not in site_columns:
             errors.append("D1 卡片表缺少隐藏收藏关联字段")
+        if "private_type" not in site_columns:
+            errors.append("D1 卡片表缺少私人类型字段")
+        invalid_private_types = connection.execute(
+            "SELECT COUNT(*) FROM sites WHERE "
+            "(hidden_collection_id='private-collection' AND (private_type IS NULL OR private_type NOT IN ('app','website','resource','other'))) "
+            "OR (hidden_collection_id<>'private-collection' AND private_type IS NOT NULL) "
+            "OR (hidden_collection_id IS NULL AND private_type IS NOT NULL)"
+        ).fetchone()[0]
+        if invalid_private_types:
+            errors.append("D1 卡片存在无效的私人类型")
         click_columns = {row[1] for row in connection.execute("PRAGMA table_info(site_click_daily)")}
         if click_columns != {"site_id", "day", "clicks", "updated_at"}:
             errors.append("D1 卡片点击统计必须只保存卡片、日期、次数和更新时间")
@@ -174,6 +184,7 @@ def main() -> int:
             "前后台主题设置同步": 'const themeKey = "sakura-theme"' in admin_js and 'const colorThemeKey = "sakura-color-theme"' in admin_js,
             "卡片编辑器内容分区": admin_html.count('class="form-section"') >= 4 and "site-basic-heading" in admin_html,
             "卡片位置标题独立间距": 'class="wide-field radio-field" role="group"' in admin_html and '<fieldset class="wide-field radio-field"' not in admin_html,
+            "私人类型编辑与筛选": "data-private-type-field" in admin_html and "data-site-private-type-filter" in admin_html and "privateType" in admin_js,
             "短ID优先使用网址域名": "adminCore?.preferredSiteId" in admin_js,
             "访问统计管理页面": "data-analytics-content" in admin_html and "function loadAnalytics(" in admin_js,
             "国家与大致地区展示": "data-analytics-locations" in admin_html and "function locationText(" in admin_js,

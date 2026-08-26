@@ -612,11 +612,13 @@
     const visibility = document.querySelector("[data-site-visibility-filter]").value;
     const status = document.querySelector("[data-site-status-filter]").value;
     const maintenance = document.querySelector("[data-site-maintenance-filter]").value;
+    const privateType = document.querySelector("[data-site-private-type-filter]").value;
     return state.data.sites.filter((site) => {
-      const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
+      const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, site.privateType, ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
       return (!query || searchable.includes(query))
         && (category === "all" || site.category === category)
         && (visibility === "all" || (visibility === "public" ? !site.isHidden : site.hiddenCollectionId === visibility))
+        && (privateType === "all" || site.privateType === privateType)
         && (status === "all" || site.status === status)
         && (maintenance === "all" || (site.maintenanceStatus || "normal") === maintenance);
     });
@@ -646,7 +648,9 @@
 
       const typeCell = document.createElement("td");
       typeCell.dataset.label = "类型";
-      typeCell.appendChild(createElement("span", "table-badge", site.urlLabel ? "双按钮" : "单按钮"));
+      const privateTypeNames = { app: "应用", website: "网站", resource: "资源", other: "其他" };
+      const typeLabel = site.hiddenCollectionId === "private-collection" ? `${privateTypeNames[site.privateType] || "其他"} · ${site.urlLabel ? "双按钮" : "单按钮"}` : site.urlLabel ? "双按钮" : "单按钮";
+      typeCell.appendChild(createElement("span", "table-badge", typeLabel));
 
       const statusCell = document.createElement("td");
       statusCell.dataset.label = "状态";
@@ -1124,6 +1128,7 @@
     fields.status.value = site?.status || "published";
     fields.maintenanceStatus.value = site?.maintenanceStatus || "normal";
     fields.location.value = site?.isHidden ? site.hiddenCollectionId || "new-world" : "public";
+    fields.privateType.value = site?.privateType || "other";
     fields.cardType.value = site?.urlLabel ? "dual" : "single";
     fields.addedAt.value = site?.addedAt || localDateValue();
     if (site) {
@@ -1152,10 +1157,13 @@
     const fields = siteForm.elements;
     const hidden = fields.location.value !== "public";
     const dual = fields.cardType.value === "dual";
+    const privateCollection = fields.location.value === "private-collection";
     document.querySelector("[data-category-field]").hidden = hidden;
     document.querySelector("[data-added-field]").hidden = hidden;
+    document.querySelector("[data-private-type-field]").hidden = !privateCollection;
     document.querySelector("[data-dual-fields]").hidden = !dual;
     fields.category.required = !hidden;
+    fields.privateType.required = privateCollection;
     fields.urlLabel.required = dual;
     if (!dual) {
       fields.urlLabel.value = "";
@@ -1173,7 +1181,8 @@
     document.querySelector("[data-preview-icon]").className = `fas ${hidden ? hiddenCollection?.icon || "fa-lock" : category?.icon || "fa-link"}`;
     document.querySelector("[data-preview-name]").textContent = fields.name.value.trim() || "卡片名称";
     document.querySelector("[data-preview-description]").textContent = fields.description.value.trim() || "卡片描述会显示在这里。";
-    document.querySelector("[data-preview-category]").textContent = hidden ? hiddenCollection?.name || "隐藏收藏" : category?.name || "所属分类";
+    const privateTypeNames = { app: "应用", website: "网站", resource: "资源", other: "其他" };
+    document.querySelector("[data-preview-category]").textContent = hidden ? `${hiddenCollection?.name || "隐藏收藏"}${fields.location.value === "private-collection" ? ` · ${privateTypeNames[fields.privateType.value] || "其他"}` : ""}` : category?.name || "所属分类";
     document.querySelector("[data-description-count]").textContent = String(fields.description.value.length);
     preview?.classList.toggle("is-unavailable", fields.maintenanceStatus.value === "unavailable");
     const actions = document.querySelector("[data-preview-actions]");
@@ -1216,6 +1225,7 @@
       category: hidden ? null : fields.category.value,
       isHidden: hidden,
       hiddenCollectionId: hidden ? fields.location.value : null,
+      privateType: fields.location.value === "private-collection" ? fields.privateType.value : null,
       url: fields.url.value,
       urlLabel: dual ? fields.urlLabel.value : null,
       secondaryUrl: secondaryUrl || null,
@@ -1305,6 +1315,10 @@
         if (!String(row.name || "").trim() || !String(row.description || "").trim()) throw new Error(`第 ${number} 条缺少名称或描述。`);
         if (!row.isHidden && !categoryIds.has(row.category)) throw new Error(`第 ${number} 条所属分类不存在。`);
         if (row.isHidden && !hiddenCollectionById(row.hiddenCollectionId || "new-world")) throw new Error(`第 ${number} 条隐藏收藏不存在。`);
+        const privateType = row.hiddenCollectionId === "private-collection" ? row.privateType || "other" : null;
+        if (row.hiddenCollectionId === "private-collection" && !new Set(["app", "website", "resource", "other"]).has(privateType)) throw new Error(`第 ${number} 条私人类型不正确。`);
+        if (row.hiddenCollectionId !== "private-collection" && row.privateType != null) throw new Error(`第 ${number} 条只有私人收藏可设置私人类型。`);
+        if (row.hiddenCollectionId === "private-collection" && !row.privateType) row.privateType = "other";
         const urls = [row.url, row.secondaryUrl].filter(Boolean);
         urls.forEach((value) => {
           let parsed;
@@ -1341,7 +1355,9 @@
       const copy = createElement("div", "site-cell-copy");
       copy.append(createElement("strong", "", site.name), createElement("span", "", site.id));
       card.appendChild(copy);
-      const category = createElement("td", "", site.isHidden ? hiddenCollectionById(site.hiddenCollectionId || "new-world")?.name || "隐藏收藏" : categoryById(site.category)?.name || site.category);
+      const privateTypeNames = { app: "应用", website: "网站", resource: "资源", other: "其他" };
+      const categoryText = site.isHidden ? `${hiddenCollectionById(site.hiddenCollectionId || "new-world")?.name || "隐藏收藏"}${site.hiddenCollectionId === "private-collection" ? ` · ${privateTypeNames[site.privateType] || "其他"}` : ""}` : categoryById(site.category)?.name || site.category;
+      const category = createElement("td", "", categoryText);
       category.dataset.label = "位置";
       const buttons = createElement("td", "", site.secondaryUrl ? "双按钮" : "单按钮");
       buttons.dataset.label = "按钮";
@@ -1593,9 +1609,15 @@
   document.querySelector("[data-batch-add]")?.addEventListener("click", openBatchDialog);
   document.querySelector("[data-add-category]")?.addEventListener("click", () => openCategoryDialog());
   document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => requestDialogClose(button.closest("dialog"))));
-  ["data-site-search", "data-site-category-filter", "data-site-visibility-filter", "data-site-status-filter", "data-site-maintenance-filter"].forEach((attribute) => {
+  ["data-site-search", "data-site-category-filter", "data-site-visibility-filter", "data-site-private-type-filter", "data-site-status-filter", "data-site-maintenance-filter"].forEach((attribute) => {
     const control = document.querySelector(`[${attribute}]`);
     control?.addEventListener(control.matches("input") ? "input" : "change", renderSites);
+  });
+  document.querySelector("[data-site-visibility-filter]")?.addEventListener("change", (event) => {
+    const filter = document.querySelector("[data-site-private-type-filter]");
+    filter.hidden = event.target.value !== "private-collection";
+    if (filter.hidden) filter.value = "all";
+    renderSites();
   });
   siteForm?.addEventListener("submit", saveSite);
   batchForm?.addEventListener("submit", saveBatchSites);
