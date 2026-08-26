@@ -50,9 +50,6 @@ REQUIRED_FILES = (
 )
 LOCAL_REF_RE = re.compile(r"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
 SITE_RE = re.compile(r"\{(?=[^{}]*\bid:\s*\")[^{}]*\burl:\s*\"[^{}]+?\bcategory:\s*\"[^{}]+?\}")
-HIDDEN_SITE_RE = re.compile(
-    r"\{(?=[^{}]*\bid:\s*\")(?=[^{}]*\burl:\s*\")(?=[^{}]*\bdescription:\s*\")(?=[^{}]*\bkeywords:\s*\[)[^{}]*\}"
-)
 CATEGORY_RE = re.compile(
     r"\{(?=[^{}]*\bid:\s*\"[a-z0-9-]+\")(?=[^{}]*\bname:\s*\"[^\"]+\")[^{}]*\}"
 )
@@ -395,109 +392,8 @@ def validate() -> tuple[list[str], list[str]]:
             if values["url"].startswith("http://"):
                 warnings.append(f"网站 {site_id} 仍使用未验证 HTTPS 的导航地址：{values['url']}")
 
-        hidden_match = re.search(r"\bhiddenSection\s*:\s*\{([\s\S]*)\}\s*\}\);\s*$", data_text)
-        if not hidden_match:
-            errors.append("sites-data.js 缺少新世界隐藏板块配置")
-        else:
-            hidden_text = hidden_match.group(1)
-            hidden_meta, separator, hidden_site_tail = hidden_text.partition("sites: [")
-            expected_hidden = {
-                "id": "new-world",
-                "name": "新世界",
-                "icon": "fa-door-open",
-                "passphrase": "开门",
-                "welcome": "欢迎踏入新世界的大门",
-            }
-            for name, expected in expected_hidden.items():
-                actual = field(hidden_meta, name)
-                if actual != expected:
-                    errors.append(f"隐藏板块 {name} 配置应为：{expected}")
-            if not separator or "]" not in hidden_site_tail:
-                errors.append("隐藏板块 sites 必须为数组")
-            else:
-                hidden_sites_text = hidden_site_tail.rsplit("]", 1)[0]
-                hidden_blocks = HIDDEN_SITE_RE.findall(hidden_sites_text)
-                hidden_objects = re.findall(r"\{[^{}]*\}", hidden_sites_text)
-                if len(hidden_blocks) != len(hidden_objects):
-                    errors.append("隐藏板块网站对象缺少必要字段")
-                for block in hidden_blocks:
-                    values = {name: field(block, name) for name in ("id", "name", "url", "description")}
-                    for name, value in values.items():
-                        if not value:
-                            identity = values.get("id") or values.get("name") or "未知"
-                            errors.append(f"隐藏网站数据必填字段为空：{identity} / {name}")
-                    site_id = values["id"]
-                    ids.append(site_id)
-                    urls.append(values["url"])
-                    names.append(values["name"].casefold())
-                    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", site_id):
-                        errors.append(f"隐藏网站 id 格式无效：{site_id or '空值'}")
-                    try:
-                        parsed_url = urlsplit(values["url"])
-                        if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
-                            errors.append(f"隐藏网站 {site_id} 的 URL 必须是完整 HTTP(S) 地址：{values['url']}")
-                        elif parsed_url.username or parsed_url.password:
-                            errors.append(f"隐藏网站 {site_id} 的 URL 不得包含认证信息")
-                        normalized_urls.append(normalized_url_key(values["url"]))
-                    except ValueError:
-                        errors.append(f"隐藏网站 {site_id} 的 URL 无法解析：{values['url']}")
-                    dual_values = {name: field(block, name) for name in ("urlLabel", "secondaryUrl", "secondaryUrlLabel")}
-                    has_url_label = bool(re.search(r"\burlLabel\s*:", block))
-                    secondary_fields = {"secondaryUrl", "secondaryUrlLabel"}
-                    secondary_fields_present = {
-                        name for name in secondary_fields
-                        if re.search(rf"\b{re.escape(name)}\s*:", block)
-                    }
-                    if not has_url_label and secondary_fields_present:
-                        errors.append(f"双按钮隐藏网站 {site_id} 缺少字段：urlLabel")
-                    elif has_url_label:
-                        if not dual_values["urlLabel"]:
-                            errors.append(f"双按钮隐藏网站 {site_id} 的 urlLabel 不能为空字符串")
-                        if secondary_fields_present and secondary_fields_present != secondary_fields:
-                            missing = sorted(secondary_fields - secondary_fields_present)
-                            errors.append(f"双按钮隐藏网站 {site_id} 缺少字段：{', '.join(missing)}")
-                        elif secondary_fields_present:
-                            for name in secondary_fields:
-                                if not dual_values[name]:
-                                    errors.append(f"双按钮隐藏网站 {site_id} 的 {name} 不能为空字符串")
-                        if secondary_fields_present == secondary_fields:
-                            secondary_url = dual_values["secondaryUrl"]
-                            primary_normalized = ""
-                            secondary_normalized = ""
-                            try:
-                                parsed_secondary_url = urlsplit(secondary_url)
-                                if parsed_secondary_url.scheme not in {"http", "https"} or not parsed_secondary_url.hostname:
-                                    errors.append(f"双按钮隐藏网站 {site_id} 的 secondaryUrl 必须是完整 HTTP(S) 地址：{secondary_url}")
-                                elif parsed_secondary_url.username or parsed_secondary_url.password:
-                                    errors.append(f"双按钮隐藏网站 {site_id} 的 secondaryUrl 不得包含认证信息")
-                                urls.append(secondary_url)
-                                secondary_normalized = normalized_url_key(secondary_url)
-                                normalized_urls.append(secondary_normalized)
-                            except ValueError:
-                                errors.append(f"双按钮隐藏网站 {site_id} 的 secondaryUrl 无法解析：{secondary_url}")
-                            try:
-                                primary_normalized = normalized_url_key(values["url"])
-                            except ValueError:
-                                pass
-                            if primary_normalized and primary_normalized == secondary_normalized:
-                                errors.append(f"双按钮隐藏网站 {site_id} 的两个 URL 不得相同")
-                            if dual_values["urlLabel"].casefold() == dual_values["secondaryUrlLabel"].casefold():
-                                errors.append(f"双按钮隐藏网站 {site_id} 的两个按钮名称不得相同")
-                    for forbidden in ("category", "icon", "addedAt", "featured", "popular", "recent"):
-                        if re.search(rf"\b{forbidden}\s*:", block):
-                            errors.append(f"隐藏网站 {site_id} 不应包含 {forbidden} 字段")
-                    keywords_match = re.search(r"\bkeywords\s*:\s*(\[[^\]]*\])", block)
-                    if not keywords_match:
-                        errors.append(f"隐藏网站 {site_id} 的 keywords 必须为字符串数组")
-                    else:
-                        try:
-                            keywords = json.loads(keywords_match.group(1))
-                            if not isinstance(keywords, list) or not keywords or not all(isinstance(keyword, str) and keyword.strip() for keyword in keywords):
-                                raise ValueError
-                        except (json.JSONDecodeError, ValueError):
-                            errors.append(f"隐藏网站 {site_id} 的 keywords 必须为字符串数组")
-                    if values["url"].startswith("http://"):
-                        warnings.append(f"隐藏网站 {site_id} 仍使用未验证 HTTPS 的导航地址：{values['url']}")
+        if re.search(r"\b(?:hiddenSection|hiddenCollections|passphrase)\s*:", data_text):
+            errors.append("sites-data.js 不得包含隐藏收藏元数据、暗号或隐藏卡片")
 
         duplicates = sorted({site_id for site_id in ids if ids.count(site_id) > 1})
         if duplicates:

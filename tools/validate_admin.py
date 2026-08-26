@@ -30,6 +30,7 @@ def main() -> int:
         required_tables = {
             "categories", "sites", "settings", "audit_logs", "login_attempts", "visitor_events",
             "content_revision_guard", "content_versions", "site_click_daily", "site_click_minute", "site_click_guard",
+            "hidden_collections",
         }
         tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         missing = sorted(required_tables - tables)
@@ -41,6 +42,12 @@ def main() -> int:
         hidden_count = connection.execute("SELECT COUNT(*) FROM sites WHERE is_hidden=1").fetchone()[0]
         if category_count <= 0 or public_count <= 0 or hidden_count <= 0:
             errors.append("D1 种子数据缺少分类、公开卡片或隐藏卡片")
+        hidden_collections = dict(connection.execute("SELECT id, name FROM hidden_collections"))
+        if hidden_collections.get("new-world") != "新世界" or hidden_collections.get("private-collection") != "私人收藏":
+            errors.append("D1 缺少新世界或私人收藏配置")
+        unassigned_hidden = connection.execute("SELECT COUNT(*) FROM sites WHERE is_hidden=1 AND hidden_collection_id IS NULL").fetchone()[0]
+        if unassigned_hidden:
+            errors.append("D1 存在未关联隐藏收藏的隐藏卡片")
 
         software_category = connection.execute(
             "SELECT name, icon FROM categories WHERE id = 'software'"
@@ -79,6 +86,8 @@ def main() -> int:
         site_columns = {row[1] for row in connection.execute("PRAGMA table_info(sites)")}
         if "maintenance_status" not in site_columns:
             errors.append("D1 卡片表缺少独立维护状态")
+        if "hidden_collection_id" not in site_columns:
+            errors.append("D1 卡片表缺少隐藏收藏关联字段")
         click_columns = {row[1] for row in connection.execute("PRAGMA table_info(site_click_daily)")}
         if click_columns != {"site_id", "day", "clicks", "updated_at"}:
             errors.append("D1 卡片点击统计必须只保存卡片、日期、次数和更新时间")
@@ -207,7 +216,7 @@ def main() -> int:
             "服务端内容版本冲突保护": "CONTENT_REVISION_HEADER" in worker and "CONTENT_CONFLICT" in worker and "content_revision_guard" in worker,
             "卡片与分类数量上限": "MAX_SITE_COUNT" in worker and "MAX_CATEGORY_COUNT" in worker,
             "批量添加原子写入": "handleBatchSiteCreate" in worker and "MAX_BATCH_SITE_COUNT" in worker,
-            "历史版本不保存入口口令": "contentSnapshot" in worker and "const { passphrase, ...safe }" in worker,
+            "历史版本不保存入口口令": "contentSnapshot" in worker and "hiddenCollections.map(safeHiddenCollection)" in worker,
             "卡片点击隐私聚合": "/api/public/click" in worker and "site_click_daily" in worker and "visitor_hash" not in worker[worker.find("async function recordSiteClick"):worker.find("function sqliteTimestamp")],
             "卡片点击硬上限": "site_click_limit_must_match" in worker and "PUBLIC_CLICK_LIMIT_PER_MINUTE" in worker,
             "公告有效期过滤": "activeAnnouncement" in worker and "announcement_starts_at" in worker and "announcement_ends_at" in worker,

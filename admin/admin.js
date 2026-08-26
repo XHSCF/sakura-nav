@@ -4,7 +4,7 @@
   const state = {
     csrf: "",
     user: "",
-    data: { categories: [], sites: [], hiddenSection: {}, auditLogs: [], revision: 0 },
+    data: { categories: [], sites: [], hiddenCollections: [], auditLogs: [], revision: 0 },
     analytics: null,
     analyticsLoading: false,
     versions: [],
@@ -28,10 +28,10 @@
   const batchDialog = document.querySelector("[data-batch-dialog]");
   const batchForm = document.querySelector("[data-batch-form]");
   const confirmDialog = document.querySelector("[data-confirm-dialog]");
-  const hiddenSettingsForm = document.querySelector("[data-hidden-settings-form]");
+  const hiddenSettingsForms = Array.from(document.querySelectorAll("[data-hidden-settings-form]"));
   const announcementForm = document.querySelector("[data-announcement-form]");
   const toast = document.querySelector("[data-toast]");
-  const trackedForms = [siteForm, categoryForm, batchForm, hiddenSettingsForm, announcementForm].filter(Boolean);
+  const trackedForms = [siteForm, categoryForm, batchForm, ...hiddenSettingsForms, announcementForm].filter(Boolean);
   const formBaselines = new WeakMap();
   const dialogClosePending = new WeakSet();
   let previewMeasureFrame = 0;
@@ -305,14 +305,13 @@
       draft.category = { editingId: state.editingCategoryId, values: formDraftValues(categoryForm) };
     }
     if (batchDialog?.open && isFormDirty(batchForm)) draft.batch = { values: formDraftValues(batchForm) };
-    if (isFormDirty(hiddenSettingsForm)) {
-      draft.settings = {
-        values: formDraftValues(hiddenSettingsForm),
-        passphraseOmitted: formFieldChanged(hiddenSettingsForm, "passphrase")
-      };
-    }
+    draft.hiddenCollections = hiddenSettingsForms.filter((form) => isFormDirty(form)).map((form) => ({
+      id: form.dataset.collectionId,
+      values: formDraftValues(form),
+      passphraseOmitted: formFieldChanged(form, "passphrase")
+    }));
     if (isFormDirty(announcementForm)) draft.announcement = { values: formDraftValues(announcementForm) };
-    if (!draft.site && !draft.category && !draft.batch && !draft.settings && !draft.announcement) return false;
+    if (!draft.site && !draft.category && !draft.batch && !draft.hiddenCollections.length && !draft.announcement) return false;
     try {
       window.sessionStorage.setItem(sessionDraftKey, JSON.stringify(draft));
       return true;
@@ -339,12 +338,14 @@
     const draft = readSessionDraft();
     if (!draft) return null;
     let restored = false;
-    if (draft.settings?.values) {
-      applyFormDraft(hiddenSettingsForm, draft.settings.values);
-      if (draft.settings.passphraseOmitted) hiddenSettingsForm.elements.passphrase.value = "";
-      updateUnsavedIndicator(hiddenSettingsForm);
+    (draft.hiddenCollections || []).forEach((item) => {
+      const form = hiddenSettingsForms.find((candidate) => candidate.dataset.collectionId === item.id);
+      if (!form || !item.values) return;
+      applyFormDraft(form, item.values);
+      if (item.passphraseOmitted) form.elements.passphrase.value = "";
+      updateUnsavedIndicator(form);
       restored = true;
-    }
+    });
     if (draft.announcement?.values) {
       applyFormDraft(announcementForm, draft.announcement.values);
       renderAnnouncementPreview();
@@ -375,7 +376,7 @@
       restored = true;
     }
     clearSessionDraft();
-    return restored ? { passphraseOmitted: Boolean(draft.settings?.passphraseOmitted) } : null;
+    return restored ? { passphraseOmitted: Boolean((draft.hiddenCollections || []).some((item) => item.passphraseOmitted)) } : null;
   }
 
   function syncDialogScrollLock() {
@@ -405,6 +406,7 @@
     if (method !== "GET" && method !== "HEAD" && state.csrf) headers["X-Sakura-CSRF"] = state.csrf;
     const contentMutation = method !== "GET" && method !== "HEAD" && (
       /^\/api\/admin\/(?:sites|categories)(?:\/|$)/.test(path)
+      || /^\/api\/admin\/hidden-collections\/[a-z0-9-]+$/.test(path)
       || /^\/api\/admin\/versions\/\d+\/restore$/.test(path)
       || new Set(["/api/admin/reorder", "/api/admin/hidden-settings", "/api/admin/announcement", "/api/admin/import"]).has(path)
     );
@@ -452,7 +454,11 @@
   function captureConflictDraft(type) {
     if (type === "site") return { type, editingId: state.editingSiteId, values: formDraftValues(siteForm, true) };
     if (type === "category") return { type, editingId: state.editingCategoryId, values: formDraftValues(categoryForm, true) };
-    if (type === "settings") return { type, values: formDraftValues(hiddenSettingsForm, true) };
+    if (type?.startsWith("settings:")) {
+      const collectionId = type.slice("settings:".length);
+      const form = hiddenSettingsForms.find((candidate) => candidate.dataset.collectionId === collectionId);
+      return form ? { type: "settings", collectionId, values: formDraftValues(form, true) } : null;
+    }
     if (type === "announcement") return { type, values: formDraftValues(announcementForm, true) };
     if (type === "batch") return { type, values: formDraftValues(batchForm, true) };
     return null;
@@ -499,8 +505,9 @@
       updateUnsavedIndicator(batchForm);
       return false;
     }
-    applyFormDraft(hiddenSettingsForm, draft.values);
-    updateUnsavedIndicator(hiddenSettingsForm);
+    const settingsForm = hiddenSettingsForms.find((form) => form.dataset.collectionId === draft.collectionId);
+    applyFormDraft(settingsForm, draft.values);
+    if (settingsForm) updateUnsavedIndicator(settingsForm);
     return false;
   }
 
@@ -554,12 +561,16 @@
     return state.data.categories.find((category) => category.id === id);
   }
 
+  function hiddenCollectionById(id) {
+    return state.data.hiddenCollections.find((collection) => collection.id === id);
+  }
+
   function categoryLabel(site) {
-    return site.isHidden ? state.data.hiddenSection.name || "新世界" : categoryById(site.category)?.name || site.category || "未分类";
+    return site.isHidden ? hiddenCollectionById(site.hiddenCollectionId)?.name || "隐藏收藏" : categoryById(site.category)?.name || site.category || "未分类";
   }
 
   function categoryIcon(site) {
-    return site.isHidden ? state.data.hiddenSection.icon || "fa-door-open" : categoryById(site.category)?.icon || "fa-link";
+    return site.isHidden ? hiddenCollectionById(site.hiddenCollectionId)?.icon || "fa-lock" : categoryById(site.category)?.icon || "fa-link";
   }
 
   function renderStats() {
@@ -578,6 +589,17 @@
     state.data.categories.forEach((category) => filter.appendChild(new Option(category.name, category.id)));
     if (Array.from(filter.options).some((option) => option.value === currentFilter)) filter.value = currentFilter;
 
+    const visibilityFilter = document.querySelector("[data-site-visibility-filter]");
+    const currentVisibility = visibilityFilter.value || "all";
+    visibilityFilter.replaceChildren(new Option("全部位置", "all"), new Option("仅普通分类", "public"));
+    state.data.hiddenCollections.forEach((collection) => visibilityFilter.appendChild(new Option(`仅${collection.name}`, collection.id)));
+    if (Array.from(visibilityFilter.options).some((option) => option.value === currentVisibility)) visibilityFilter.value = currentVisibility;
+    Array.from(siteForm.elements.location).forEach((control) => {
+      if (control.value === "public") return;
+      const label = control.closest("label")?.querySelector("span");
+      if (label) label.textContent = hiddenCollectionById(control.value)?.name || "隐藏收藏";
+    });
+
     const select = siteForm.elements.category;
     const currentValue = select.value;
     select.replaceChildren(...state.data.categories.map((category) => new Option(category.name, category.id)));
@@ -594,7 +616,7 @@
       const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
       return (!query || searchable.includes(query))
         && (category === "all" || site.category === category)
-        && (visibility === "all" || (visibility === "hidden") === Boolean(site.isHidden))
+        && (visibility === "all" || (visibility === "public" ? !site.isHidden : site.hiddenCollectionId === visibility))
         && (status === "all" || site.status === status)
         && (maintenance === "all" || (site.maintenanceStatus || "normal") === maintenance);
     });
@@ -982,14 +1004,16 @@
   }
 
   function renderSettings() {
-    const form = hiddenSettingsForm;
-    const settings = state.data.hiddenSection;
-    form.elements.name.value = settings.name || "";
-    form.elements.icon.value = settings.icon || "fa-door-open";
-    form.elements.passphrase.value = settings.passphrase || "";
-    form.elements.welcome.value = settings.welcome || "";
-    form.elements.enabled.checked = settings.enabled !== false;
-    setFormBaseline(form);
+    hiddenSettingsForms.forEach((form) => {
+      const settings = hiddenCollectionById(form.dataset.collectionId) || {};
+      form.elements.name.value = settings.name || "";
+      form.elements.icon.value = settings.icon || (form.dataset.collectionId === "private-collection" ? "fa-lock" : "fa-door-open");
+      form.elements.eyebrow.value = settings.eyebrow || (form.dataset.collectionId === "private-collection" ? "PRIVATE COLLECTION" : "SECRET COLLECTION");
+      form.elements.passphrase.value = settings.passphrase || "";
+      form.elements.welcome.value = settings.welcome || "";
+      form.elements.enabled.checked = settings.enabled === true;
+      setFormBaseline(form);
+    });
 
     const announcement = state.data.announcement || {};
     announcementForm.elements.text.value = announcement.text || "";
@@ -1056,7 +1080,7 @@
 
   async function selectTab(tabId) {
     const currentTab = document.querySelector("[data-tab].is-active")?.dataset.tab;
-    if (currentTab === "settings" && tabId !== "settings" && (isFormDirty(hiddenSettingsForm) || isFormDirty(announcementForm))) {
+    if (currentTab === "settings" && tabId !== "settings" && (hiddenSettingsForms.some((form) => isFormDirty(form)) || isFormDirty(announcementForm))) {
       if (!(await confirmAction("放弃未保存修改", "设置页面还有内容没有保存，确定离开吗？"))) return;
       renderSettings();
     }
@@ -1069,7 +1093,7 @@
       sites: ["SAKURA 控制台", "内容管理", "修改并发布后，前台会直接读取数据库中的最新内容。"],
       analytics: ["匿名访问数据", "访问统计", "查看访问趋势、设备、来源、地区与卡片点击。"],
       categories: ["分类结构", "分类管理", "维护前台分类名称、图标、显示状态和排列顺序。"],
-      settings: ["数据与安全", "设置与备份", "管理临时公告、新世界入口、数据库备份和部署状态。"],
+      settings: ["数据与安全", "设置与备份", "管理临时公告、隐藏收藏入口、数据库备份和部署状态。"],
       history: ["版本与审计", "修改记录", "查看、恢复历史内容版本和最近的后台操作。"]
     }[tabId] || ["SAKURA 控制台", "内容管理", "管理网站内容。"];
     document.querySelector("[data-dashboard-eyebrow]").textContent = copy[0];
@@ -1099,7 +1123,7 @@
     if (idHelp) idHelp.textContent = site && !duplicate ? "卡片 ID 创建后保持不变，不能修改。" : "根据名称或网址自动生成，可在保存前修改。";
     fields.status.value = site?.status || "published";
     fields.maintenanceStatus.value = site?.maintenanceStatus || "normal";
-    fields.location.value = site?.isHidden ? "hidden" : "public";
+    fields.location.value = site?.isHidden ? site.hiddenCollectionId || "new-world" : "public";
     fields.cardType.value = site?.urlLabel ? "dual" : "single";
     fields.addedAt.value = site?.addedAt || localDateValue();
     if (site) {
@@ -1126,7 +1150,7 @@
 
   function updateSiteFormVisibility() {
     const fields = siteForm.elements;
-    const hidden = fields.location.value === "hidden";
+    const hidden = fields.location.value !== "public";
     const dual = fields.cardType.value === "dual";
     document.querySelector("[data-category-field]").hidden = hidden;
     document.querySelector("[data-added-field]").hidden = hidden;
@@ -1143,12 +1167,13 @@
   function updateCardPreview() {
     const fields = siteForm.elements;
     const preview = document.querySelector("[data-card-preview]");
-    const hidden = fields.location.value === "hidden";
+    const hidden = fields.location.value !== "public";
+    const hiddenCollection = hidden ? hiddenCollectionById(fields.location.value) : null;
     const category = hidden ? null : categoryById(fields.category.value);
-    document.querySelector("[data-preview-icon]").className = `fas ${hidden ? state.data.hiddenSection.icon || "fa-door-open" : category?.icon || "fa-link"}`;
+    document.querySelector("[data-preview-icon]").className = `fas ${hidden ? hiddenCollection?.icon || "fa-lock" : category?.icon || "fa-link"}`;
     document.querySelector("[data-preview-name]").textContent = fields.name.value.trim() || "卡片名称";
     document.querySelector("[data-preview-description]").textContent = fields.description.value.trim() || "卡片描述会显示在这里。";
-    document.querySelector("[data-preview-category]").textContent = hidden ? state.data.hiddenSection.name || "新世界" : category?.name || "所属分类";
+    document.querySelector("[data-preview-category]").textContent = hidden ? hiddenCollection?.name || "隐藏收藏" : category?.name || "所属分类";
     document.querySelector("[data-description-count]").textContent = String(fields.description.value.length);
     preview?.classList.toggle("is-unavailable", fields.maintenanceStatus.value === "unavailable");
     const actions = document.querySelector("[data-preview-actions]");
@@ -1182,7 +1207,7 @@
   function sitePayloadFromForm() {
     const fields = siteForm.elements;
     const dual = fields.cardType.value === "dual";
-    const hidden = fields.location.value === "hidden";
+    const hidden = fields.location.value !== "public";
     const secondaryUrl = dual ? fields.secondaryUrl.value.trim() : "";
     return {
       id: state.editingSiteId || fields.id.value,
@@ -1190,6 +1215,7 @@
       description: fields.description.value,
       category: hidden ? null : fields.category.value,
       isHidden: hidden,
+      hiddenCollectionId: hidden ? fields.location.value : null,
       url: fields.url.value,
       urlLabel: dual ? fields.urlLabel.value : null,
       secondaryUrl: secondaryUrl || null,
@@ -1229,7 +1255,7 @@
   }
 
   async function moveSite(site, direction) {
-    const group = state.data.sites.filter((item) => item.isHidden === site.isHidden && (site.isHidden || item.category === site.category)).sort((left, right) => left.sortOrder - right.sortOrder);
+    const group = state.data.sites.filter((item) => item.isHidden === site.isHidden && (site.isHidden ? item.hiddenCollectionId === site.hiddenCollectionId : item.category === site.category)).sort((left, right) => left.sortOrder - right.sortOrder);
     const index = group.findIndex((item) => item.id === site.id);
     const target = index + direction;
     if (index < 0 || target < 0 || target >= group.length) return;
@@ -1278,6 +1304,7 @@
         if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(row.id || ""))) throw new Error(`第 ${number} 条卡片 ID 不正确。`);
         if (!String(row.name || "").trim() || !String(row.description || "").trim()) throw new Error(`第 ${number} 条缺少名称或描述。`);
         if (!row.isHidden && !categoryIds.has(row.category)) throw new Error(`第 ${number} 条所属分类不存在。`);
+        if (row.isHidden && !hiddenCollectionById(row.hiddenCollectionId || "new-world")) throw new Error(`第 ${number} 条隐藏收藏不存在。`);
         const urls = [row.url, row.secondaryUrl].filter(Boolean);
         urls.forEach((value) => {
           let parsed;
@@ -1314,7 +1341,7 @@
       const copy = createElement("div", "site-cell-copy");
       copy.append(createElement("strong", "", site.name), createElement("span", "", site.id));
       card.appendChild(copy);
-      const category = createElement("td", "", site.isHidden ? state.data.hiddenSection.name || "新世界" : categoryById(site.category)?.name || site.category);
+      const category = createElement("td", "", site.isHidden ? hiddenCollectionById(site.hiddenCollectionId || "new-world")?.name || "隐藏收藏" : categoryById(site.category)?.name || site.category);
       category.dataset.label = "位置";
       const buttons = createElement("td", "", site.secondaryUrl ? "双按钮" : "单按钮");
       buttons.dataset.label = "按钮";
@@ -1436,19 +1463,23 @@
   async function saveHiddenSettings(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const collectionId = form.dataset.collectionId;
+    const existing = hiddenCollectionById(collectionId);
     setFormBusy(form, true);
     try {
-      await api("/api/admin/hidden-settings", { method: "PUT", body: {
-        id: state.data.hiddenSection.id || "new-world",
+      await api(`/api/admin/hidden-collections/${encodeURIComponent(collectionId)}`, { method: "PUT", body: {
+        id: collectionId,
         name: form.elements.name.value,
         icon: form.elements.icon.value,
+        eyebrow: form.elements.eyebrow.value,
         passphrase: form.elements.passphrase.value,
         welcome: form.elements.welcome.value,
-        enabled: form.elements.enabled.checked
+        enabled: form.elements.enabled.checked,
+        sortOrder: existing?.sortOrder || 0
       } });
       await loadData();
-      showToast("新世界设置已保存。 ");
-    } catch (error) { if (!(await handleContentConflict(error, "settings"))) showToast(error.message, true); }
+      showToast(`${existing?.name || "隐藏收藏"}设置已保存。`);
+    } catch (error) { if (!(await handleContentConflict(error, `settings:${collectionId}`))) showToast(error.message, true); }
     finally { setFormBusy(form, false); }
   }
 
@@ -1514,7 +1545,7 @@
     if (file.size > 1024 * 1024) { showToast("备份文件不能超过 1 MB。", true); return; }
     let backup;
     try { backup = JSON.parse(await file.text()); } catch (_) { showToast("选择的文件不是有效 JSON。", true); return; }
-    if (!(await confirmAction("导入备份", "系统会先下载当前数据备份，再替换全部分类、卡片、新世界设置和备份内的公告。确定继续吗？"))) return;
+    if (!(await confirmAction("导入备份", "系统会先下载当前数据备份，再替换全部分类、卡片、隐藏收藏设置和备份内的公告。确定继续吗？"))) return;
     if (!(await exportBackup("导入前的当前数据已自动备份。"))) {
       showToast("当前数据未能备份，已取消导入。", true);
       return;
@@ -1570,7 +1601,7 @@
   batchForm?.addEventListener("submit", saveBatchSites);
   document.querySelector("[data-batch-parse]")?.addEventListener("click", parseBatchInput);
   categoryForm?.addEventListener("submit", saveCategory);
-  hiddenSettingsForm?.addEventListener("submit", saveHiddenSettings);
+  hiddenSettingsForms.forEach((form) => form.addEventListener("submit", saveHiddenSettings));
   announcementForm?.addEventListener("submit", saveAnnouncement);
   announcementForm?.addEventListener("input", renderAnnouncementPreview);
   document.querySelector("[data-export]")?.addEventListener("click", () => exportBackup());

@@ -78,23 +78,5 @@ window.SAKURA_DATA = Object.freeze({
     { id: "potplayer", name: "PotPlayer", url: "https://potplayer.tv/?lang=zh_CN", description: "支持多格式与硬件加速的播放器。", category: "software", keywords: ["PotPlayer", "potplayer", "视频播放器", "影音播放", "字幕", "硬件加速"], addedAt: "2026-07-14" },
     { id: "mpc-be", name: "MPC-BE", url: "https://sourceforge.net/projects/mpcbe/", description: "轻量开源的 Windows 音视频播放器。", category: "software", keywords: ["MPC-BE", "mpcbe", "Media Player Classic", "视频播放器", "音频播放器", "开源播放器"], addedAt: "2026-07-14" },
     { id: "7-zip", name: "7-Zip", url: "https://www.7-zip.org/", description: "免费开源的文件压缩与解压工具。", category: "software", keywords: ["7-Zip", "7zip", "压缩软件", "解压工具", "7z", "zip", "rar"], addedAt: "2026-07-14" }
-  ],
-  hiddenSection: {
-    id: "new-world",
-    name: "新世界",
-    icon: "fa-door-open",
-    passphrase: "开门",
-    welcome: "欢迎踏入新世界的大门",
-    sites: [
-      { id: "jable", name: "Jable", url: "https://jable.tv/", description: "日本18+。", keywords: ["Jable", "jable", "日本", "18+"] },
-      { id: "51chigua", name: "51吃瓜网", url: "https://zuzpayj.cc/", description: "全网更新最快最全的吃瓜网。", keywords: ["51吃瓜网", "51吃瓜", "zuzpayj", "吃瓜网"] },
-      { id: "heiliaowang", name: "黑料网", url: "https://hlwe7.com/", description: "网红与明星黑料爆料。", keywords: ["黑料网", "hlwe7", "吃瓜", "爆料", "网红黑料", "明星丑闻"] },
-      { id: "missav", name: "MissAV", url: "https://missav.ws/", description: "日本18+。", keywords: ["MissAV", "missav", "日本", "18+"] },
-      { id: "netflav", name: "Netflav", url: "https://netflav.com/", description: "日本18+。", keywords: ["Netflav", "netflav", "日本", "18+"] },
-      { id: "asmr-one", name: "ASMR", url: "https://www.asmr.one/", description: "懂得都懂。", keywords: ["ASMR", "asmr", "asmr.one", "懂得都懂"] },
-      { id: "91douyin", name: "91抖阴_v5.2.0", url: "https://qiuyw.lanzouq.com/iioFW3x8fb7i", urlLabel: "蓝奏云", secondaryUrl: "https://pan.baidu.com/s/1vKqZD4i0YIlqBDVFf_MV-A?pwd=nrj7", secondaryUrlLabel: "百度网盘", description: "去广告、内容免费看的短视频应用。", keywords: ["91抖阴", "91douyin", "短视频", "去广告", "免费观看", "DY"] },
-      { id: "jinman-tiantang", name: "禁漫天堂", url: "https://tz.mmlt.top/r.php?c=X2ZC4pH", urlLabel: "蓝奏云", secondaryUrl: "https://pan.baidu.com/s/1vrK4xz_SqVnHs9bMDJ2mjA?pwd=x9bc", secondaryUrlLabel: "百度网盘", description: "去广告美化版；密码 qiuyuezt。", keywords: ["禁漫天堂", "jinman", "漫画", "去广告", "内置模块"] },
-      { id: "whos-tv", name: "图片搜AV", url: "https://whos.tv/", description: "日本AV识图搜索引擎，精准、高效。", keywords: ["图片搜AV", "whos.tv", "AV识图", "图片搜索"] }
-    ]
-  }
+  ]
 });

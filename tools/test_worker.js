@@ -56,7 +56,7 @@ class TestD1Database {
   }
 }
 
-function request(pathname, { method = "GET", body, cookie, csrf, revision, userAgent, cf, origin = "https://example.com" } = {}) {
+function request(pathname, { method = "GET", body, cookie, csrf, revision, userAgent, ip, cf, origin = "https://example.com" } = {}) {
   const headers = { Accept: "application/json" };
   if (origin) headers.Origin = origin;
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -64,6 +64,7 @@ function request(pathname, { method = "GET", body, cookie, csrf, revision, userA
   if (csrf) headers["X-Sakura-CSRF"] = csrf;
   if (revision !== undefined) headers["X-Sakura-Revision"] = String(revision);
   if (userAgent) headers["User-Agent"] = userAgent;
+  if (ip) headers["CF-Connecting-IP"] = ip;
   const result = new Request(`https://example.com${pathname}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   if (cf) Object.defineProperty(result, "cf", { configurable: true, value: cf });
   return result;
@@ -120,7 +121,7 @@ test("worker rejects invalid IDs, categories and incomplete dual-button data", a
   }, new Set(["tools"])), /发布状态/);
 });
 
-test("worker secret comparison and hidden unlock hash normalize safely", async () => {
+test("worker secret comparison and operational hashes behave safely", async () => {
   const { secureEqual, sha256Hex } = await workerPromise;
   assert.equal(await secureEqual("same-value", "same-value"), true);
   assert.equal(await secureEqual("same-value", "different"), false);
@@ -228,22 +229,25 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const initialData = (await dataResponse.json()).data;
   assert.ok(initialData.categories.length > 0);
   assert.ok(initialData.sites.length > 0);
-  assert.equal(initialData.revision, 2);
-  assert.equal(initialData.systemStatus.schemaVersion, 7);
-  assert.equal(initialData.systemStatus.contentRevision, 2);
+  assert.equal(initialData.revision, 3);
+  assert.equal(initialData.systemStatus.schemaVersion, 8);
+  assert.equal(initialData.systemStatus.contentRevision, 3);
+  assert.deepEqual(new Set(initialData.hiddenCollections.map((collection) => collection.id)), new Set(["new-world", "private-collection"]));
+  assert.equal(initialData.hiddenCollections.find((collection) => collection.id === "private-collection").enabled, false);
   assert.equal(initialData.systemStatus.siteCount, initialData.sites.length);
   assert.equal(initialData.systemStatus.categoryCount, initialData.categories.length);
   assert.equal(initialData.systemStatus.siteLimit, 500);
   assert.equal(initialData.systemStatus.categoryLimit, 50);
 
   const duplicateCategoryBackup = {
-    version: 1,
+    version: 3,
     categories: initialData.categories.map((category, index) => ({
       ...category,
       name: index === 1 ? initialData.categories[0].name : category.name
     })),
     sites: initialData.sites,
-    hiddenSection: initialData.hiddenSection
+    hiddenCollections: initialData.hiddenCollections,
+    announcement: initialData.announcement
   };
   const duplicateCategoryResponse = await module.default.fetch(request("/api/admin/import", {
     method: "POST", body: duplicateCategoryBackup, cookie, csrf: login.csrf
@@ -254,10 +258,11 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const invalidHiddenIconResponse = await module.default.fetch(request("/api/admin/import", {
     method: "POST",
     body: {
-      version: 1,
+      version: 3,
       categories: initialData.categories,
       sites: initialData.sites,
-      hiddenSection: { ...initialData.hiddenSection, icon: "fab fa-apple" }
+      hiddenCollections: initialData.hiddenCollections.map((collection) => collection.id === "new-world" ? { ...collection, icon: "fab fa-apple" } : collection),
+      announcement: initialData.announcement
     },
     cookie,
     csrf: login.csrf
@@ -307,9 +312,10 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(missingRevisionResponse.status, 428);
   assert.equal((await missingRevisionResponse.json()).code, "CONTENT_REVISION_REQUIRED");
 
-  const hiddenSettingsResponse = await module.default.fetch(request("/api/admin/hidden-settings", {
+  const newWorld = currentAdminData.hiddenCollections.find((collection) => collection.id === "new-world");
+  const hiddenSettingsResponse = await module.default.fetch(request("/api/admin/hidden-collections/new-world", {
     method: "PUT",
-    body: currentAdminData.hiddenSection,
+    body: newWorld,
     cookie,
     csrf: login.csrf,
     revision: currentAdminData.revision
@@ -341,8 +347,8 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(publicResponse.status, 200);
   const publicData = (await publicResponse.json()).data;
   assert.ok(publicData.sites.some((site) => site.id === newSite.id));
-  assert.equal(publicData.hiddenSection.passphrase, undefined);
-  assert.match(publicData.hiddenSection.unlockHash, /^[a-f0-9]{64}$/);
+  assert.equal(publicData.hiddenSection, undefined);
+  assert.equal(publicData.hiddenCollections, undefined);
 
   const invalidUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: "开 门" } }), env);
   assert.equal(invalidUnlock.status, 403);
@@ -427,6 +433,65 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(deleteResponse.status, 200);
   const publicAfterDelete = (await (await module.default.fetch(request("/api/public/data"), env)).json()).data;
   assert.ok(!publicAfterDelete.sites.some((site) => site.id === newSite.id));
+
+  const afterDelete = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
+  const privateCollection = afterDelete.hiddenCollections.find((collection) => collection.id === "private-collection");
+  const enablePrivate = await module.default.fetch(request("/api/admin/hidden-collections/private-collection", {
+    method: "PUT",
+    body: { ...privateCollection, passphrase: "我的收藏", enabled: true },
+    cookie,
+    csrf: login.csrf,
+    revision: afterDelete.revision
+  }), env);
+  assert.equal(enablePrivate.status, 200);
+  const enabledRevision = (await enablePrivate.json()).revision;
+  const privateSite = {
+    id: "private-test-site",
+    name: "私人测试卡片",
+    description: "只允许私人收藏解锁后读取。",
+    isHidden: true,
+    hiddenCollectionId: "private-collection",
+    url: "https://example.test/private",
+    keywords: ["私人"],
+    sortOrder: 0,
+    status: "published"
+  };
+  const createPrivate = await module.default.fetch(request("/api/admin/sites", {
+    method: "POST", body: privateSite, cookie, csrf: login.csrf, revision: enabledRevision
+  }), env);
+  assert.equal(createPrivate.status, 201);
+  assert.equal((await (await module.default.fetch(request("/api/public/data"), env)).json()).data.sites.some((site) => site.id === privateSite.id), false);
+  const privateUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: "我的收藏" } }), env);
+  assert.equal(privateUnlock.status, 200);
+  const privatePayload = (await privateUnlock.json()).data;
+  assert.equal(privatePayload.id, "private-collection");
+  assert.deepEqual(privatePayload.sites.map((site) => site.id), [privateSite.id]);
+  assert.equal(privatePayload.passphrase, undefined);
+  const newWorldUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: "开门" } }), env);
+  assert.equal((await newWorldUnlock.json()).data.sites.some((site) => site.id === privateSite.id), false);
+
+  const latest = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
+  const duplicatePassphrase = await module.default.fetch(request("/api/admin/hidden-collections/private-collection", {
+    method: "PUT",
+    body: { ...latest.hiddenCollections.find((collection) => collection.id === "private-collection"), passphrase: "开门", enabled: true },
+    cookie,
+    csrf: login.csrf,
+    revision: latest.revision
+  }), env);
+  assert.equal(duplicatePassphrase.status, 409);
+  assert.equal((await duplicatePassphrase.json()).code, "DUPLICATE_PASSPHRASE");
+
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const wrongUnlock = await module.default.fetch(request("/api/public/hidden", {
+      method: "POST", body: { passphrase: `错误暗号-${attempt}` }, ip: "203.0.113.8"
+    }), env);
+    assert.equal(wrongUnlock.status, 403);
+  }
+  const limitedUnlock = await module.default.fetch(request("/api/public/hidden", {
+    method: "POST", body: { passphrase: "仍然错误" }, ip: "203.0.113.8"
+  }), env);
+  assert.equal(limitedUnlock.status, 429);
+  assert.equal((await limitedUnlock.json()).code, "TOO_MANY_ATTEMPTS");
 });
 
 test("fifth-round history, maintenance, batch, click analytics and announcement flows are atomic", async () => {
@@ -445,7 +510,7 @@ test("fifth-round history, maintenance, batch, click analytics and announcement 
   const login = await loginResponse.json();
   const cookie = loginResponse.headers.get("Set-Cookie").split(";", 1)[0];
   const initial = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
-  const originalPassphrase = initial.hiddenSection.passphrase;
+  const originalPassphrase = initial.hiddenCollections.find((collection) => collection.id === "new-world").passphrase;
   const batchSites = [
     {
       id: "batch-review", name: "批量待复查", description: "用于测试批量添加。", category: "tools",
@@ -520,7 +585,7 @@ test("fifth-round history, maintenance, batch, click analytics and announcement 
   }), env);
   assert.equal(restoreResponse.status, 200);
   const restoredAdmin = (await (await module.default.fetch(request("/api/admin/data", { cookie }), env)).json()).data;
-  assert.equal(restoredAdmin.hiddenSection.passphrase, originalPassphrase);
+  assert.equal(restoredAdmin.hiddenCollections.find((collection) => collection.id === "new-world").passphrase, originalPassphrase);
   assert.ok(!restoredAdmin.sites.some((site) => site.id === "batch-review"));
   assert.equal(restoredAdmin.announcement.enabled, false);
 });

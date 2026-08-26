@@ -306,7 +306,7 @@
     const copyView = document.querySelector("[data-copy-view]");
     const copyViewLabel = document.querySelector("[data-copy-view-label]");
     const utilityStatus = document.querySelector("[data-utility-status]");
-    const hiddenConfig = data.hiddenSection;
+    let hiddenConfig = null;
     const hiddenPanel = document.querySelector("[data-hidden-section]");
     const hiddenSitesRoot = document.querySelector("[data-hidden-section-sites]");
     const hiddenEmpty = document.querySelector("[data-hidden-section-empty]");
@@ -314,6 +314,10 @@
     const hiddenName = document.querySelector("[data-hidden-section-name]");
     const hiddenWelcome = document.querySelector("[data-hidden-section-welcome]");
     const hiddenCount = document.querySelector("[data-hidden-section-count]");
+    const hiddenEyebrow = document.querySelector("[data-hidden-section-eyebrow]");
+    const hiddenExitLabel = document.querySelector("[data-hidden-section-exit-label]");
+    const hiddenEmptyTitle = document.querySelector("[data-hidden-section-empty-title]");
+    const hiddenEmptyMessage = document.querySelector("[data-hidden-section-empty-message]");
     const categoryMap = new Map(data.categories.map((category) => [category.id, category]));
     const categoryAliases = new Map([["ppt", "software"]]);
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
@@ -341,21 +345,10 @@
     const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
     if (shortcut) shortcut.textContent = /Mac|iPhone|iPad|iPod/i.test(platform) ? "⌘ K" : "Ctrl K";
 
-    async function hiddenPassphraseMatches(value) {
-      const normalized = core.normalize(value);
-      if (!normalized || !hiddenConfig?.enabled && hiddenConfig?.enabled !== undefined) return false;
-      if (hiddenConfig?.unlockHash) {
-        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalized));
-        const hexadecimal = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-        return hexadecimal === hiddenConfig.unlockHash;
-      }
-      return core.matchesPassphrase(value, hiddenConfig?.passphrase);
-    }
-
-    async function restoreUrlState() {
+    function restoreUrlState() {
       const params = new URLSearchParams(window.location.search);
       const requestedQuery = params.get("q") || "";
-      const query = await hiddenPassphraseMatches(requestedQuery) ? "" : requestedQuery;
+      const query = requestedQuery;
       const requestedCategory = params.get("category") || "all";
       const category = categoryAliases.get(requestedCategory) || requestedCategory;
       const view = params.get("view") || "all";
@@ -367,9 +360,7 @@
 
     function updateUrlState(historyMode = "replace") {
       const url = new URL(window.location.href);
-      const query = state.hidden ? "" : (search?.value.trim() || "");
-      if (query) url.searchParams.set("q", query);
-      else url.searchParams.delete("q");
+      url.searchParams.delete("q");
       if (state.category !== "all") url.searchParams.set("category", state.category);
       else url.searchParams.delete("category");
       if (state.view !== "all") url.searchParams.set("view", state.view);
@@ -379,7 +370,7 @@
       else window.history.replaceState(window.history.state, "", nextUrl);
     }
 
-    await restoreUrlState();
+    restoreUrlState();
 
     function updateViewNavigation() {
       const historyActive = state.view === "history";
@@ -788,6 +779,10 @@
       if (hiddenCount) hiddenCount.textContent = String(sites.length);
       if (hiddenName) hiddenName.textContent = hiddenConfig.name;
       if (hiddenWelcome) hiddenWelcome.textContent = hiddenConfig.welcome;
+      if (hiddenEyebrow) hiddenEyebrow.textContent = hiddenConfig.eyebrow || "SECRET COLLECTION";
+      if (hiddenExitLabel) hiddenExitLabel.textContent = `退出${hiddenConfig.name}`;
+      if (hiddenEmptyTitle) hiddenEmptyTitle.textContent = `${hiddenConfig.name}暂时还是空的`;
+      if (hiddenEmptyMessage) hiddenEmptyMessage.textContent = "以后加入的内容会显示在这里。";
       document.querySelectorAll("[data-hidden-section-icon]").forEach((icon) => {
         icon.className = `fas ${hiddenConfig.icon || "fa-door-open"}`;
       });
@@ -795,11 +790,7 @@
 
     async function unlockHiddenSection(value) {
       const token = ++hiddenUnlockToken;
-      if (!(await hiddenPassphraseMatches(value)) || token !== hiddenUnlockToken) return false;
-      if (Array.isArray(hiddenConfig?.sites)) {
-        enterHiddenSection();
-        return true;
-      }
+      if (!String(value || "").trim() || state.hidden) return false;
       try {
         const response = await fetch("./api/public/hidden", {
           method: "POST",
@@ -808,16 +799,17 @@
           body: JSON.stringify({ passphrase: value })
         });
         const payload = await response.json();
+        if (response.status === 403) return false;
         if (!response.ok || !Array.isArray(payload?.data?.sites) || token !== hiddenUnlockToken) {
-          if (token === hiddenUnlockToken) announceUtility("隐藏板块暂时无法打开，请稍后重试");
-          return true;
+          if (token === hiddenUnlockToken) announceUtility("隐藏收藏暂时无法打开，请稍后重试");
+          return false;
         }
-        Object.assign(hiddenConfig, payload.data);
+        hiddenConfig = payload.data;
         enterHiddenSection();
         return true;
       } catch (_) {
-        if (token === hiddenUnlockToken) announceUtility("隐藏板块暂时无法打开，请稍后重试");
-        return true;
+        if (token === hiddenUnlockToken) announceUtility("隐藏收藏暂时无法打开，请稍后重试");
+        return false;
       }
     }
 
@@ -860,6 +852,8 @@
       hiddenTransitionToken += 1;
       root.classList.remove("is-hidden-world");
       hiddenPanel.hidden = true;
+      hiddenSitesRoot?.replaceChildren();
+      hiddenConfig = null;
       if (search) {
         search.value = "";
         search.readOnly = false;
@@ -937,6 +931,8 @@
       hiddenTransitionToken += 1;
       root.classList.remove("is-hidden-world");
       if (hiddenPanel) hiddenPanel.hidden = true;
+      hiddenSitesRoot?.replaceChildren();
+      hiddenConfig = null;
       if (search) {
         search.readOnly = false;
         search.placeholder = normalSearchPlaceholder;
@@ -1072,7 +1068,13 @@
       render();
     });
 
-    searchForm?.addEventListener("submit", (event) => event.preventDefault());
+    searchForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!search || state.hidden) return;
+      const value = search.value;
+      if (await unlockHiddenSection(value) || search.value !== value) return;
+      openKeyboardSelection();
+    });
     document.addEventListener("pointerdown", pressCardIcon);
     document.addEventListener("pointerup", clearPressedCardIcon);
     document.addEventListener("pointercancel", clearPressedCardIcon);
@@ -1096,9 +1098,8 @@
     });
 
     if (search) {
-      search.addEventListener("input", async () => {
+      search.addEventListener("input", () => {
         const value = search.value;
-        if (await unlockHiddenSection(value) || search.value !== value) return;
         if (state.hidden) return;
         state.terms = core.queryTerms(value);
         clear?.classList.toggle("is-visible", Boolean(state.terms.length));
@@ -1160,7 +1161,6 @@
     if (shortcut) shortcut.hidden = Boolean(state.terms.length);
     updateUrlState();
     render();
-    renderHiddenSection();
     return true;
   }
 

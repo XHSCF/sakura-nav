@@ -32,7 +32,7 @@ powershell -ExecutionPolicy Bypass -File tools\maintain_d1.ps1 -Action Migrate
 
 后台“设置与备份”中的导出适合日常内容恢复。选择导入文件并确认后，浏览器会先自动下载当前数据库的 JSON 备份；如果下载失败，导入会取消。JSON 备份不包含访问统计与修改记录。
 
-后台导入会替换分类、卡片和新世界设置，因此仍应确认下载文件已保存后再继续。多标签页同时编辑时，旧页面保存会收到冲突提示，当前表单不会被静默清空。
+后台导入会替换分类、卡片和全部隐藏收藏设置，因此仍应确认下载文件已保存后再继续。多标签页同时编辑时，旧页面保存会收到冲突提示，当前表单不会被静默清空。
 
 ## 紧急 SQL 恢复
 
@@ -42,13 +42,13 @@ powershell -ExecutionPolicy Bypass -File tools\maintain_d1.ps1 -Action Migrate
 powershell -ExecutionPolicy Bypass -File tools\maintain_d1.ps1 -Action Restore -BackupFile ".d1-backups\sakura-nav-db-日期时间.sql"
 ```
 
-脚本会先再次备份当前远程数据库，再要求输入 `RESTORE`，然后执行指定 SQL。完成后立即检查 `/admin/` 中的分类、卡片、新世界设置和前台数据。恢复失败时保留刚生成的恢复前备份，不要反复执行同一文件。
+脚本会先再次备份当前远程数据库，再要求输入 `RESTORE`，然后执行指定 SQL。完成后立即检查 `/admin/` 中的分类、卡片、新世界与私人收藏设置和前台数据。恢复失败时保留刚生成的恢复前备份，不要反复执行同一文件。
 
 ## 新增 migration 的维护要求
 
 1. 只新增下一个连续编号的 `.sql`，不得改写已经登记的历史文件。
 2. 增量 migration 不得包含 `DELETE FROM sites`、`DELETE FROM categories` 或删除这两张表的语句。
-3. 如果 migration 会修改卡片、分类或新世界设置，末尾必须递增 `content_revision`，让已经打开的旧后台页面失效。
+3. 如果 migration 会修改卡片、分类或隐藏收藏设置，末尾必须递增 `content_revision`，让已经打开的旧后台页面失效。
 4. 把新文件的 SHA-256 登记到 `migrations/checksums.json`。
 5. 本地运行：
 

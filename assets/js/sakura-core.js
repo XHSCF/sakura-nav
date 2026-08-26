@@ -15,11 +15,6 @@
     return normalize(value).split(" ").filter(Boolean);
   }
 
-  function matchesPassphrase(value, passphrase) {
-    const expected = normalize(passphrase);
-    return Boolean(expected) && normalize(value) === expected;
-  }
-
   function normalizeThemeMode(value) {
     return value === "light" || value === "dark" ? value : "auto";
   }
@@ -154,7 +149,6 @@
   return {
     normalize,
     queryTerms,
-    matchesPassphrase,
     normalizeThemeMode,
     resolveTheme,
     nextThemeMode,

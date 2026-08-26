@@ -2,6 +2,7 @@ const SESSION_COOKIE = "sakura_admin_session";
 const SESSION_SECONDS = 8 * 60 * 60;
 const LOGIN_WINDOW_SECONDS = 15 * 60;
 const LOGIN_MAX_ATTEMPTS = 5;
+const HIDDEN_UNLOCK_MAX_ATTEMPTS = 30;
 const MAX_JSON_BYTES = 256 * 1024;
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ICON_PATTERN = /^fa-[a-z0-9-]+$/;
@@ -13,7 +14,7 @@ const ANALYTICS_RETENTION_DAYS = 90;
 const CLICK_ANALYTICS_RETENTION_DAYS = 90;
 const AUDIT_RETENTION_DAYS = 180;
 const CONTENT_REVISION_HEADER = "X-Sakura-Revision";
-const DATABASE_SCHEMA_VERSION = 7;
+const DATABASE_SCHEMA_VERSION = 8;
 const MAX_SITE_COUNT = 500;
 const MAX_CATEGORY_COUNT = 50;
 const MAX_BATCH_SITE_COUNT = 50;
@@ -386,10 +387,12 @@ export function validateCategoryPayload(payload) {
   };
 }
 
-export function validateSitePayload(payload, categoryIds = new Set()) {
+export function validateSitePayload(payload, categoryIds = new Set(), hiddenCollectionIds = new Set(["new-world"])) {
   const hidden = payload?.isHidden === true;
   const category = hidden ? null : validateId(payload?.category, "所属分类");
   if (!hidden && !categoryIds.has(category)) throw new ApiError("请选择有效的所属分类。");
+  const hiddenCollectionId = hidden ? validateId(payload?.hiddenCollectionId || "new-world", "隐藏收藏 ID") : null;
+  if (hidden && !hiddenCollectionIds.has(hiddenCollectionId)) throw new ApiError("请选择有效的隐藏收藏。");
   const urlLabel = optionalString(payload?.urlLabel, 20);
   const secondaryUrl = validateUrl(payload?.secondaryUrl, "第二个按钮链接", true);
   const secondaryUrlLabel = optionalString(payload?.secondaryUrlLabel, 20);
@@ -410,6 +413,7 @@ export function validateSitePayload(payload, categoryIds = new Set()) {
     description: requireString(payload?.description, "卡片描述", 100),
     category,
     isHidden: hidden,
+    hiddenCollectionId,
     url,
     urlLabel,
     secondaryUrl,
@@ -433,6 +437,7 @@ function rowToSite(row) {
     keywords: Array.isArray(keywords) ? keywords : []
   };
   if (!row.is_hidden) site.category = row.category_id;
+  else site.hiddenCollectionId = row.hidden_collection_id || "new-world";
   if (row.primary_label) site.urlLabel = row.primary_label;
   if (row.secondary_url && row.secondary_label) {
     site.secondaryUrl = row.secondary_url;
@@ -455,7 +460,7 @@ async function listCategories(env, includeHidden = false) {
   }));
 }
 
-async function listSites(env, { admin = false, hidden = null } = {}) {
+async function listSites(env, { admin = false, hidden = null, hiddenCollectionId = null } = {}) {
   const clauses = [];
   const values = [];
   if (!admin) clauses.push("s.status = 'published'");
@@ -463,8 +468,12 @@ async function listSites(env, { admin = false, hidden = null } = {}) {
     clauses.push("s.is_hidden = ?");
     values.push(hidden ? 1 : 0);
   }
+  if (hiddenCollectionId !== null) {
+    clauses.push("s.hidden_collection_id = ?");
+    values.push(validateId(hiddenCollectionId, "隐藏收藏 ID"));
+  }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-  const result = await env.DB.prepare(`SELECT s.* FROM sites s LEFT JOIN categories c ON c.id=s.category_id ${where} ORDER BY s.is_hidden, COALESCE(c.sort_order, 9999), s.sort_order, s.rowid`).bind(...values).all();
+  const result = await env.DB.prepare(`SELECT s.* FROM sites s LEFT JOIN categories c ON c.id=s.category_id LEFT JOIN hidden_collections h ON h.id=s.hidden_collection_id ${where} ORDER BY s.is_hidden, COALESCE(c.sort_order, h.sort_order, 9999), s.sort_order, s.rowid`).bind(...values).all();
   return (result.results || []).map((row) => ({
     ...rowToSite(row),
     isHidden: Boolean(row.is_hidden),
@@ -474,6 +483,50 @@ async function listSites(env, { admin = false, hidden = null } = {}) {
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }));
+}
+
+async function listHiddenCollections(env, { includePassphrase = false } = {}) {
+  const result = await env.DB.prepare("SELECT id, name, icon, eyebrow, passphrase, welcome, enabled, sort_order, created_at, updated_at FROM hidden_collections ORDER BY sort_order, rowid").all();
+  return (result.results || []).map((row) => {
+    const collection = {
+      id: row.id,
+      name: row.name,
+      icon: row.icon,
+      eyebrow: row.eyebrow,
+      welcome: row.welcome,
+      enabled: Boolean(row.enabled),
+      sortOrder: Number(row.sort_order) || 0,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+    if (includePassphrase) collection.passphrase = row.passphrase || "";
+    return collection;
+  });
+}
+
+function validateHiddenCollectionPayload(payload, { allowEmptyPassphrase = false, fixedId = "" } = {}) {
+  const id = validateId(fixedId || payload?.id, "隐藏收藏 ID");
+  const icon = requireString(payload?.icon, "隐藏收藏图标", 64);
+  if (!ICON_PATTERN.test(icon)) throw new ApiError("隐藏收藏图标必须使用 fa-* 格式。");
+  const enabled = payload?.enabled === true;
+  const passphrase = cleanText(payload?.passphrase);
+  if (enabled && !passphrase && !allowEmptyPassphrase) throw new ApiError("启用隐藏收藏前请填写入口暗号。");
+  if (passphrase.length > 64) throw new ApiError("入口暗号不能超过 64 个字符。");
+  return {
+    id,
+    name: requireString(payload?.name, "隐藏收藏名称", 30),
+    icon,
+    eyebrow: requireString(payload?.eyebrow, "英文标题", 40).toUpperCase(),
+    passphrase,
+    welcome: requireString(payload?.welcome, "欢迎词", 80),
+    enabled,
+    sortOrder: Number.isInteger(Number(payload?.sortOrder)) ? Number(payload.sortOrder) : 0
+  };
+}
+
+function safeHiddenCollection(collection) {
+  const { passphrase, createdAt, updatedAt, ...safe } = collection;
+  return safe;
 }
 
 async function readSettings(env) {
@@ -548,22 +601,20 @@ function activeAnnouncement(settings, now = Date.now()) {
 }
 
 async function contentSnapshot(env) {
-  const [categories, sites, settings] = await Promise.all([
+  const [categories, sites, hiddenCollections, settings] = await Promise.all([
     listCategories(env, true),
     listSites(env, { admin: true }),
+    listHiddenCollections(env),
     readSettings(env)
   ]);
   const revision = Number(settings.content_revision);
   return {
     revision,
     data: {
-      version: 1,
+      version: 2,
       categories,
       sites: sites.map(({ createdAt, updatedAt, ...site }) => site),
-      hiddenSection: (() => {
-        const { passphrase, ...safe } = hiddenSettingsForAdmin(settings);
-        return safe;
-      })(),
+      hiddenCollections: hiddenCollections.map(safeHiddenCollection),
       announcement: announcementForAdmin(settings)
     }
   };
@@ -589,29 +640,6 @@ async function runContentMutation(request, env, statements, summary = "内容更
   return expected + 1;
 }
 
-function hiddenSettingsForAdmin(settings) {
-  return {
-    id: settings.hidden_id || "new-world",
-    name: settings.hidden_name || "新世界",
-    icon: settings.hidden_icon || "fa-door-open",
-    passphrase: settings.hidden_passphrase || "",
-    welcome: settings.hidden_welcome || "欢迎踏入新世界的大门",
-    enabled: settings.hidden_enabled !== "0"
-  };
-}
-
-async function hiddenSettingsForPublic(settings) {
-  const adminSettings = hiddenSettingsForAdmin(settings);
-  return {
-    id: adminSettings.id,
-    name: adminSettings.name,
-    icon: adminSettings.icon,
-    welcome: adminSettings.welcome,
-    enabled: adminSettings.enabled,
-    unlockHash: adminSettings.passphrase ? await sha256Hex(normalizeSecret(adminSettings.passphrase)) : ""
-  };
-}
-
 async function publicData(env) {
   const [categories, sites, settings] = await Promise.all([
     listCategories(env),
@@ -622,7 +650,6 @@ async function publicData(env) {
   return {
     categories: categories.map(({ sortOrder, isVisible, ...category }) => category),
     sites: sites.filter((site) => visibleIds.has(site.category)).map(({ isHidden, sortOrder, status, createdAt, updatedAt, ...site }) => site),
-    hiddenSection: await hiddenSettingsForPublic(settings),
     announcement: activeAnnouncement(settings),
     source: "database"
   };
@@ -651,15 +678,15 @@ async function ensureCategoryUnique(env, category, excludedId = "") {
 
 function siteStatement(env, site, update = false, originalId = site.id) {
   const values = [
-    site.name, site.description, site.category, site.isHidden ? 1 : 0, site.url, site.urlLabel,
+    site.name, site.description, site.category, site.isHidden ? 1 : 0, site.hiddenCollectionId, site.url, site.urlLabel,
     site.secondaryUrl, site.secondaryUrlLabel, JSON.stringify(site.keywords), site.addedAt,
     site.sortOrder, site.status, site.maintenanceStatus
   ];
   if (update) {
-    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, maintenance_status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
+    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, hidden_collection_id=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, maintenance_status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
       .bind(...values, originalId);
   }
-  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status, maintenance_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, hidden_collection_id, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status, maintenance_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .bind(site.id, ...values);
 }
 
@@ -731,10 +758,10 @@ async function loginKey(request) {
   return sha256Hex(`sakura-admin-login|${address}`);
 }
 
-async function checkLoginLimit(env, key) {
+async function checkLoginLimit(env, key, maximumAttempts = LOGIN_MAX_ATTEMPTS) {
   const now = Math.floor(Date.now() / 1000);
   const row = await env.DB.prepare("SELECT attempts, window_started FROM login_attempts WHERE key=?").bind(key).first();
-  return Boolean(row && now - Number(row.window_started) < LOGIN_WINDOW_SECONDS && Number(row.attempts) >= LOGIN_MAX_ATTEMPTS);
+  return Boolean(row && now - Number(row.window_started) < LOGIN_WINDOW_SECONDS && Number(row.attempts) >= maximumAttempts);
 }
 
 async function recordLoginFailure(env, key) {
@@ -768,9 +795,10 @@ async function handleLogin(request, env) {
 }
 
 async function adminData(env) {
-  const [categories, sites, settings, auditResult] = await Promise.all([
+  const [categories, sites, hiddenCollections, settings, auditResult] = await Promise.all([
     listCategories(env, true),
     listSites(env, { admin: true }),
+    listHiddenCollections(env, { includePassphrase: true }),
     readSettings(env),
     env.DB.prepare("SELECT id, action, entity_type, entity_id, details_json, created_at FROM audit_logs ORDER BY id DESC LIMIT 100").all()
   ]);
@@ -799,7 +827,7 @@ async function adminData(env) {
   return {
     categories,
     sites,
-    hiddenSection: hiddenSettingsForAdmin(settings),
+    hiddenCollections,
     announcement: announcementForAdmin(settings),
     revision,
     systemStatus: {
@@ -834,8 +862,10 @@ async function handleSiteMutation(request, env, pathname) {
     const payload = await readJson(request);
     const count = Number(await env.DB.prepare("SELECT COUNT(*) AS count FROM sites").first("count"));
     if (count >= MAX_SITE_COUNT) throw new ApiError(`卡片数量已达到 ${MAX_SITE_COUNT} 张上限。`, 409, "SITE_LIMIT_REACHED");
-    const categoryIds = new Set((await listCategories(env, true)).map((category) => category.id));
-    const site = validateSitePayload(payload, categoryIds);
+    const [categories, hiddenCollections] = await Promise.all([listCategories(env, true), listHiddenCollections(env)]);
+    const categoryIds = new Set(categories.map((category) => category.id));
+    const hiddenCollectionIds = new Set(hiddenCollections.map((collection) => collection.id));
+    const site = validateSitePayload(payload, categoryIds, hiddenCollectionIds);
     await ensureSiteUnique(env, site);
     const revision = await runContentMutation(request, env, [
       siteStatement(env, site),
@@ -847,8 +877,10 @@ async function handleSiteMutation(request, env, pathname) {
     const existing = await env.DB.prepare("SELECT id FROM sites WHERE id=?").bind(routeId).first();
     if (!existing) throw new ApiError("没有找到这张卡片。", 404, "NOT_FOUND");
     const payload = { ...(await readJson(request)), id: routeId };
-    const categoryIds = new Set((await listCategories(env, true)).map((category) => category.id));
-    const site = validateSitePayload(payload, categoryIds);
+    const [categories, hiddenCollections] = await Promise.all([listCategories(env, true), listHiddenCollections(env)]);
+    const categoryIds = new Set(categories.map((category) => category.id));
+    const hiddenCollectionIds = new Set(hiddenCollections.map((collection) => collection.id));
+    const site = validateSitePayload(payload, categoryIds, hiddenCollectionIds);
     await ensureSiteUnique(env, site, routeId);
     const revision = await runContentMutation(request, env, [
       siteStatement(env, site, true, routeId),
@@ -874,22 +906,24 @@ async function handleBatchSiteCreate(request, env) {
   const payload = await readJson(request, 512 * 1024);
   if (!Array.isArray(payload?.sites) || !payload.sites.length) throw new ApiError("请至少提供一张卡片。", 400, "INVALID_BATCH");
   if (payload.sites.length > MAX_BATCH_SITE_COUNT) throw new ApiError(`每次最多批量添加 ${MAX_BATCH_SITE_COUNT} 张卡片。`, 400, "BATCH_LIMIT_REACHED");
-  const [existingCount, categories, existingSites] = await Promise.all([
+  const [existingCount, categories, hiddenCollections, existingSites] = await Promise.all([
     env.DB.prepare("SELECT COUNT(*) AS count FROM sites").first("count"),
     listCategories(env, true),
+    listHiddenCollections(env),
     listSites(env, { admin: true })
   ]);
   if (Number(existingCount) + payload.sites.length > MAX_SITE_COUNT) {
     throw new ApiError(`添加后会超过 ${MAX_SITE_COUNT} 张卡片上限。`, 409, "SITE_LIMIT_REACHED");
   }
   const categoryIds = new Set(categories.map((category) => category.id));
+  const hiddenCollectionIds = new Set(hiddenCollections.map((collection) => collection.id));
   const usedIds = new Set(existingSites.map((site) => site.id));
   const usedNames = new Set(existingSites.map((site) => site.name.toLocaleLowerCase("zh-CN")));
   const usedUrls = new Set(existingSites.flatMap((site) => [site.url, site.secondaryUrl].filter(Boolean)));
   const sites = payload.sites.map((item, index) => {
     let site;
     try {
-      site = validateSitePayload({ ...item, sortOrder: Number.isInteger(Number(item?.sortOrder)) ? Number(item.sortOrder) : 9999 + index }, categoryIds);
+      site = validateSitePayload({ ...item, sortOrder: Number.isInteger(Number(item?.sortOrder)) ? Number(item.sortOrder) : 9999 + index }, categoryIds, hiddenCollectionIds);
     } catch (error) {
       if (error instanceof ApiError) throw new ApiError(`第 ${index + 1} 条：${error.message}`, error.status, error.code);
       throw error;
@@ -953,23 +987,23 @@ async function handleCategoryMutation(request, env, pathname) {
   return errorResponse("不支持的分类操作。", 405, "METHOD_NOT_ALLOWED");
 }
 
-async function handleHiddenSettings(request, env) {
+async function handleHiddenCollectionSettings(request, env, collectionId = "") {
   await requireAdmin(env, request, true);
   const payload = await readJson(request, 16 * 1024);
-  const settings = {
-    hidden_id: validateId(payload.id || "new-world", "隐藏板块 ID"),
-    hidden_name: requireString(payload.name, "隐藏板块名称", 30),
-    hidden_icon: requireString(payload.icon, "隐藏板块图标", 64),
-    hidden_passphrase: requireString(payload.passphrase, "入口口令", 64),
-    hidden_welcome: requireString(payload.welcome, "欢迎词", 80),
-    hidden_enabled: payload.enabled === false ? "0" : "1"
-  };
-  if (!ICON_PATTERN.test(settings.hidden_icon)) throw new ApiError("隐藏板块图标必须使用 fa-* 格式。");
-  const statements = Object.entries(settings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value));
+  const id = validateId(collectionId || payload?.id || "new-world", "隐藏收藏 ID");
+  const existing = await env.DB.prepare("SELECT id FROM hidden_collections WHERE id=?").bind(id).first();
+  if (!existing) throw new ApiError("没有找到这个隐藏收藏。", 404, "NOT_FOUND");
+  const collection = validateHiddenCollectionPayload(payload, { fixedId: id });
+  if (collection.passphrase) {
+    const others = await listHiddenCollections(env, { includePassphrase: true });
+    const duplicate = others.find((item) => item.id !== id && item.passphrase && normalizeSecret(item.passphrase) === normalizeSecret(collection.passphrase));
+    if (duplicate) throw new ApiError(`入口暗号与“${duplicate.name}”重复，请使用不同暗号。`, 409, "DUPLICATE_PASSPHRASE");
+  }
   const revision = await runContentMutation(request, env, [
-    ...statements,
-    auditStatement(env, "update", "settings", "hidden-section", { name: settings.hidden_name })
-  ], `更新隐藏板块：${settings.hidden_name}`);
+    env.DB.prepare("UPDATE hidden_collections SET name=?, icon=?, eyebrow=?, passphrase=?, welcome=?, enabled=?, sort_order=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
+      .bind(collection.name, collection.icon, collection.eyebrow, collection.passphrase, collection.welcome, collection.enabled ? 1 : 0, collection.sortOrder, id),
+    auditStatement(env, "update", "hidden-collection", id, { name: collection.name, enabled: collection.enabled })
+  ], `更新隐藏收藏：${collection.name}`);
   return json({ ok: true, revision });
 }
 
@@ -1009,19 +1043,60 @@ async function handleReorder(request, env) {
 
 function backupFromAdminData(data) {
   return {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     categories: data.categories,
     sites: data.sites.map(({ createdAt, updatedAt, ...site }) => site),
-    hiddenSection: data.hiddenSection,
+    hiddenCollections: data.hiddenCollections.map(({ createdAt, updatedAt, ...collection }) => collection),
     announcement: data.announcement
   };
+}
+
+function legacyHiddenCollections(hidden = {}) {
+  return [
+    {
+      id: hidden.id || "new-world",
+      name: hidden.name,
+      icon: hidden.icon,
+      eyebrow: "SECRET COLLECTION",
+      passphrase: hidden.passphrase,
+      welcome: hidden.welcome,
+      enabled: hidden.enabled !== false,
+      sortOrder: 0
+    },
+    {
+      id: "private-collection",
+      name: "私人收藏",
+      icon: "fa-lock",
+      eyebrow: "PRIVATE COLLECTION",
+      passphrase: "",
+      welcome: "欢迎回到你的私人收藏",
+      enabled: false,
+      sortOrder: 1
+    }
+  ];
+}
+
+function validateHiddenCollectionsPayload(source, { snapshot = false } = {}) {
+  if (!Array.isArray(source) || source.length < 1 || source.length > 10) throw new ApiError(snapshot ? "历史版本的隐藏收藏不正确。" : "备份中的隐藏收藏不正确。", snapshot ? 409 : 400, snapshot ? "INVALID_CONTENT_VERSION" : "INVALID_BACKUP");
+  const collections = source.map((item) => validateHiddenCollectionPayload(item, { allowEmptyPassphrase: snapshot }));
+  if (new Set(collections.map((item) => item.id)).size !== collections.length
+    || new Set(collections.map((item) => item.name.toLocaleLowerCase("zh-CN"))).size !== collections.length) {
+    throw new ApiError(snapshot ? "历史版本包含重复隐藏收藏。" : "备份中存在重复的隐藏收藏。", snapshot ? 409 : 400, snapshot ? "INVALID_CONTENT_VERSION" : "INVALID_BACKUP");
+  }
+  const supportedIds = new Set(["new-world", "private-collection"]);
+  if (collections.length !== supportedIds.size || collections.some((item) => !supportedIds.has(item.id))) {
+    throw new ApiError(snapshot ? "历史版本的隐藏收藏结构不受支持。" : "备份必须包含新世界和私人收藏。", snapshot ? 409 : 400, snapshot ? "INVALID_CONTENT_VERSION" : "INVALID_BACKUP");
+  }
+  const enabledSecrets = collections.filter((item) => item.enabled).map((item) => normalizeSecret(item.passphrase));
+  if (!snapshot && new Set(enabledSecrets).size !== enabledSecrets.length) throw new ApiError("不同隐藏收藏必须使用不同入口暗号。", 409, "DUPLICATE_PASSPHRASE");
+  return collections;
 }
 
 async function handleImport(request, env) {
   await requireAdmin(env, request, true);
   const payload = await readJson(request, 1024 * 1024);
-  if (![1, 2].includes(payload?.version) || !Array.isArray(payload.categories) || !Array.isArray(payload.sites)) throw new ApiError("备份文件格式不正确。 ");
+  if (![1, 2, 3].includes(payload?.version) || !Array.isArray(payload.categories) || !Array.isArray(payload.sites)) throw new ApiError("备份文件格式不正确。 ");
   if (payload.categories.length > MAX_CATEGORY_COUNT || payload.sites.length > MAX_SITE_COUNT) throw new ApiError("备份中的数据量超过限制。 ");
   const categories = payload.categories.map(validateCategoryPayload);
   const categoryIds = new Set(categories.map((category) => category.id));
@@ -1029,21 +1104,13 @@ async function handleImport(request, env) {
   if (new Set(categories.map((category) => category.name.toLocaleLowerCase("zh-CN"))).size !== categories.length) {
     throw new ApiError("备份中存在重复的分类名称。 ");
   }
-  const sites = payload.sites.map((site) => validateSitePayload(site, categoryIds));
+  const hiddenCollections = validateHiddenCollectionsPayload(payload.version >= 3 ? payload.hiddenCollections : legacyHiddenCollections(payload.hiddenSection || {}));
+  const hiddenCollectionIds = new Set(hiddenCollections.map((collection) => collection.id));
+  const sites = payload.sites.map((site) => validateSitePayload(site, categoryIds, hiddenCollectionIds));
   if (new Set(sites.map((site) => site.id)).size !== sites.length) throw new ApiError("备份中存在重复的卡片 ID。 ");
   if (new Set(sites.map((site) => site.name.toLocaleLowerCase("zh-CN"))).size !== sites.length) throw new ApiError("备份中存在重复的卡片名称。 ");
   const importedUrls = sites.flatMap((site) => [site.url, site.secondaryUrl].filter(Boolean));
   if (new Set(importedUrls).size !== importedUrls.length) throw new ApiError("备份中存在重复的卡片链接。 ");
-  const hidden = payload.hiddenSection || {};
-  const hiddenSettings = {
-    hidden_id: validateId(hidden.id || "new-world", "隐藏板块 ID"),
-    hidden_name: requireString(hidden.name, "隐藏板块名称", 30),
-    hidden_icon: requireString(hidden.icon, "隐藏板块图标", 64),
-    hidden_passphrase: requireString(hidden.passphrase, "入口口令", 64),
-    hidden_welcome: requireString(hidden.welcome, "欢迎词", 80),
-    hidden_enabled: hidden.enabled === false ? "0" : "1"
-  };
-  if (!ICON_PATTERN.test(hiddenSettings.hidden_icon)) throw new ApiError("隐藏板块图标必须使用 fa-* 格式。");
   const announcement = payload.version >= 2 ? validateAnnouncementPayload(payload.announcement || {}) : null;
   const announcementSettings = announcement ? {
     announcement_text: announcement.text,
@@ -1054,9 +1121,11 @@ async function handleImport(request, env) {
   const statements = [
     env.DB.prepare("DELETE FROM sites"),
     env.DB.prepare("DELETE FROM categories"),
+    env.DB.prepare("DELETE FROM hidden_collections"),
+    ...hiddenCollections.map((collection) => env.DB.prepare("INSERT INTO hidden_collections(id, name, icon, eyebrow, passphrase, welcome, enabled, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(collection.id, collection.name, collection.icon, collection.eyebrow, collection.passphrase, collection.welcome, collection.enabled ? 1 : 0, collection.sortOrder)),
     ...categories.map((category) => env.DB.prepare("INSERT INTO categories(id, name, icon, sort_order, is_visible) VALUES (?, ?, ?, ?, ?)").bind(category.id, category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0)),
     ...sites.map((site) => siteStatement(env, site)),
-    ...Object.entries(hiddenSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
     ...Object.entries(announcementSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
     env.DB.prepare("INSERT INTO audit_logs(action, entity_type, entity_id, details_json) VALUES ('import', 'backup', 'all', ?)").bind(JSON.stringify({ categories: categories.length, sites: sites.length }))
   ];
@@ -1065,7 +1134,7 @@ async function handleImport(request, env) {
 }
 
 function validateVersionSnapshot(snapshot) {
-  if (snapshot?.version !== 1 || !Array.isArray(snapshot.categories) || !Array.isArray(snapshot.sites)) {
+  if (![1, 2].includes(snapshot?.version) || !Array.isArray(snapshot.categories) || !Array.isArray(snapshot.sites)) {
     throw new ApiError("历史版本内容已损坏，无法恢复。", 409, "INVALID_CONTENT_VERSION");
   }
   if (snapshot.categories.length > MAX_CATEGORY_COUNT || snapshot.sites.length > MAX_SITE_COUNT) {
@@ -1077,7 +1146,9 @@ function validateVersionSnapshot(snapshot) {
     || new Set(categories.map((category) => category.name.toLocaleLowerCase("zh-CN"))).size !== categories.length) {
     throw new ApiError("历史版本包含重复分类。", 409, "INVALID_CONTENT_VERSION");
   }
-  const sites = snapshot.sites.map((site) => validateSitePayload(site, categoryIds));
+  const hiddenCollections = validateHiddenCollectionsPayload(snapshot.version >= 2 ? snapshot.hiddenCollections : legacyHiddenCollections(snapshot.hiddenSection || {}).map(({ passphrase, ...collection }) => collection), { snapshot: true });
+  const hiddenCollectionIds = new Set(hiddenCollections.map((collection) => collection.id));
+  const sites = snapshot.sites.map((site) => validateSitePayload(site, categoryIds, hiddenCollectionIds));
   const names = sites.map((site) => site.name.toLocaleLowerCase("zh-CN"));
   const urls = sites.flatMap((site) => [site.url, site.secondaryUrl].filter(Boolean));
   if (new Set(sites.map((site) => site.id)).size !== sites.length
@@ -1085,17 +1156,8 @@ function validateVersionSnapshot(snapshot) {
     || new Set(urls).size !== urls.length) {
     throw new ApiError("历史版本包含重复卡片或链接。", 409, "INVALID_CONTENT_VERSION");
   }
-  const hidden = snapshot.hiddenSection || {};
-  const hiddenSettings = {
-    hidden_id: validateId(hidden.id || "new-world", "隐藏板块 ID"),
-    hidden_name: requireString(hidden.name, "隐藏板块名称", 30),
-    hidden_icon: requireString(hidden.icon, "隐藏板块图标", 64),
-    hidden_welcome: requireString(hidden.welcome, "欢迎词", 80),
-    hidden_enabled: hidden.enabled === false ? "0" : "1"
-  };
-  if (!ICON_PATTERN.test(hiddenSettings.hidden_icon)) throw new ApiError("历史版本的隐藏板块图标不正确。", 409, "INVALID_CONTENT_VERSION");
   const announcement = validateAnnouncementPayload(snapshot.announcement || {});
-  return { categories, sites, hiddenSettings, announcement };
+  return { categories, sites, hiddenCollections, announcement };
 }
 
 async function handleContentVersions(request, env, pathname) {
@@ -1134,9 +1196,10 @@ async function handleContentVersions(request, env, pathname) {
     const statements = [
       env.DB.prepare("DELETE FROM sites"),
       env.DB.prepare("DELETE FROM categories"),
+      ...restored.hiddenCollections.map((collection) => env.DB.prepare("INSERT INTO hidden_collections(id, name, icon, eyebrow, passphrase, welcome, enabled, sort_order) VALUES (?, ?, ?, ?, '', ?, 0, ?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, icon=excluded.icon, eyebrow=excluded.eyebrow, welcome=excluded.welcome, enabled=CASE WHEN hidden_collections.passphrase<>'' THEN ? ELSE 0 END, sort_order=excluded.sort_order, updated_at=CURRENT_TIMESTAMP")
+        .bind(collection.id, collection.name, collection.icon, collection.eyebrow, collection.welcome, collection.sortOrder, collection.enabled ? 1 : 0)),
       ...restored.categories.map((category) => env.DB.prepare("INSERT INTO categories(id, name, icon, sort_order, is_visible) VALUES (?, ?, ?, ?, ?)").bind(category.id, category.name, category.icon, category.sortOrder, category.isVisible ? 1 : 0)),
       ...restored.sites.map((site) => siteStatement(env, site)),
-      ...Object.entries(restored.hiddenSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
       ...Object.entries(announcementSettings).map(([key, value]) => env.DB.prepare("INSERT INTO settings(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP").bind(key, value)),
       auditStatement(env, "restore", "content-version", String(versionId), { sourceRevision: row.revision, summary: row.summary })
     ];
@@ -1174,14 +1237,25 @@ async function handlePublic(request, env, pathname, ctx) {
   }
   if (request.method === "POST" && pathname === "/api/public/hidden") {
     requireSameOrigin(request, true);
-    const settings = hiddenSettingsForAdmin(await readSettings(env));
-    if (!settings.enabled) return errorResponse("隐藏板块当前未开放。", 404, "NOT_FOUND");
+    const address = request.headers.get("CF-Connecting-IP") || "local";
+    const unlockKey = await sha256Hex(`sakura-hidden-unlock|${address}`);
+    if (await checkLoginLimit(env, unlockKey, HIDDEN_UNLOCK_MAX_ATTEMPTS)) return errorResponse("尝试次数过多，请 15 分钟后再试。", 429, "TOO_MANY_ATTEMPTS");
     const payload = await readJson(request, 2048);
-    if (!(await secureEqual(normalizeSecret(payload.passphrase), normalizeSecret(settings.passphrase)))) {
+    const passphrase = cleanText(payload?.passphrase);
+    if (!passphrase || passphrase.length > 64) {
+      await recordLoginFailure(env, unlockKey);
+      return errorResponse("入口暗号不正确。", 403, "INVALID_PASSPHRASE");
+    }
+    const collections = (await listHiddenCollections(env, { includePassphrase: true })).filter((collection) => collection.enabled && collection.passphrase);
+    const comparisons = await Promise.all(collections.map((collection) => secureEqual(normalizeSecret(passphrase), normalizeSecret(collection.passphrase))));
+    const collection = collections[comparisons.findIndex(Boolean)];
+    if (!collection) {
+      await recordLoginFailure(env, unlockKey);
       return errorResponse("入口口令不正确。", 403, "INVALID_PASSPHRASE");
     }
-    const sites = (await listSites(env, { hidden: true })).map(({ isHidden, sortOrder, status, createdAt, updatedAt, ...site }) => site);
-    return json({ ok: true, data: { id: settings.id, name: settings.name, icon: settings.icon, welcome: settings.welcome, sites } });
+    await env.DB.prepare("DELETE FROM login_attempts WHERE key=?").bind(unlockKey).run();
+    const sites = (await listSites(env, { hidden: true, hiddenCollectionId: collection.id })).map(({ isHidden, hiddenCollectionId, sortOrder, status, createdAt, updatedAt, ...site }) => site);
+    return json({ ok: true, data: { ...safeHiddenCollection(collection), sites } });
   }
   return errorResponse("接口不存在。", 404, "NOT_FOUND");
 }
@@ -1250,7 +1324,9 @@ async function handleAdmin(request, env, pathname) {
   }
   if (request.method === "POST" && pathname === "/api/admin/import") return handleImport(request, env);
   if (request.method === "POST" && pathname === "/api/admin/reorder") return handleReorder(request, env);
-  if (request.method === "PUT" && pathname === "/api/admin/hidden-settings") return handleHiddenSettings(request, env);
+  if (request.method === "PUT" && pathname === "/api/admin/hidden-settings") return handleHiddenCollectionSettings(request, env, "new-world");
+  const hiddenCollectionMatch = pathname.match(/^\/api\/admin\/hidden-collections\/([a-z0-9-]+)$/);
+  if (request.method === "PUT" && hiddenCollectionMatch) return handleHiddenCollectionSettings(request, env, hiddenCollectionMatch[1]);
   if (request.method === "PUT" && pathname === "/api/admin/announcement") return handleAnnouncementSettings(request, env);
   if (pathname === "/api/admin/sites/batch") return handleBatchSiteCreate(request, env);
   if (pathname === "/api/admin/versions" || /^\/api\/admin\/versions\/\d+\/restore$/.test(pathname)) return handleContentVersions(request, env, pathname);

@@ -109,19 +109,12 @@ test("application guard waits for navigation data before revealing an initializa
   assert.equal(await fallbackHidden(false), false);
 });
 
-test("database loader accepts legitimate empty data and sanitizes bundled hidden fallback data", async () => {
+test("database loader accepts legitimate empty data without exposing hidden collections", async () => {
   const source = fs.readFileSync(path.join(repositoryRoot, "assets/js/data-loader.js"), "utf8");
   const bundled = {
     categories: [{ id: "tools", name: "在线工具", icon: "fa-tools" }],
     sites: [{ id: "example", name: "示例", url: "https://example.com/", category: "tools" }],
-    hiddenSection: {
-      id: "new-world",
-      name: "新世界",
-      icon: "fa-door-open",
-      passphrase: "secret",
-      welcome: "欢迎",
-      sites: [{ id: "hidden", url: "https://hidden.example/" }]
-    }
+    hiddenSection: { passphrase: "secret", sites: [{ id: "hidden", url: "https://hidden.example/" }] }
   };
 
   async function loadWith(fetch) {
@@ -146,13 +139,12 @@ test("database loader accepts legitimate empty data and sanitizes bundled hidden
   assert.deepEqual(remote.categories, []);
   assert.deepEqual(remote.sites, []);
   assert.deepEqual(remote.announcement, { text: "临时公告" });
+  assert.equal(Object.hasOwn(remote, "hiddenSection"), false);
 
   const fallback = await loadWith(async () => { throw new Error("database offline"); });
   assert.equal(fallback.source, "snapshot");
   assert.equal(fallback.sites.length, 1);
-  assert.equal(fallback.hiddenSection.enabled, false);
-  assert.equal(Object.hasOwn(fallback.hiddenSection, "passphrase"), false);
-  assert.equal(Object.hasOwn(fallback.hiddenSection, "sites"), false);
+  assert.equal(Object.hasOwn(fallback, "hiddenSection"), false);
   assert.equal(fallback.announcement, null);
   assert.match(source, /const timeout = 2000/);
 });
@@ -207,15 +199,6 @@ test("single-button and dual-button cards expose complete searchable actions", (
   assert.equal(core.siteMatchesTerms(site, "安卓专区", ["蓝奏云"]), true);
 });
 
-test("hidden section passphrase requires an exact normalized match", () => {
-  assert.equal(core.matchesPassphrase("开门", "开门"), true);
-  assert.equal(core.matchesPassphrase("  开门  ", "开门"), true);
-  assert.equal(core.matchesPassphrase("开门啦", "开门"), false);
-  assert.equal(core.matchesPassphrase("门", "开门"), false);
-  assert.equal(core.matchesPassphrase("", "开门"), false);
-  assert.equal(core.matchesPassphrase("开门", ""), false);
-});
-
 test("search highlighting returns safe text segments for matching terms", () => {
   assert.deepEqual(core.highlightSegments("M3U8 在线播放器", ["m3u8", "播放"]), [
     { text: "M3U8", match: true },
@@ -249,50 +232,19 @@ test("browser data and core scripts expose the expected globals", () => {
     assert.ok([1, 2].includes(core.siteActions(site).length));
   });
 
-  const { sites: hiddenSites, ...hiddenMeta } = data.hiddenSection;
-  assert.deepEqual(hiddenMeta, {
-    id: "new-world",
-    name: "新世界",
-    icon: "fa-door-open",
-    passphrase: "开门",
-    welcome: "欢迎踏入新世界的大门"
-  });
-  assert.ok(Array.isArray(hiddenSites));
+  assert.equal(Object.hasOwn(data, "hiddenSection"), false);
+  assert.doesNotMatch(fs.readFileSync(path.join(repositoryRoot, "assets/js/sites-data.js"), "utf8"), /hiddenSection|passphrase/);
+});
 
-  const normalIds = new Set(data.sites.map((site) => site.id));
-  const hiddenIds = new Set();
-  const hiddenUrls = new Set();
-  hiddenSites.forEach((site) => {
-    const requiredFields = ["description", "id", "keywords", "name", "url"];
-    const actionFields = ["urlLabel", "secondaryUrl", "secondaryUrlLabel"];
-    const allowedFields = new Set([...requiredFields, ...actionFields]);
-    requiredFields.forEach((field) => assert.ok(Object.hasOwn(site, field)));
-    assert.ok(Object.keys(site).every((field) => allowedFields.has(field)));
-    const presentActionFields = actionFields.filter((field) => Object.hasOwn(site, field));
-    const hasUrlLabel = presentActionFields.includes("urlLabel");
-    const secondaryFieldCount = presentActionFields.filter((field) => field !== "urlLabel").length;
-    assert.ok(secondaryFieldCount === 0 || secondaryFieldCount === 2);
-    if (secondaryFieldCount) assert.equal(hasUrlLabel, true);
-    assert.equal(core.hasDualLinks(site), hasUrlLabel);
-    assert.ok([1, 2].includes(core.siteActions(site).length));
-    assert.match(site.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-    assert.ok(site.name.trim());
-    assert.ok(site.description.trim());
-    assert.ok(["http:", "https:"].includes(new URL(site.url).protocol));
-    assert.ok(Array.isArray(site.keywords));
-    assert.ok(site.keywords.length > 0);
-    assert.ok(site.keywords.every((keyword) => typeof keyword === "string" && keyword.trim()));
-    assert.equal(normalIds.has(site.id), false);
-    assert.equal(hiddenIds.has(site.id), false);
-    assert.equal(hiddenUrls.has(site.url), false);
-    if (site.secondaryUrl) {
-      assert.ok(["http:", "https:"].includes(new URL(site.secondaryUrl).protocol));
-      assert.equal(hiddenUrls.has(site.secondaryUrl), false);
-      hiddenUrls.add(site.secondaryUrl);
-    }
-    hiddenIds.add(site.id);
-    hiddenUrls.add(site.url);
-  });
+test("hidden collections unlock only through the server and clear client state on exit", () => {
+  const application = fs.readFileSync(path.join(repositoryRoot, "assets/js/sakura-app.js"), "utf8");
+  const loader = fs.readFileSync(path.join(repositoryRoot, "assets/js/data-loader.js"), "utf8");
+  assert.match(application, /searchForm\?\.addEventListener\("submit", async \(event\) => \{[\s\S]*unlockHiddenSection\(value\)/);
+  assert.match(application, /fetch\("\.\/api\/public\/hidden", \{[\s\S]*body: JSON\.stringify\(\{ passphrase: value \}\)/);
+  assert.match(application, /url\.searchParams\.delete\("q"\)/);
+  assert.match(application, /hiddenSitesRoot\?\.replaceChildren\(\);\s*hiddenConfig = null;/);
+  assert.doesNotMatch(application, /unlockHash|crypto\.subtle\.digest/);
+  assert.doesNotMatch(loader, /hiddenSection|hiddenCollections|passphrase|unlockHash/);
 });
 
 test("all normal and hidden cards render actions with the expected visit behavior", () => {
