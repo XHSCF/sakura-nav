@@ -192,19 +192,31 @@
             <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存临时公告</span></button></div>
           </form>
 
-          <form class="settings-card collection-settings-card admin-form" data-hidden-settings-form data-collection-id="new-world">
-            <div class="panel-heading compact-heading"><div><h2>新世界设置</h2><p>更改入口信息和搜索口令。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
-            <div class="form-grid two-columns">
-              <label><span>板块名称</span><input name="name" maxlength="30" required></label>
-              <label><span>图标类名</span><input name="icon" maxlength="64" placeholder="fa-door-open" required></label>
-              <label class="wide-field"><span>英文标题</span><input name="eyebrow" maxlength="40" placeholder="SECRET COLLECTION" required></label>
-              <label class="wide-field"><span>入口暗号</span><input name="passphrase" type="password" maxlength="64" autocomplete="new-password" spellcheck="false"><small>启用时必须填写；只有完全匹配才会进入。</small></label>
-              <label class="wide-field"><span>欢迎词</span><input name="welcome" maxlength="80" required></label>
-            </div>
-            <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存新世界设置</span></button></div>
-          </form>
+          <div class="settings-column">
+            <form class="settings-card collection-settings-card admin-form" data-hidden-settings-form data-collection-id="new-world">
+              <div class="panel-heading compact-heading"><div><h2>新世界设置</h2><p>更改入口信息和搜索口令。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
+              <div class="form-grid two-columns">
+                <label><span>板块名称</span><input name="name" maxlength="30" required></label>
+                <label><span>图标类名</span><input name="icon" maxlength="64" placeholder="fa-door-open" required></label>
+                <label class="wide-field"><span>英文标题</span><input name="eyebrow" maxlength="40" placeholder="SECRET COLLECTION" required></label>
+                <label class="wide-field"><span>入口暗号</span><input name="passphrase" type="password" maxlength="64" autocomplete="new-password" spellcheck="false"><small>启用时必须填写；只有完全匹配才会进入。</small></label>
+                <label class="wide-field"><span>欢迎词</span><input name="welcome" maxlength="80" required></label>
+              </div>
+              <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存新世界设置</span></button></div>
+            </form>
 
-          <form class="settings-card collection-settings-card admin-form" data-hidden-settings-form data-collection-id="private-collection">
+            <section class="settings-card">
+              <div class="panel-heading compact-heading"><div><h2>数据备份</h2><p>导出全部分类、卡片、隐藏收藏设置和临时公告。</p></div></div>
+              <div class="backup-actions">
+                <button class="secondary-button" type="button" data-export><i class="fas fa-download"></i><span>导出 JSON 备份</span></button>
+                <label class="secondary-button file-button"><i class="fas fa-upload"></i><span>导入 JSON 备份</span><input type="file" accept="application/json,.json" data-import hidden></label>
+              </div>
+              <div class="danger-note"><i class="fas fa-exclamation-triangle"></i><p>导入会替换数据库中的全部分类和卡片。执行前会再次确认，请先导出当前备份。</p></div>
+            </section>
+          </div>
+
+          <div class="settings-column">
+            <form class="settings-card collection-settings-card admin-form" data-hidden-settings-form data-collection-id="private-collection">
             <div class="panel-heading compact-heading"><div><h2>私人收藏设置</h2><p>使用与新世界不同的独立入口暗号。</p></div><label class="switch-control"><input type="checkbox" name="enabled"><span>启用</span></label></div>
             <div class="form-grid two-columns">
               <label><span>板块名称</span><input name="name" maxlength="30" required></label>
@@ -225,16 +237,8 @@
               </div>
             </details>
             <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存私人收藏设置</span></button></div>
-          </form>
-
-          <section class="settings-card">
-            <div class="panel-heading compact-heading"><div><h2>数据备份</h2><p>导出全部分类、卡片、隐藏收藏设置和临时公告。</p></div></div>
-            <div class="backup-actions">
-              <button class="secondary-button" type="button" data-export><i class="fas fa-download"></i><span>导出 JSON 备份</span></button>
-              <label class="secondary-button file-button"><i class="fas fa-upload"></i><span>导入 JSON 备份</span><input type="file" accept="application/json,.json" data-import hidden></label>
-            </div>
-            <div class="danger-note"><i class="fas fa-exclamation-triangle"></i><p>导入会替换数据库中的全部分类和卡片。执行前会再次确认，请先导出当前备份。</p></div>
-          </section>
+            </form>
+          </div>
 
           <section class="settings-card full-settings-card">
             <div class="panel-heading compact-heading"><div><h2>系统状态</h2><p>查看数据库版本、容量、写入保护和自动维护状态。</p></div></div>

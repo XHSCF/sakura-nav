@@ -59,6 +59,22 @@ test("admin analytics UI exposes responsive privacy, location and history views"
   assert.match(application, /\/api\/admin\/analytics/);
   assert.match(css, /\.analytics-dashboard-grid/);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.analytics-dashboard-grid \{ grid-template-columns: 1fr;/);
+  assert.match(css, /\.analytics-range-control::after\s*\{[^}]*content:\s*"\\f078";/s);
+  assert.match(css, /\.analytics-range-control select\s*\{[^}]*appearance:\s*none;/s);
+});
+
+test("admin layout keeps Apple-style alignment across desktop, tablet and phone", () => {
+  const html = fs.readFileSync(path.join(root, "admin", "index.html"), "utf8");
+  const css = fs.readFileSync(path.join(root, "admin", "admin.css"), "utf8");
+  assert.match(html, /class="settings-column"[\s\S]*data-collection-id="new-world"[\s\S]*数据备份/);
+  assert.match(html, /class="settings-column"[\s\S]*data-collection-id="private-collection"/);
+  assert.match(css, /\.admin-layout\s*\{[^}]*align-content:\s*start;/s);
+  assert.match(css, /\.settings-column\s*\{[^}]*align-content:\s*start;/s);
+  assert.match(css, /\.result-count\s*\{[^}]*white-space:\s*nowrap;/s);
+  assert.match(css, /\.switch-control\s*\{[^}]*white-space:\s*nowrap;/s);
+  assert.match(css, /\.switch-control input\s*\{[^}]*width:\s*42px !important;[^}]*appearance:\s*none;/s);
+  assert.match(css, /@media \(max-width: 680px\)[\s\S]*?\.admin-panel\.settings-grid\s*\{[^}]*padding:\s*0;[^}]*border:\s*0;/s);
+  assert.match(css, /:root\s*\{[^}]*--radius-sm:\s*14px;[^}]*--radius-md:\s*18px;[^}]*--radius-lg:\s*22px;/s);
 });
 
 test("fifth-round admin UI exposes history restore, maintenance, batch, clicks and announcements", () => {
