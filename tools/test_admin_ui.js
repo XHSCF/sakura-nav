@@ -78,8 +78,8 @@ test("admin layout keeps Apple-style alignment across desktop, tablet and phone"
   assert.match(css, /\.dashboard-actions\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\);/s);
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*?\.dashboard-heading\s*\{[^}]*flex-direction:\s*column;[\s\S]*?\.dashboard-actions > \*\s*\{[^}]*min-width:\s*0;[^}]*min-height:\s*40px;[^}]*flex:\s*1 1 0;/s);
   assert.match(html, /<table class="data-table site-table">/);
-  assert.match(css, /\.site-table\s*\{[^}]*table-layout:\s*fixed;/s);
-  assert.match(css, /\.site-table th:nth-child\(n\+2\), \.site-table td:nth-child\(n\+2\)\s*\{[^}]*text-align:\s*center;/s);
+  assert.match(css, /@media \(min-width: 681px\)[\s\S]*?\.site-table\s*\{[^}]*table-layout:\s*fixed;/s);
+  assert.match(css, /@media \(min-width: 681px\)[\s\S]*?\.site-table th:nth-child\(n\+2\), \.site-table td:nth-child\(n\+2\)\s*\{[^}]*text-align:\s*center;/s);
   assert.match(css, /\.site-table td\[data-label="状态"\] \.table-badge \+ \.table-badge\s*\{[^}]*margin-left:\s*8px;/s);
   assert.match(css, /:root\s*\{[^}]*--radius-sm:\s*14px;[^}]*--radius-md:\s*18px;[^}]*--radius-lg:\s*22px;/s);
 });
