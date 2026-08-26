@@ -329,11 +329,14 @@
     const state = { terms: [], category: "all", view: "all", hidden: false, hiddenTerms: [], privateType: "all" };
     const privateTypes = [
       { id: "all", name: "全部" },
-      { id: "app", name: "应用" },
-      { id: "website", name: "网站" },
-      { id: "resource", name: "资源" },
-      { id: "other", name: "其他" }
+      { id: "app", name: "已购应用" },
+      { id: "website", name: "私人网站" },
+      { id: "resource", name: "备用资源" },
+      { id: "other", name: "未分类" }
     ];
+    const privateTypeNames = Object.fromEntries(privateTypes.slice(1).map((type) => [type.id, type.name]));
+    const privateStatusNames = { purchased: "已购", unlocked: "已解锁内购", frequent: "常用", backup: "备用" };
+    const appStoreRegionNames = { cn: "国区", us: "美区" };
     let scrollRequestToken = 0;
     let hiddenTransitionToken = 0;
     let normalScrollY = 0;
@@ -624,6 +627,19 @@
         category.className = "site-card-category";
         category.textContent = siteCategory?.name || site.category;
         meta.appendChild(category);
+      } else if (options.category?.id === "private-collection") {
+        const metadata = [
+          privateTypeNames[site.privateType] || "未分类",
+          privateStatusNames[site.privateStatus] || "状态未设置",
+          site.privateType === "app" ? appStoreRegionNames[site.appStoreRegion] || "地区未设置" : null,
+          site.lastVerifiedAt ? `确认于 ${site.lastVerifiedAt}` : null
+        ].filter(Boolean);
+        metadata.forEach((label) => {
+          const badge = document.createElement("span");
+          badge.className = "site-card-private-meta";
+          badge.textContent = label;
+          meta.appendChild(badge);
+        });
       }
       let newBadge = null;
       if (!hiddenCard && core.isNewSite(site.addedAt, currentDay, 14)) {
@@ -797,7 +813,10 @@
       if (hiddenExitLabel) hiddenExitLabel.textContent = `退出${hiddenConfig.name}`;
       if (hiddenEmptyTitle) hiddenEmptyTitle.textContent = allSites.length && isPrivate ? "没有找到匹配的私人收藏" : `${hiddenConfig.name}暂时还是空的`;
       if (hiddenEmptyMessage) hiddenEmptyMessage.textContent = allSites.length && isPrivate ? "试试更短的关键词，或切换到“全部”类型。" : "以后加入的内容会显示在这里。";
-      if (privateTools) privateTools.hidden = !isPrivate;
+      if (privateTools) {
+        privateTools.hidden = !isPrivate;
+        privateTools.setAttribute("aria-hidden", String(!isPrivate));
+      }
       if (isPrivate && privateTypeFilter) {
         privateTypeFilter.replaceChildren(...privateTypes.map((type) => {
           const count = type.id === "all" ? allSites.length : allSites.filter((site) => (site.privateType || "other") === type.id).length;
@@ -884,7 +903,10 @@
       state.hiddenTerms = [];
       state.privateType = "all";
       if (privateSearch) privateSearch.value = "";
-      if (privateTools) privateTools.hidden = true;
+      if (privateTools) {
+        privateTools.hidden = true;
+        privateTools.setAttribute("aria-hidden", "true");
+      }
       hiddenTransitionToken += 1;
       root.classList.remove("is-hidden-world");
       hiddenPanel.hidden = true;

@@ -89,6 +89,13 @@ def main() -> int:
         )
         production.commit()
         for migration in migrations[2:]:
+            if migration.name == "0011_private_collection_metadata.sql":
+                production.execute(
+                    "INSERT INTO sites(id, name, description, category_id, is_hidden, hidden_collection_id, private_type, primary_url, keywords_json, sort_order, status) "
+                    "VALUES ('existing-private-card', '现有私人卡片', '迁移不得猜测私人元数据。', NULL, 1, 'private-collection', 'app', "
+                    "'https://example.test/private-existing', '[]', 0, 'published')"
+                )
+                production.commit()
             apply(production, migration)
         custom = production.execute(
             "SELECT name, primary_url FROM sites WHERE id='custom-production-card'"
@@ -109,7 +116,7 @@ def main() -> int:
             "announcement_enabled": "0",
             "audit_retention_days": "180",
             "click_analytics_enabled": "1",
-            "content_revision": "4",
+            "content_revision": "5",
         }:
             errors.append("第五轮 migration 缺少内容版本、公告或点击统计设置")
         site_columns = {row[1] for row in production.execute("PRAGMA table_info(sites)")}
@@ -119,6 +126,14 @@ def main() -> int:
             errors.append("隐藏收藏 migration 未关联卡片所属收藏")
         if "private_type" not in site_columns:
             errors.append("私人收藏 migration 未添加私人类型")
+        private_metadata_columns = {"private_status", "app_store_region", "last_verified_at"}
+        if private_metadata_columns - site_columns:
+            errors.append("私人收藏 migration 未添加状态、地区或最后确认日期")
+        preserved_private = production.execute(
+            "SELECT private_type, private_status, app_store_region, last_verified_at FROM sites WHERE id='existing-private-card'"
+        ).fetchone()
+        if preserved_private != ("app", None, None, None):
+            errors.append("私人收藏元数据 migration 改写或猜测了现有卡片字段")
         required_tables = {"content_versions", "site_click_daily", "site_click_minute", "site_click_guard", "hidden_collections"}
         actual_tables = {row[0] for row in production.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         if not required_tables.issubset(actual_tables):
@@ -128,7 +143,7 @@ def main() -> int:
         production.execute(
             "INSERT OR REPLACE INTO content_revision_guard(id, valid) VALUES "
             "(1, COALESCE((SELECT CASE WHEN CAST(value AS INTEGER)=? THEN 1 ELSE 0 END FROM settings WHERE key='content_revision'), 0))",
-            (4,),
+            (5,),
         )
         production.execute("UPDATE sites SET description='版本 1' WHERE id='custom-production-card'")
         production.execute(

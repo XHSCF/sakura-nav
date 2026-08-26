@@ -254,6 +254,10 @@ test("private collection search and type filters stay in memory", () => {
   assert.match(html, /data-private-type-filter/);
   assert.match(application, /hiddenTerms:\s*\[\]/);
   assert.match(application, /privateType:\s*"all"/);
+  assert.match(application, /已购应用/);
+  assert.match(application, /appStoreRegionNames\[site\.appStoreRegion\] \|\| "地区未设置"/);
+  assert.match(application, /privateTools\.hidden = !isPrivate/);
+  assert.match(fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8"), /\.private-collection-tools\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
   assert.match(application, /core\.siteMatchesTerms\(site, hiddenConfig\.name, state\.hiddenTerms\)/);
   assert.doesNotMatch(application, /setItem\([^\n]*hiddenTerms/);
   assert.doesNotMatch(application, /URLSearchParams[^\n]*hiddenTerms/);

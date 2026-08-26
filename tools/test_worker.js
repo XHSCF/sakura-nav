@@ -101,11 +101,16 @@ test("worker validates public single-button and hidden dual-button cards", async
   assert.equal(hidden.category, null);
   assert.equal(hidden.addedAt, null);
   assert.deepEqual(hidden.keywords, ["隐藏", "下载"]);
-  const privateCard = validateSitePayload({ ...hidden, id: "private-card", hiddenCollectionId: "private-collection", privateType: "app" }, categories, new Set(["new-world", "private-collection"]));
+  const privateCard = validateSitePayload({ ...hidden, id: "private-card", hiddenCollectionId: "private-collection", privateType: "app", privateStatus: "unlocked", appStoreRegion: "us", lastVerifiedAt: "2026-08-26" }, categories, new Set(["new-world", "private-collection"]));
   assert.equal(privateCard.privateType, "app");
+  assert.equal(privateCard.privateStatus, "unlocked");
+  assert.equal(privateCard.appStoreRegion, "us");
+  assert.equal(privateCard.lastVerifiedAt, "2026-08-26");
   assert.equal(validateSitePayload({ ...hidden, id: "private-other", hiddenCollectionId: "private-collection" }, categories, new Set(["new-world", "private-collection"])).privateType, "other");
   assert.throws(() => validateSitePayload({ ...single, privateType: "website" }, categories), /只有私人收藏/);
   assert.throws(() => validateSitePayload({ ...hidden, id: "bad-new-world", privateType: "other" }, categories), /只有私人收藏/);
+  assert.throws(() => validateSitePayload({ ...hidden, id: "bad-region", hiddenCollectionId: "private-collection", privateType: "website", appStoreRegion: "cn" }, categories, new Set(["new-world", "private-collection"])), /已购应用/);
+  assert.throws(() => validateSitePayload({ ...hidden, id: "bad-private-date", hiddenCollectionId: "private-collection", privateType: "app", lastVerifiedAt: "2026-02-30" }, categories, new Set(["new-world", "private-collection"])), /有效的 YYYY-MM-DD/);
 });
 
 test("worker rejects invalid IDs, categories and incomplete dual-button data", async () => {
@@ -234,9 +239,9 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const initialData = (await dataResponse.json()).data;
   assert.ok(initialData.categories.length > 0);
   assert.ok(initialData.sites.length > 0);
-  assert.equal(initialData.revision, 4);
-  assert.equal(initialData.systemStatus.schemaVersion, 9);
-  assert.equal(initialData.systemStatus.contentRevision, 4);
+  assert.equal(initialData.revision, 5);
+  assert.equal(initialData.systemStatus.schemaVersion, 10);
+  assert.equal(initialData.systemStatus.contentRevision, 5);
   assert.deepEqual(new Set(initialData.hiddenCollections.map((collection) => collection.id)), new Set(["new-world", "private-collection"]));
   assert.equal(initialData.hiddenCollections.find((collection) => collection.id === "private-collection").enabled, false);
   assert.equal(initialData.systemStatus.siteCount, initialData.sites.length);
@@ -457,6 +462,9 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     isHidden: true,
     hiddenCollectionId: "private-collection",
     privateType: "app",
+    privateStatus: "unlocked",
+    appStoreRegion: "us",
+    lastVerifiedAt: "2026-08-26",
     url: "https://example.test/private",
     keywords: ["私人"],
     sortOrder: 0,
@@ -473,10 +481,18 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(privatePayload.id, "private-collection");
   assert.deepEqual(privatePayload.sites.map((site) => site.id), [privateSite.id]);
   assert.equal(privatePayload.sites[0].privateType, "app");
+  assert.equal(privatePayload.sites[0].privateStatus, "unlocked");
+  assert.equal(privatePayload.sites[0].appStoreRegion, "us");
+  assert.equal(privatePayload.sites[0].lastVerifiedAt, "2026-08-26");
   assert.equal(privatePayload.passphrase, undefined);
   const privateBackup = await module.default.fetch(request("/api/admin/export", { cookie }), env);
   assert.equal(privateBackup.status, 200);
-  assert.equal((await privateBackup.json()).sites.find((site) => site.id === privateSite.id).privateType, "app");
+  const privateBackupPayload = await privateBackup.json();
+  assert.equal(privateBackupPayload.version, 4);
+  assert.deepEqual(
+    (({ privateType, privateStatus, appStoreRegion, lastVerifiedAt }) => ({ privateType, privateStatus, appStoreRegion, lastVerifiedAt }))(privateBackupPayload.sites.find((site) => site.id === privateSite.id)),
+    { privateType: "app", privateStatus: "unlocked", appStoreRegion: "us", lastVerifiedAt: "2026-08-26" }
+  );
   const newWorldUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: "开门" } }), env);
   assert.equal((await newWorldUnlock.json()).data.sites.some((site) => site.id === privateSite.id), false);
 

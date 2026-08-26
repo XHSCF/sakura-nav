@@ -14,7 +14,7 @@ const ANALYTICS_RETENTION_DAYS = 90;
 const CLICK_ANALYTICS_RETENTION_DAYS = 90;
 const AUDIT_RETENTION_DAYS = 180;
 const CONTENT_REVISION_HEADER = "X-Sakura-Revision";
-const DATABASE_SCHEMA_VERSION = 9;
+const DATABASE_SCHEMA_VERSION = 10;
 const MAX_SITE_COUNT = 500;
 const MAX_CATEGORY_COUNT = 50;
 const MAX_BATCH_SITE_COUNT = 50;
@@ -147,6 +147,16 @@ function validateDate(value, hidden) {
   const date = new Date(`${text}T00:00:00Z`);
   if (!DATE_PATTERN.test(text) || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
     throw new ApiError("收录日期必须是有效的 YYYY-MM-DD 日期。");
+  }
+  return text;
+}
+
+function validateOptionalDate(value, label) {
+  const text = cleanText(value);
+  if (!text) return null;
+  const date = new Date(`${text}T00:00:00Z`);
+  if (!DATE_PATTERN.test(text) || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
+    throw new ApiError(`${label}必须是有效的 YYYY-MM-DD 日期。`);
   }
   return text;
 }
@@ -397,6 +407,16 @@ export function validateSitePayload(payload, categoryIds = new Set(), hiddenColl
   const privateType = hiddenCollectionId === "private-collection" ? (payload?.privateType || "other") : null;
   if (hiddenCollectionId === "private-collection" && !privateTypes.has(privateType)) throw new ApiError("请选择有效的私人类型。");
   if (hiddenCollectionId !== "private-collection" && payload?.privateType != null) throw new ApiError("只有私人收藏卡片可以设置私人类型。");
+  const privateStatuses = new Set(["purchased", "unlocked", "frequent", "backup"]);
+  const privateStatus = hiddenCollectionId === "private-collection" ? optionalString(payload?.privateStatus, 20) : null;
+  if (privateStatus && !privateStatuses.has(privateStatus)) throw new ApiError("请选择有效的私人状态。");
+  if (hiddenCollectionId !== "private-collection" && payload?.privateStatus != null) throw new ApiError("只有私人收藏卡片可以设置私人状态。");
+  const appStoreRegions = new Set(["cn", "us"]);
+  const appStoreRegion = hiddenCollectionId === "private-collection" && privateType === "app" ? optionalString(payload?.appStoreRegion, 10) : null;
+  if (appStoreRegion && !appStoreRegions.has(appStoreRegion)) throw new ApiError("App Store 地区只允许选择国区或美区。");
+  if ((hiddenCollectionId !== "private-collection" || privateType !== "app") && payload?.appStoreRegion != null) throw new ApiError("只有私人收藏中的已购应用可以设置 App Store 地区。");
+  const lastVerifiedAt = hiddenCollectionId === "private-collection" ? validateOptionalDate(payload?.lastVerifiedAt, "最后确认日期") : null;
+  if (hiddenCollectionId !== "private-collection" && payload?.lastVerifiedAt != null) throw new ApiError("只有私人收藏卡片可以设置最后确认日期。");
   const urlLabel = optionalString(payload?.urlLabel, 20);
   const secondaryUrl = validateUrl(payload?.secondaryUrl, "第二个按钮链接", true);
   const secondaryUrlLabel = optionalString(payload?.secondaryUrlLabel, 20);
@@ -419,6 +439,9 @@ export function validateSitePayload(payload, categoryIds = new Set(), hiddenColl
     isHidden: hidden,
     hiddenCollectionId,
     privateType,
+    privateStatus,
+    appStoreRegion,
+    lastVerifiedAt,
     url,
     urlLabel,
     secondaryUrl,
@@ -444,7 +467,12 @@ function rowToSite(row) {
   if (!row.is_hidden) site.category = row.category_id;
   else {
     site.hiddenCollectionId = row.hidden_collection_id || "new-world";
-    if (site.hiddenCollectionId === "private-collection") site.privateType = row.private_type || "other";
+    if (site.hiddenCollectionId === "private-collection") {
+      site.privateType = row.private_type || "other";
+      if (row.private_status) site.privateStatus = row.private_status;
+      if (row.app_store_region) site.appStoreRegion = row.app_store_region;
+      if (row.last_verified_at) site.lastVerifiedAt = row.last_verified_at;
+    }
   }
   if (row.primary_label) site.urlLabel = row.primary_label;
   if (row.secondary_url && row.secondary_label) {
@@ -619,7 +647,7 @@ async function contentSnapshot(env) {
   return {
     revision,
     data: {
-      version: 2,
+      version: 3,
       categories,
       sites: sites.map(({ createdAt, updatedAt, ...site }) => site),
       hiddenCollections: hiddenCollections.map(safeHiddenCollection),
@@ -686,15 +714,15 @@ async function ensureCategoryUnique(env, category, excludedId = "") {
 
 function siteStatement(env, site, update = false, originalId = site.id) {
   const values = [
-    site.name, site.description, site.category, site.isHidden ? 1 : 0, site.hiddenCollectionId, site.privateType, site.url, site.urlLabel,
+    site.name, site.description, site.category, site.isHidden ? 1 : 0, site.hiddenCollectionId, site.privateType, site.privateStatus, site.appStoreRegion, site.lastVerifiedAt, site.url, site.urlLabel,
     site.secondaryUrl, site.secondaryUrlLabel, JSON.stringify(site.keywords), site.addedAt,
     site.sortOrder, site.status, site.maintenanceStatus
   ];
   if (update) {
-    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, hidden_collection_id=?, private_type=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, maintenance_status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
+    return env.DB.prepare("UPDATE sites SET name=?, description=?, category_id=?, is_hidden=?, hidden_collection_id=?, private_type=?, private_status=?, app_store_region=?, last_verified_at=?, primary_url=?, primary_label=?, secondary_url=?, secondary_label=?, keywords_json=?, added_at=?, sort_order=?, status=?, maintenance_status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?")
       .bind(...values, originalId);
   }
-  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, hidden_collection_id, private_type, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status, maintenance_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+  return env.DB.prepare("INSERT INTO sites(id, name, description, category_id, is_hidden, hidden_collection_id, private_type, private_status, app_store_region, last_verified_at, primary_url, primary_label, secondary_url, secondary_label, keywords_json, added_at, sort_order, status, maintenance_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .bind(site.id, ...values);
 }
 
@@ -1051,7 +1079,7 @@ async function handleReorder(request, env) {
 
 function backupFromAdminData(data) {
   return {
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     categories: data.categories,
     sites: data.sites.map(({ createdAt, updatedAt, ...site }) => site),
@@ -1104,7 +1132,7 @@ function validateHiddenCollectionsPayload(source, { snapshot = false } = {}) {
 async function handleImport(request, env) {
   await requireAdmin(env, request, true);
   const payload = await readJson(request, 1024 * 1024);
-  if (![1, 2, 3].includes(payload?.version) || !Array.isArray(payload.categories) || !Array.isArray(payload.sites)) throw new ApiError("备份文件格式不正确。 ");
+  if (![1, 2, 3, 4].includes(payload?.version) || !Array.isArray(payload.categories) || !Array.isArray(payload.sites)) throw new ApiError("备份文件格式不正确。 ");
   if (payload.categories.length > MAX_CATEGORY_COUNT || payload.sites.length > MAX_SITE_COUNT) throw new ApiError("备份中的数据量超过限制。 ");
   const categories = payload.categories.map(validateCategoryPayload);
   const categoryIds = new Set(categories.map((category) => category.id));
@@ -1142,7 +1170,7 @@ async function handleImport(request, env) {
 }
 
 function validateVersionSnapshot(snapshot) {
-  if (![1, 2].includes(snapshot?.version) || !Array.isArray(snapshot.categories) || !Array.isArray(snapshot.sites)) {
+  if (![1, 2, 3].includes(snapshot?.version) || !Array.isArray(snapshot.categories) || !Array.isArray(snapshot.sites)) {
     throw new ApiError("历史版本内容已损坏，无法恢复。", 409, "INVALID_CONTENT_VERSION");
   }
   if (snapshot.categories.length > MAX_CATEGORY_COUNT || snapshot.sites.length > MAX_SITE_COUNT) {

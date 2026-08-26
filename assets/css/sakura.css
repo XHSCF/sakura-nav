@@ -1124,6 +1124,7 @@ select {
   max-width: 760px;
   margin: 0 auto 24px;
 }
+.private-collection-tools[hidden] { display: none !important; }
 
 .private-collection-search {
   display: flex;
@@ -1549,6 +1550,20 @@ select {
   color: var(--primary);
   font-size: 10px;
   font-weight: 750;
+}
+
+.site-card-private-meta {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  padding: 3px 7px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .site-card-new {

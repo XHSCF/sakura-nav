@@ -123,7 +123,9 @@ test("admin styles remain usable without color-mix or backdrop-filter", () => {
   assert.match(css, /@supports not \(\(backdrop-filter: blur\(1px\)\) or \(-webkit-backdrop-filter: blur\(1px\)\)\)[\s\S]*?background:\s*var\(--surface-solid\);/);
   assert.notEqual(fallbackStart, -1);
   assert.match(fallback, /\.admin-header,[\s\S]*?\.color-theme-panel\s*\{[^}]*background:\s*var\(--surface-solid\);/s);
-  assert.match(fallback, /\.primary-button\s*\{[^}]*border-color:\s*var\(--primary\);[^}]*background:\s*var\(--primary\);/s);
+  assert.match(css, /\.primary-button, \.secondary-button, \.danger-button, \.table-action, \.icon-close\s*\{[^}]*border:\s*0;[^}]*box-shadow:\s*none;[^}]*transform:\s*none;/s);
+  assert.match(fallback, /\.primary-button\s*\{[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--surface-soft\);[^}]*box-shadow:\s*none;/s);
+  assert.doesNotMatch(css, /\.primary-button\s*\{[^}]*linear-gradient|\.primary-button\s*\{[^}]*0 0 12px|(?:primary-button|secondary-button|danger-button|table-action):hover[^}]*translateY/s);
   assert.match(fallback, /\.analytics-trend-bar,[\s\S]*?\.analytics-breakdown-fill\s*\{[^}]*background:\s*var\(--primary\);/s);
   assert.match(fallback, /button:focus-visible,[\s\S]*?a:focus-visible\s*\{[^}]*outline:\s*3px solid var\(--primary\);/s);
 });
