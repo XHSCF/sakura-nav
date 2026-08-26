@@ -723,6 +723,72 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   opacity: 0.78;
 }
 
+.private-type-settings {
+  margin: 18px 0 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.private-type-settings > legend {
+  padding: 0 8px;
+  color: var(--text);
+  font-weight: 760;
+}
+
+.private-type-settings > p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.private-type-settings-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.private-type-setting-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.private-type-setting-row > i {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  align-self: center;
+  border-radius: 14px;
+  color: var(--primary-strong);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-solid));
+  font-size: 18px;
+}
+
+.private-type-setting-row label {
+  min-width: 0;
+}
+
+@media (max-width: 620px) {
+  .private-type-setting-row {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .private-type-setting-row > i {
+    width: 38px;
+    height: 38px;
+  }
+
+  .private-type-setting-row label:last-child {
+    grid-column: 2;
+  }
+}
+
 @media (max-width: 760px) {
   .dashboard-actions {
     width: 100%;

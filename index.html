@@ -85,7 +85,7 @@
           <form class="search-box" role="search" data-search-form>
             <i class="fas fa-search search-icon" aria-hidden="true"></i>
             <label class="sr-only" for="site-search">搜索网站</label>
-            <input class="search-input" id="site-search" type="search" data-site-search placeholder="搜索网站、描述或分类…" autocomplete="off" spellcheck="false" aria-describedby="search-keyboard-help">
+            <input class="search-input" id="site-search" type="search" data-site-search placeholder="搜索网站、描述或分类…" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-describedby="search-keyboard-help">
             <span class="sr-only" id="search-keyboard-help">输入关键词后可使用上下方向键选择网站，按 Enter 选择操作按钮。</span>
             <kbd class="search-shortcut" aria-hidden="true">Ctrl K</kbd>
             <button class="search-clear" type="button" data-search-clear aria-label="清空搜索">
@@ -118,7 +118,7 @@
           <strong data-hidden-section-welcome>欢迎踏入新世界的大门</strong>
         </div>
 
-        <div class="access-notice hidden-world-notice" role="note">
+        <div class="access-notice hidden-world-notice" role="note" data-hidden-section-notice>
           <div class="access-notice-copy">
             <div class="access-notice-line">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
@@ -137,7 +137,7 @@
             <span class="sr-only">搜索私人收藏</span>
             <input type="search" data-private-search placeholder="搜索私人收藏…" autocomplete="off" spellcheck="false">
           </label>
-          <div class="private-type-filter" data-private-type-filter aria-label="按私人类型筛选"></div>
+          <div class="category-bar private-type-filter" data-private-type-filter role="group" aria-label="按私人类型筛选"></div>
           <p class="private-result-summary" data-private-result-summary aria-live="polite"></p>
         </div>
 

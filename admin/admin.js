@@ -48,7 +48,13 @@
   const numberFormatter = new Intl.NumberFormat("zh-CN");
   let countryFormatter = null;
   try { countryFormatter = new Intl.DisplayNames(["zh-CN"], { type: "region" }); } catch (_) { countryFormatter = null; }
-  const privateTypeNames = { app: "已购应用", website: "私人网站", resource: "备用资源", other: "未分类" };
+  const defaultPrivateTypes = [
+    { id: "all", name: "全部", icon: "fa-layer-group" },
+    { id: "app", name: "已购应用", icon: "fa-mobile-alt" },
+    { id: "website", name: "私人网站", icon: "fa-globe" },
+    { id: "resource", name: "备用资源", icon: "fa-archive" },
+    { id: "other", name: "未分类", icon: "fa-tags" }
+  ];
   const privateStatusNames = { purchased: "已购", unlocked: "已解锁内购", frequent: "常用", backup: "备用" };
   const appStoreRegionNames = { cn: "国区", us: "美区" };
 
@@ -346,6 +352,7 @@
       if (!form || !item.values) return;
       applyFormDraft(form, item.values);
       if (item.passphraseOmitted) form.elements.passphrase.value = "";
+      updatePrivateTypePreviews(form);
       updateUnsavedIndicator(form);
       restored = true;
     });
@@ -568,11 +575,29 @@
     return state.data.hiddenCollections.find((collection) => collection.id === id);
   }
 
+  function privateTypeDefinitions() {
+    const configured = hiddenCollectionById("private-collection")?.privateTypes;
+    return defaultPrivateTypes.map((fallback) => {
+      const value = Array.isArray(configured) ? configured.find((item) => item?.id === fallback.id) : null;
+      return value?.name && value?.icon ? { id: fallback.id, name: value.name, icon: value.icon } : { ...fallback };
+    });
+  }
+
+  function privateTypeDefinition(id) {
+    const definitions = privateTypeDefinitions();
+    return definitions.find((item) => item.id === id) || definitions.find((item) => item.id === "other");
+  }
+
+  function privateTypeName(id) {
+    return privateTypeDefinition(id)?.name || "未分类";
+  }
+
   function categoryLabel(site) {
     return site.isHidden ? hiddenCollectionById(site.hiddenCollectionId)?.name || "隐藏收藏" : categoryById(site.category)?.name || site.category || "未分类";
   }
 
   function categoryIcon(site) {
+    if (site.hiddenCollectionId === "private-collection") return privateTypeDefinition(site.privateType || "other")?.icon || "fa-tags";
     return site.isHidden ? hiddenCollectionById(site.hiddenCollectionId)?.icon || "fa-lock" : categoryById(site.category)?.icon || "fa-link";
   }
 
@@ -597,6 +622,21 @@
     visibilityFilter.replaceChildren(new Option("全部位置", "all"), new Option("仅普通分类", "public"));
     state.data.hiddenCollections.forEach((collection) => visibilityFilter.appendChild(new Option(`仅${collection.name}`, collection.id)));
     if (Array.from(visibilityFilter.options).some((option) => option.value === currentVisibility)) visibilityFilter.value = currentVisibility;
+
+    const privateDefinitions = privateTypeDefinitions();
+    const privateFilter = document.querySelector("[data-site-private-type-filter]");
+    const currentPrivateFilter = privateFilter.value || "all";
+    privateFilter.replaceChildren(...privateDefinitions.map((item) => new Option(item.id === "all" ? `全部${hiddenCollectionById("private-collection")?.name || "私人收藏"}类型` : item.name, item.id)));
+    if (Array.from(privateFilter.options).some((option) => option.value === currentPrivateFilter)) privateFilter.value = currentPrivateFilter;
+
+    const privateTypeSelect = siteForm.elements.privateType;
+    const currentPrivateType = privateTypeSelect.value;
+    privateTypeSelect.replaceChildren(...privateDefinitions.filter((item) => item.id !== "all").map((item) => {
+      const option = new Option(item.id === "other" ? `${item.name}（旧数据）` : item.name, item.id);
+      option.disabled = item.id === "other";
+      return option;
+    }));
+    if (Array.from(privateTypeSelect.options).some((option) => option.value === currentPrivateType)) privateTypeSelect.value = currentPrivateType;
     Array.from(siteForm.elements.location).forEach((control) => {
       if (control.value === "public") return;
       const label = control.closest("label")?.querySelector("span");
@@ -619,7 +659,7 @@
     const privateStatus = document.querySelector("[data-site-private-status-filter]").value;
     const appStoreRegion = document.querySelector("[data-site-region-filter]").value;
     return state.data.sites.filter((site) => {
-      const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, site.privateType, privateTypeNames[site.privateType], site.privateStatus, privateStatusNames[site.privateStatus], site.appStoreRegion, appStoreRegionNames[site.appStoreRegion], site.lastVerifiedAt, ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
+      const searchable = [site.id, site.name, site.description, site.url, site.urlLabel, site.secondaryUrl, site.secondaryUrlLabel, site.privateType, privateTypeName(site.privateType), site.privateStatus, privateStatusNames[site.privateStatus], site.appStoreRegion, appStoreRegionNames[site.appStoreRegion], site.lastVerifiedAt, ...(site.keywords || [])].join(" ").toLocaleLowerCase("zh-CN");
       return (!query || searchable.includes(query))
         && (category === "all" || site.category === category)
         && (visibility === "all" || (visibility === "public" ? !site.isHidden : site.hiddenCollectionId === visibility))
@@ -655,7 +695,7 @@
 
       const typeCell = document.createElement("td");
       typeCell.dataset.label = "类型";
-      const typeLabel = site.hiddenCollectionId === "private-collection" ? `${privateTypeNames[site.privateType] || "未分类"} · ${site.urlLabel ? "双按钮" : "单按钮"}` : site.urlLabel ? "双按钮" : "单按钮";
+      const typeLabel = site.hiddenCollectionId === "private-collection" ? `${privateTypeName(site.privateType)} · ${site.urlLabel ? "双按钮" : "单按钮"}` : site.urlLabel ? "双按钮" : "单按钮";
       typeCell.appendChild(createElement("span", "table-badge", typeLabel));
 
       const statusCell = document.createElement("td");
@@ -1018,6 +1058,23 @@
     }
   }
 
+  function privateTypesFromForm(form) {
+    return defaultPrivateTypes.map((fallback) => ({
+      id: fallback.id,
+      name: form.elements[`privateTypeName_${fallback.id}`]?.value || fallback.name,
+      icon: form.elements[`privateTypeIcon_${fallback.id}`]?.value || fallback.icon
+    }));
+  }
+
+  function updatePrivateTypePreviews(form) {
+    if (form?.dataset.collectionId !== "private-collection") return;
+    privateTypesFromForm(form).forEach((item) => {
+      const preview = form.querySelector(`[data-private-type-setting="${item.id}"] [data-private-type-icon-preview]`);
+      const safeIcon = /^fa-[a-z0-9-]+$/.test(item.icon) ? item.icon : "fa-link";
+      if (preview) preview.className = `fas ${safeIcon}`;
+    });
+  }
+
   function renderSettings() {
     hiddenSettingsForms.forEach((form) => {
       const settings = hiddenCollectionById(form.dataset.collectionId) || {};
@@ -1027,6 +1084,15 @@
       form.elements.passphrase.value = settings.passphrase || "";
       form.elements.welcome.value = settings.welcome || "";
       form.elements.enabled.checked = settings.enabled === true;
+      if (form.dataset.collectionId === "private-collection") {
+        const configured = Array.isArray(settings.privateTypes) ? settings.privateTypes : [];
+        defaultPrivateTypes.forEach((fallback) => {
+          const value = configured.find((item) => item?.id === fallback.id) || fallback;
+          form.elements[`privateTypeName_${fallback.id}`].value = value.name;
+          form.elements[`privateTypeIcon_${fallback.id}`].value = value.icon;
+        });
+        updatePrivateTypePreviews(form);
+      }
       setFormBaseline(form);
     });
 
@@ -1206,7 +1272,7 @@
     document.querySelector("[data-preview-name]").textContent = fields.name.value.trim() || "卡片名称";
     document.querySelector("[data-preview-description]").textContent = fields.description.value.trim() || "卡片描述会显示在这里。";
     const privateDetails = fields.location.value === "private-collection"
-      ? [privateTypeNames[fields.privateType.value] || "未分类", privateStatusNames[fields.privateStatus.value], fields.privateType.value === "app" ? appStoreRegionNames[fields.appStoreRegion.value] || "地区未设置" : null, fields.lastVerifiedAt.value ? `确认于 ${fields.lastVerifiedAt.value}` : null].filter(Boolean)
+      ? [privateTypeName(fields.privateType.value), privateStatusNames[fields.privateStatus.value], fields.privateType.value === "app" ? appStoreRegionNames[fields.appStoreRegion.value] || "地区未设置" : null, fields.lastVerifiedAt.value ? `确认于 ${fields.lastVerifiedAt.value}` : null].filter(Boolean)
       : [];
     document.querySelector("[data-preview-category]").textContent = hidden ? [hiddenCollection?.name || "隐藏收藏", ...privateDetails].join(" · ") : category?.name || "所属分类";
     document.querySelector("[data-description-count]").textContent = String(fields.description.value.length);
@@ -1393,7 +1459,7 @@
       const copy = createElement("div", "site-cell-copy");
       copy.append(createElement("strong", "", site.name), createElement("span", "", site.id));
       card.appendChild(copy);
-      const privateDetails = site.hiddenCollectionId === "private-collection" ? [privateTypeNames[site.privateType] || "未分类", privateStatusNames[site.privateStatus], site.privateType === "app" ? appStoreRegionNames[site.appStoreRegion] || "地区未设置" : null].filter(Boolean) : [];
+      const privateDetails = site.hiddenCollectionId === "private-collection" ? [privateTypeName(site.privateType), privateStatusNames[site.privateStatus], site.privateType === "app" ? appStoreRegionNames[site.appStoreRegion] || "地区未设置" : null].filter(Boolean) : [];
       const categoryText = site.isHidden ? [hiddenCollectionById(site.hiddenCollectionId || "new-world")?.name || "隐藏收藏", ...privateDetails].join(" · ") : categoryById(site.category)?.name || site.category;
       const category = createElement("td", "", categoryText);
       category.dataset.label = "位置";
@@ -1528,6 +1594,7 @@
         eyebrow: form.elements.eyebrow.value,
         passphrase: form.elements.passphrase.value,
         welcome: form.elements.welcome.value,
+        privateTypes: collectionId === "private-collection" ? privateTypesFromForm(form) : undefined,
         enabled: form.elements.enabled.checked,
         sortOrder: existing?.sortOrder || 0
       } });
@@ -1663,7 +1730,10 @@
   batchForm?.addEventListener("submit", saveBatchSites);
   document.querySelector("[data-batch-parse]")?.addEventListener("click", parseBatchInput);
   categoryForm?.addEventListener("submit", saveCategory);
-  hiddenSettingsForms.forEach((form) => form.addEventListener("submit", saveHiddenSettings));
+  hiddenSettingsForms.forEach((form) => {
+    form.addEventListener("submit", saveHiddenSettings);
+    if (form.dataset.collectionId === "private-collection") form.addEventListener("input", () => updatePrivateTypePreviews(form));
+  });
   announcementForm?.addEventListener("submit", saveAnnouncement);
   announcementForm?.addEventListener("input", renderAnnouncementPreview);
   document.querySelector("[data-export]")?.addEventListener("click", () => exportBackup());

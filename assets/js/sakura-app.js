@@ -318,6 +318,7 @@
     const hiddenExitLabel = document.querySelector("[data-hidden-section-exit-label]");
     const hiddenEmptyTitle = document.querySelector("[data-hidden-section-empty-title]");
     const hiddenEmptyMessage = document.querySelector("[data-hidden-section-empty-message]");
+    const hiddenNotice = document.querySelector("[data-hidden-section-notice]");
     const privateTools = document.querySelector("[data-private-collection-tools]");
     const privateSearch = document.querySelector("[data-private-search]");
     const privateTypeFilter = document.querySelector("[data-private-type-filter]");
@@ -327,14 +328,13 @@
     const siteMap = new Map(data.sites.map((site) => [site.id, site]));
     const validIds = new Set(siteMap.keys());
     const state = { terms: [], category: "all", view: "all", hidden: false, hiddenTerms: [], privateType: "all" };
-    const privateTypes = [
-      { id: "all", name: "全部" },
-      { id: "app", name: "已购应用" },
-      { id: "website", name: "私人网站" },
-      { id: "resource", name: "备用资源" },
-      { id: "other", name: "未分类" }
+    const defaultPrivateTypes = [
+      { id: "all", name: "全部", icon: "fa-layer-group" },
+      { id: "app", name: "已购应用", icon: "fa-mobile-alt" },
+      { id: "website", name: "私人网站", icon: "fa-globe" },
+      { id: "resource", name: "备用资源", icon: "fa-archive" },
+      { id: "other", name: "未分类", icon: "fa-tags" }
     ];
-    const privateTypeNames = Object.fromEntries(privateTypes.slice(1).map((type) => [type.id, type.name]));
     const privateStatusNames = { purchased: "已购", unlocked: "已解锁内购", frequent: "常用", backup: "备用" };
     const appStoreRegionNames = { cn: "国区", us: "美区" };
     let scrollRequestToken = 0;
@@ -344,6 +344,8 @@
     let selectedCardIndex = -1;
     let utilityResetTimer = 0;
     let hiddenUnlockToken = 0;
+    let hiddenUnlockTimer = 0;
+    let automaticUnlockValue = "";
     let contentRevealObserver = null;
     let pressedCardBody = null;
     const revealedContentKeys = new Set();
@@ -414,6 +416,7 @@
     }
 
     const categoryIndicator = ensureSegmentedIndicator(categoryBar);
+    let privateTypeIndicator = ensureSegmentedIndicator(privateTypeFilter);
 
     function updateSegmentedIndicator(container, indicator, animate = false) {
       if (!container || !indicator) return;
@@ -442,13 +445,20 @@
       window.cancelAnimationFrame(segmentedIndicatorFrame);
       segmentedIndicatorFrame = window.requestAnimationFrame(() => {
         updateSegmentedIndicator(categoryBar, categoryIndicator);
+        updateSegmentedIndicator(privateTypeFilter, privateTypeIndicator);
       });
     }
 
-    function createButton(label, value, type, count) {
+    function createButton(label, value, type, count, iconClass = "") {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "filter-chip";
+      if (iconClass) {
+        const buttonIcon = document.createElement("i");
+        buttonIcon.className = `fas ${iconClass}`;
+        buttonIcon.setAttribute("aria-hidden", "true");
+        button.appendChild(buttonIcon);
+      }
       const buttonLabel = document.createElement("span");
       buttonLabel.textContent = label;
       button.appendChild(buttonLabel);
@@ -469,12 +479,27 @@
 
     function updatePressed(container, key, activeValue, animate) {
       if (!container) return;
-      container.querySelectorAll(`[data-${key}]`).forEach((button) => {
+      const attributeKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+      container.querySelectorAll(`[data-${attributeKey}]`).forEach((button) => {
         const active = button.dataset[key] === activeValue;
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", String(active));
       });
-      updateSegmentedIndicator(container, categoryIndicator, Boolean(animate));
+      const indicator = container === privateTypeFilter ? privateTypeIndicator : categoryIndicator;
+      updateSegmentedIndicator(container, indicator, Boolean(animate));
+    }
+
+    function privateTypeDefinitions() {
+      const configured = Array.isArray(hiddenConfig?.privateTypes) ? hiddenConfig.privateTypes : [];
+      return defaultPrivateTypes.map((fallback) => {
+        const value = configured.find((item) => item?.id === fallback.id);
+        return value?.name && value?.icon ? { id: fallback.id, name: value.name, icon: value.icon } : { ...fallback };
+      });
+    }
+
+    function privateTypeDefinition(id) {
+      const definitions = privateTypeDefinitions();
+      return definitions.find((item) => item.id === id) || definitions.find((item) => item.id === "other");
     }
 
     function trackVisit(siteId) {
@@ -627,9 +652,9 @@
         category.className = "site-card-category";
         category.textContent = siteCategory?.name || site.category;
         meta.appendChild(category);
-      } else if (options.category?.id === "private-collection") {
+      } else if (options.privateCollection === true) {
         const metadata = [
-          privateTypeNames[site.privateType] || "未分类",
+          privateTypeDefinition(site.privateType || "other")?.name || "未分类",
           privateStatusNames[site.privateStatus] || "状态未设置",
           site.privateType === "app" ? appStoreRegionNames[site.appStoreRegion] || "地区未设置" : null,
           site.lastVerifiedAt ? `确认于 ${site.lastVerifiedAt}` : null
@@ -793,15 +818,17 @@
       }
     }
 
-    function renderHiddenSection() {
+    function renderHiddenSection(animatePrivateType = false) {
       if (!hiddenConfig || !hiddenSitesRoot) return;
       const allSites = Array.isArray(hiddenConfig.sites) ? hiddenConfig.sites : [];
       const isPrivate = hiddenConfig.id === "private-collection";
+      const privateTypes = privateTypeDefinitions();
       const sites = allSites.filter((site) => (!isPrivate || state.privateType === "all" || (site.privateType || "other") === state.privateType)
         && (!isPrivate || !state.hiddenTerms.length || core.siteMatchesTerms(site, hiddenConfig.name, state.hiddenTerms)));
       const fragment = document.createDocumentFragment();
       sites.forEach((site, index) => {
-        fragment.appendChild(createSiteCard(site, { hidden: true, category: hiddenConfig, revealIndex: index }));
+        const category = isPrivate ? privateTypeDefinition(site.privateType || "other") : hiddenConfig;
+        fragment.appendChild(createSiteCard(site, { hidden: true, privateCollection: isPrivate, category, revealIndex: index }));
       });
       hiddenSitesRoot.replaceChildren(fragment);
       refreshContentReveals();
@@ -811,6 +838,7 @@
       if (hiddenWelcome) hiddenWelcome.textContent = hiddenConfig.welcome;
       if (hiddenEyebrow) hiddenEyebrow.textContent = hiddenConfig.eyebrow || "SECRET COLLECTION";
       if (hiddenExitLabel) hiddenExitLabel.textContent = `退出${hiddenConfig.name}`;
+      if (hiddenNotice) hiddenNotice.hidden = isPrivate;
       if (hiddenEmptyTitle) hiddenEmptyTitle.textContent = allSites.length && isPrivate ? "没有找到匹配的私人收藏" : `${hiddenConfig.name}暂时还是空的`;
       if (hiddenEmptyMessage) hiddenEmptyMessage.textContent = allSites.length && isPrivate ? "试试更短的关键词，或切换到“全部”类型。" : "以后加入的内容会显示在这里。";
       if (privateTools) {
@@ -818,17 +846,19 @@
         privateTools.setAttribute("aria-hidden", String(!isPrivate));
       }
       if (isPrivate && privateTypeFilter) {
-        privateTypeFilter.replaceChildren(...privateTypes.map((type) => {
-          const count = type.id === "all" ? allSites.length : allSites.filter((site) => (site.privateType || "other") === type.id).length;
-          const button = document.createElement("button");
-          button.type = "button";
-          button.dataset.privateType = type.id;
-          button.className = "private-type-button";
-          button.classList.toggle("is-active", state.privateType === type.id);
-          button.setAttribute("aria-pressed", String(state.privateType === type.id));
-          button.textContent = `${type.name} ${count}`;
-          return button;
-        }));
+        const typeCounts = privateTypes.map((type) => type.id === "all" ? allSites.length : allSites.filter((site) => (site.privateType || "other") === type.id).length);
+        const filterSignature = JSON.stringify(privateTypes.map((type, index) => [type.id, type.name, type.icon, typeCounts[index]]));
+        const shouldRebuildFilter = privateTypeFilter.dataset.privateTypeSignature !== filterSignature;
+        if (shouldRebuildFilter) {
+          const buttons = privateTypes.map((type, index) => {
+            const button = createButton(type.name, type.id, "privateType", typeCounts[index], type.icon);
+            return button;
+          });
+          privateTypeFilter.replaceChildren(...buttons);
+          privateTypeFilter.dataset.privateTypeSignature = filterSignature;
+          privateTypeIndicator = ensureSegmentedIndicator(privateTypeFilter);
+        }
+        updatePressed(privateTypeFilter, "privateType", state.privateType, animatePrivateType && !shouldRebuildFilter);
       }
       if (privateResultSummary) privateResultSummary.textContent = isPrivate ? `显示 ${sites.length} / ${allSites.length} 项` : "";
       document.querySelectorAll("[data-hidden-section-icon]").forEach((icon) => {
@@ -848,6 +878,10 @@
         });
         const payload = await response.json();
         if (response.status === 403) return false;
+        if (response.status === 429) {
+          if (token === hiddenUnlockToken) announceUtility(payload?.error || "尝试次数过多，请稍后再试");
+          return false;
+        }
         if (!response.ok || !Array.isArray(payload?.data?.sites) || token !== hiddenUnlockToken) {
           if (token === hiddenUnlockToken) announceUtility("隐藏收藏暂时无法打开，请稍后重试");
           return false;
@@ -861,6 +895,17 @@
       }
     }
 
+    function queueHiddenUnlock(value) {
+      window.clearTimeout(hiddenUnlockTimer);
+      const candidate = String(value || "").trim();
+      if (state.hidden || candidate.length < 2 || candidate === automaticUnlockValue) return;
+      hiddenUnlockTimer = window.setTimeout(async () => {
+        if (state.hidden || !search || search.value !== value) return;
+        automaticUnlockValue = candidate;
+        await unlockHiddenSection(value);
+      }, 650);
+    }
+
     function enterHiddenSection() {
       if (!hiddenConfig || !hiddenPanel || state.hidden) return;
       normalScrollY = window.scrollY;
@@ -869,6 +914,7 @@
       state.hiddenTerms = [];
       state.privateType = "all";
       if (privateSearch) privateSearch.value = "";
+      window.clearTimeout(hiddenUnlockTimer);
       hiddenTransitionToken += 1;
       scrollRequestToken += 1;
       resetKeyboardSelection();
@@ -912,6 +958,8 @@
       hiddenPanel.hidden = true;
       hiddenSitesRoot?.replaceChildren();
       hiddenConfig = null;
+      automaticUnlockValue = "";
+      if (hiddenNotice) hiddenNotice.hidden = false;
       if (search) {
         search.value = "";
         search.readOnly = false;
@@ -939,8 +987,9 @@
     privateTypeFilter?.addEventListener("click", (event) => {
       const button = event.target.closest("[data-private-type]");
       if (!button) return;
-      state.privateType = privateTypes.some((type) => type.id === button.dataset.privateType) ? button.dataset.privateType : "all";
-      renderHiddenSection();
+      state.privateType = privateTypeDefinitions().some((type) => type.id === button.dataset.privateType) ? button.dataset.privateType : "all";
+      renderHiddenSection(true);
+      centerCategoryButton(button, privateTypeFilter);
     });
 
     function visibleStickyHeight(element) {
@@ -963,12 +1012,12 @@
       return headings[0] || null;
     }
 
-    function centerCategoryButton(button) {
-      if (!categoryBar || !button || !window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)").matches) return;
-      const maxScrollLeft = Math.max(0, categoryBar.scrollWidth - categoryBar.clientWidth);
-      const targetLeft = button.offsetLeft - (categoryBar.clientWidth - button.offsetWidth) / 2;
+    function centerCategoryButton(button, container = categoryBar) {
+      if (!container || !button || !window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)").matches) return;
+      const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+      const targetLeft = button.offsetLeft - (container.clientWidth - button.offsetWidth) / 2;
       const nextLeft = Math.min(maxScrollLeft, Math.max(0, targetLeft));
-      categoryBar.scrollTo({
+      container.scrollTo({
         left: nextLeft,
         behavior: reducedMotion ? "auto" : "smooth"
       });
@@ -1175,6 +1224,7 @@
         if (shortcut) shortcut.hidden = Boolean(state.terms.length);
         updateUrlState();
         render();
+        queueHiddenUnlock(value);
       });
 
       search.addEventListener("keydown", (event) => {

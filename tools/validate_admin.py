@@ -45,6 +45,9 @@ def main() -> int:
         hidden_collections = dict(connection.execute("SELECT id, name FROM hidden_collections"))
         if hidden_collections.get("new-world") != "新世界" or hidden_collections.get("private-collection") != "私人收藏":
             errors.append("D1 缺少新世界或私人收藏配置")
+        hidden_collection_columns = {row[1] for row in connection.execute("PRAGMA table_info(hidden_collections)")}
+        if "private_type_config_json" not in hidden_collection_columns:
+            errors.append("D1 隐藏收藏表缺少私人分类栏显示配置")
         unassigned_hidden = connection.execute("SELECT COUNT(*) FROM sites WHERE is_hidden=1 AND hidden_collection_id IS NULL").fetchone()[0]
         if unassigned_hidden:
             errors.append("D1 存在未关联隐藏收藏的隐藏卡片")
@@ -197,6 +200,7 @@ def main() -> int:
             "卡片编辑器内容分区": admin_html.count('class="form-section"') >= 4 and "site-basic-heading" in admin_html,
             "卡片位置标题独立间距": 'class="wide-field radio-field" role="group"' in admin_html and '<fieldset class="wide-field radio-field"' not in admin_html,
             "私人类型编辑与筛选": "data-private-type-field" in admin_html and "data-site-private-type-filter" in admin_html and "privateType" in admin_js,
+            "私人分类栏名称图标管理": "data-private-type-settings" in admin_html and "privateTypesFromForm" in admin_js and "privateTypeIcon_" in admin_js,
             "私人状态地区日期与筛选": all(value in admin_html for value in ("data-private-status-field", "data-private-region-field", "data-private-verified-field", "data-site-private-status-filter", "data-site-region-filter")) and all(value in admin_js for value in ("privateStatus", "appStoreRegion", "lastVerifiedAt")),
             "短ID优先使用网址域名": "adminCore?.preferredSiteId" in admin_js,
             "访问统计管理页面": "data-analytics-content" in admin_html and "function loadAnalytics(" in admin_js,

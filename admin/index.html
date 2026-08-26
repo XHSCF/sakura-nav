@@ -214,6 +214,17 @@
               <label class="wide-field"><span>入口暗号</span><input name="passphrase" type="password" maxlength="64" autocomplete="new-password" spellcheck="false"><small>请先设置独立暗号，再启用私人收藏。</small></label>
               <label class="wide-field"><span>欢迎词</span><input name="welcome" maxlength="80" required></label>
             </div>
+            <fieldset class="private-type-settings wide-field" data-private-type-settings>
+              <legend>私人收藏分类栏</legend>
+              <p>可以修改前台名称和本地图标；内部类型保持固定，已有卡片不会失去归类。</p>
+              <div class="private-type-settings-grid">
+                <div class="private-type-setting-row" data-private-type-setting="all"><i class="fas fa-layer-group" data-private-type-icon-preview aria-hidden="true"></i><label><span>全部</span><input name="privateTypeName_all" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_all" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
+                <div class="private-type-setting-row" data-private-type-setting="app"><i class="fas fa-mobile-alt" data-private-type-icon-preview aria-hidden="true"></i><label><span>已购应用</span><input name="privateTypeName_app" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_app" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
+                <div class="private-type-setting-row" data-private-type-setting="website"><i class="fas fa-globe" data-private-type-icon-preview aria-hidden="true"></i><label><span>私人网站</span><input name="privateTypeName_website" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_website" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
+                <div class="private-type-setting-row" data-private-type-setting="resource"><i class="fas fa-archive" data-private-type-icon-preview aria-hidden="true"></i><label><span>备用资源</span><input name="privateTypeName_resource" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_resource" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
+                <div class="private-type-setting-row" data-private-type-setting="other"><i class="fas fa-tags" data-private-type-icon-preview aria-hidden="true"></i><label><span>未分类</span><input name="privateTypeName_other" maxlength="20" required></label><label><span>图标</span><input name="privateTypeIcon_other" maxlength="64" pattern="fa-[a-z0-9-]+" required></label></div>
+              </div>
+            </fieldset>
             <div class="settings-save-row"><span class="unsaved-indicator" data-unsaved-indicator hidden>尚未保存</span><button class="primary-button" type="submit"><i class="fas fa-save"></i><span>保存私人收藏设置</span></button></div>
           </form>
 

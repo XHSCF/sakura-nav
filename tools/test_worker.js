@@ -239,15 +239,58 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const initialData = (await dataResponse.json()).data;
   assert.ok(initialData.categories.length > 0);
   assert.ok(initialData.sites.length > 0);
-  assert.equal(initialData.revision, 5);
-  assert.equal(initialData.systemStatus.schemaVersion, 10);
-  assert.equal(initialData.systemStatus.contentRevision, 5);
+  assert.equal(initialData.revision, 6);
+  assert.equal(initialData.systemStatus.schemaVersion, 11);
+  assert.equal(initialData.systemStatus.contentRevision, 6);
   assert.deepEqual(new Set(initialData.hiddenCollections.map((collection) => collection.id)), new Set(["new-world", "private-collection"]));
   assert.equal(initialData.hiddenCollections.find((collection) => collection.id === "private-collection").enabled, false);
+  assert.deepEqual(initialData.hiddenCollections.find((collection) => collection.id === "private-collection").privateTypes.map(({ id, name, icon }) => ({ id, name, icon })), [
+    { id: "all", name: "全部", icon: "fa-layer-group" },
+    { id: "app", name: "已购应用", icon: "fa-mobile-alt" },
+    { id: "website", name: "私人网站", icon: "fa-globe" },
+    { id: "resource", name: "备用资源", icon: "fa-archive" },
+    { id: "other", name: "未分类", icon: "fa-tags" }
+  ]);
   assert.equal(initialData.systemStatus.siteCount, initialData.sites.length);
   assert.equal(initialData.systemStatus.categoryCount, initialData.categories.length);
   assert.equal(initialData.systemStatus.siteLimit, 500);
   assert.equal(initialData.systemStatus.categoryLimit, 50);
+
+  const initialPrivateCollection = initialData.hiddenCollections.find((collection) => collection.id === "private-collection");
+  const invalidPrivateTypeCases = [
+    {
+      body: { ...initialPrivateCollection, privateTypes: initialPrivateCollection.privateTypes.slice(0, -1) },
+      error: /全部固定类型/
+    },
+    {
+      body: { ...initialPrivateCollection, privateTypes: initialPrivateCollection.privateTypes.map((item, index) => index === 0 ? { ...item, id: "changed" } : item) },
+      error: /内部类型或顺序不能修改/
+    },
+    {
+      body: { ...initialPrivateCollection, privateTypes: initialPrivateCollection.privateTypes.map((item, index) => index === 1 ? { ...item, name: "全部" } : item) },
+      error: /不能使用重复名称/
+    },
+    {
+      body: { ...initialPrivateCollection, privateTypes: initialPrivateCollection.privateTypes.map((item, index) => index === 1 ? { ...item, icon: "fab fa-apple" } : item) },
+      error: /fa-\*/
+    }
+  ];
+  for (const invalidCase of invalidPrivateTypeCases) {
+    const response = await module.default.fetch(request("/api/admin/hidden-collections/private-collection", {
+      method: "PUT", body: invalidCase.body, cookie, csrf: login.csrf, revision: initialData.revision
+    }), env);
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, invalidCase.error);
+  }
+  const invalidNewWorldPrivateTypes = await module.default.fetch(request("/api/admin/hidden-collections/new-world", {
+    method: "PUT",
+    body: { ...initialData.hiddenCollections.find((collection) => collection.id === "new-world"), privateTypes: [] },
+    cookie,
+    csrf: login.csrf,
+    revision: initialData.revision
+  }), env);
+  assert.equal(invalidNewWorldPrivateTypes.status, 400);
+  assert.match((await invalidNewWorldPrivateTypes.json()).error, /只有私人收藏/);
 
   const duplicateCategoryBackup = {
     version: 3,
@@ -448,7 +491,12 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const privateCollection = afterDelete.hiddenCollections.find((collection) => collection.id === "private-collection");
   const enablePrivate = await module.default.fetch(request("/api/admin/hidden-collections/private-collection", {
     method: "PUT",
-    body: { ...privateCollection, passphrase: "我的收藏", enabled: true },
+    body: {
+      ...privateCollection,
+      passphrase: "我的收藏",
+      enabled: true,
+      privateTypes: privateCollection.privateTypes.map((item) => item.id === "app" ? { ...item, name: "我的应用", icon: "fa-shopping-bag" } : item)
+    },
     cookie,
     csrf: login.csrf,
     revision: afterDelete.revision
@@ -479,6 +527,8 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(privateUnlock.status, 200);
   const privatePayload = (await privateUnlock.json()).data;
   assert.equal(privatePayload.id, "private-collection");
+  assert.equal(privatePayload.privateTypes.find((item) => item.id === "app").name, "我的应用");
+  assert.equal(privatePayload.privateTypes.find((item) => item.id === "app").icon, "fa-shopping-bag");
   assert.deepEqual(privatePayload.sites.map((site) => site.id), [privateSite.id]);
   assert.equal(privatePayload.sites[0].privateType, "app");
   assert.equal(privatePayload.sites[0].privateStatus, "unlocked");
@@ -488,7 +538,8 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   const privateBackup = await module.default.fetch(request("/api/admin/export", { cookie }), env);
   assert.equal(privateBackup.status, 200);
   const privateBackupPayload = await privateBackup.json();
-  assert.equal(privateBackupPayload.version, 4);
+  assert.equal(privateBackupPayload.version, 5);
+  assert.equal(privateBackupPayload.hiddenCollections.find((collection) => collection.id === "private-collection").privateTypes.find((item) => item.id === "app").name, "我的应用");
   assert.deepEqual(
     (({ privateType, privateStatus, appStoreRegion, lastVerifiedAt }) => ({ privateType, privateStatus, appStoreRegion, lastVerifiedAt }))(privateBackupPayload.sites.find((site) => site.id === privateSite.id)),
     { privateType: "app", privateStatus: "unlocked", appStoreRegion: "us", lastVerifiedAt: "2026-08-26" }

@@ -1121,10 +1121,12 @@ select {
 .private-collection-tools {
   display: grid;
   gap: 12px;
-  max-width: 760px;
+  max-width: 1040px;
   margin: 0 auto 24px;
 }
 .private-collection-tools[hidden] { display: none !important; }
+
+.hidden-world-notice[hidden] { display: none !important; }
 
 .private-collection-search {
   display: flex;
@@ -1150,34 +1152,25 @@ select {
 }
 
 .private-type-filter {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 2px;
-  scrollbar-width: none;
+  width: 100%;
 }
 .private-type-filter::-webkit-scrollbar { display: none; }
-.private-type-button {
-  flex: 1 0 auto;
-  min-height: 40px;
-  padding: 8px 16px;
-  border: 0;
-  border-radius: 999px;
-  color: var(--muted);
-  background: var(--surface-solid);
-  font: inherit;
-  font-weight: 650;
-  cursor: pointer;
-}
-.private-type-button.is-active {
-  color: var(--primary);
-  background: var(--action-bg);
-}
-.private-type-button:focus-visible,
 .private-collection-search:focus-within {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+.private-type-filter .filter-chip > i {
+  flex: 0 0 auto;
+  color: var(--primary);
+  font-size: 13px;
+}
+.private-type-filter .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.private-type-filter .filter-chip-count { margin-left: 0; }
 .private-result-summary {
   margin: 0;
   color: var(--muted);
@@ -1559,8 +1552,9 @@ select {
   padding: 3px 7px;
   border: 0;
   border-radius: 999px;
-  color: var(--muted);
-  background: var(--surface-soft);
+  color: var(--primary-strong);
+  background: var(--action-bg);
+  box-shadow: none;
   font-size: 10px;
   font-weight: 700;
   line-height: 1.2;

@@ -116,7 +116,7 @@ def main() -> int:
             "announcement_enabled": "0",
             "audit_retention_days": "180",
             "click_analytics_enabled": "1",
-            "content_revision": "5",
+            "content_revision": "6",
         }:
             errors.append("第五轮 migration 缺少内容版本、公告或点击统计设置")
         site_columns = {row[1] for row in production.execute("PRAGMA table_info(sites)")}
@@ -129,6 +129,18 @@ def main() -> int:
         private_metadata_columns = {"private_status", "app_store_region", "last_verified_at"}
         if private_metadata_columns - site_columns:
             errors.append("私人收藏 migration 未添加状态、地区或最后确认日期")
+        hidden_collection_columns = {row[1] for row in production.execute("PRAGMA table_info(hidden_collections)")}
+        if "private_type_config_json" not in hidden_collection_columns:
+            errors.append("私人收藏显示配置 migration 未添加分类栏配置字段")
+        else:
+            try:
+                private_display = json.loads(production.execute(
+                    "SELECT private_type_config_json FROM hidden_collections WHERE id='private-collection'"
+                ).fetchone()[0])
+            except (TypeError, json.JSONDecodeError):
+                private_display = []
+            if [item.get("id") for item in private_display] != ["all", "app", "website", "resource", "other"]:
+                errors.append("私人收藏显示配置缺少固定类型或顺序不正确")
         preserved_private = production.execute(
             "SELECT private_type, private_status, app_store_region, last_verified_at FROM sites WHERE id='existing-private-card'"
         ).fetchone()
@@ -143,7 +155,7 @@ def main() -> int:
         production.execute(
             "INSERT OR REPLACE INTO content_revision_guard(id, valid) VALUES "
             "(1, COALESCE((SELECT CASE WHEN CAST(value AS INTEGER)=? THEN 1 ELSE 0 END FROM settings WHERE key='content_revision'), 0))",
-            (5,),
+            (6,),
         )
         production.execute("UPDATE sites SET description='版本 1' WHERE id='custom-production-card'")
         production.execute(

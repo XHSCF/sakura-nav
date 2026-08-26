@@ -9,5 +9,6 @@
   "0008_enforce_pc_category_icon.sql": "535e4eb32f4c6dc8704656498f8f1e1f6bf5d555b42aeb1c4c24867b5fada880",
   "0009_hidden_collections.sql": "a4d59d2e386a8a919d8c61e33b3ffe9dc6e1f4523d276f1c717d66febe58cfbe",
   "0010_private_collection_types.sql": "4aecdc565ea5c3177f3bb662184a39af054b595c7326b95b4bbfd1c6fbf4adc1",
-  "0011_private_collection_metadata.sql": "6a60d2dc3d755dbf96171078c630ad2ee911d5ac9fd0d970b07e062026f79dc5"
+  "0011_private_collection_metadata.sql": "6a60d2dc3d755dbf96171078c630ad2ee911d5ac9fd0d970b07e062026f79dc5",
+  "0012_private_collection_display.sql": "ced7892c964bf7c67354d0547afe2f0a177fd77a91ef93938d9251ecbd57c307"
 }
