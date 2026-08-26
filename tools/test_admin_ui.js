@@ -119,6 +119,7 @@ test("expired admin sessions preserve non-sensitive unsaved form drafts in the c
   assert.match(application, /response\.status === 401[\s\S]*?captureSessionDraft\(\)[\s\S]*?showLogin\(/);
   assert.match(application, /await loadData\(\);\s*showApp\(\);\s*const restored = restoreSessionDraft\(\);/);
   assert.match(application, /passphraseOmitted[\s\S]*?elements\.passphrase\.value = ""/);
+  assert.match(application, /新私人卡片必须选择已购应用、私人网站或备用资源/);
 });
 
 test("admin API requests time out with clear network recovery messages", () => {

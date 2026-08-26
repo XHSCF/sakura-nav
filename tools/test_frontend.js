@@ -241,6 +241,10 @@ test("hidden collections unlock only through the server and clear client state o
   const loader = fs.readFileSync(path.join(repositoryRoot, "assets/js/data-loader.js"), "utf8");
   assert.match(application, /searchForm\?\.addEventListener\("submit", async \(event\) => \{[\s\S]*unlockHiddenSection\(value\)/);
   assert.match(application, /fetch\("\.\/api\/public\/hidden", \{[\s\S]*body: JSON\.stringify\(\{ passphrase: value \}\)/);
+  assert.match(application, /function leaveHiddenSectionForNavigation\(\)[\s\S]*?state\.privateType = "all";[\s\S]*?privateTools\.hidden = true;/);
+  assert.match(application, /function cancelPendingHiddenUnlock\(\)[\s\S]*?window\.clearTimeout\(hiddenUnlockTimer\);[\s\S]*?hiddenUnlockToken \+= 1;[\s\S]*?automaticUnlockValue = "";/);
+  assert.match(application, /function leaveHiddenSectionForNavigation\(\)[\s\S]*?cancelPendingHiddenUnlock\(\);[\s\S]*?if \(!state\.hidden\) return;/);
+  assert.match(application, /search\.addEventListener\("input", \(\) => \{[\s\S]*?cancelPendingHiddenUnlock\(\);[\s\S]*?queueHiddenUnlock\(value\)/);
   assert.match(application, /function queueHiddenUnlock\(value\)[\s\S]*window\.setTimeout\([\s\S]*unlockHiddenSection\(value\)[\s\S]*650/);
   assert.match(application, /search\.addEventListener\("input", \(\) => \{[\s\S]*queueHiddenUnlock\(value\)/);
   assert.match(application, /url\.searchParams\.delete\("q"\)/);

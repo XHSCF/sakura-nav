@@ -1398,9 +1398,8 @@
         if (!row.isHidden && !categoryIds.has(row.category)) throw new Error(`第 ${number} 条所属分类不存在。`);
         if (row.isHidden && !hiddenCollectionById(row.hiddenCollectionId || "new-world")) throw new Error(`第 ${number} 条隐藏收藏不存在。`);
         const privateType = row.hiddenCollectionId === "private-collection" ? row.privateType || "other" : null;
-        if (row.hiddenCollectionId === "private-collection" && !new Set(["app", "website", "resource", "other"]).has(privateType)) throw new Error(`第 ${number} 条私人类型不正确。`);
+        if (row.hiddenCollectionId === "private-collection" && !new Set(["app", "website", "resource"]).has(privateType)) throw new Error(`第 ${number} 条新私人卡片必须选择已购应用、私人网站或备用资源。`);
         if (row.hiddenCollectionId !== "private-collection" && row.privateType != null) throw new Error(`第 ${number} 条只有私人收藏可设置私人类型。`);
-        if (row.hiddenCollectionId === "private-collection" && !row.privateType) row.privateType = "other";
         if (row.hiddenCollectionId !== "private-collection" && row.appStoreRegion != null) throw new Error(`第 ${number} 条只有私人收藏应用可设置 App Store 地区。`);
         if (row.appStoreRegion != null && (row.privateType !== "app" || !new Set(["cn", "us"]).has(row.appStoreRegion))) throw new Error(`第 ${number} 条 App Store 地区不正确。`);
         const urls = [row.url, row.secondaryUrl].filter(Boolean);

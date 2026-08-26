@@ -58,7 +58,7 @@ function cleanText(value) {
 }
 
 function normalizeSecret(value) {
-  return cleanText(value).toLocaleLowerCase("zh-CN");
+  return cleanText(value);
 }
 
 function bytesToBase64Url(bytes) {
@@ -394,7 +394,7 @@ export function validateCategoryPayload(payload) {
   };
 }
 
-export function validateSitePayload(payload, categoryIds = new Set(), hiddenCollectionIds = new Set(["new-world"])) {
+export function validateSitePayload(payload, categoryIds = new Set(), hiddenCollectionIds = new Set(["new-world"]), { allowLegacyPrivateType = true } = {}) {
   const hidden = payload?.isHidden === true;
   const category = hidden ? null : validateId(payload?.category, "所属分类");
   if (!hidden && !categoryIds.has(category)) throw new ApiError("请选择有效的所属分类。");
@@ -403,6 +403,9 @@ export function validateSitePayload(payload, categoryIds = new Set(), hiddenColl
   const privateTypes = new Set(["app", "website", "resource", "other"]);
   const privateType = hiddenCollectionId === "private-collection" ? (payload?.privateType || "other") : null;
   if (hiddenCollectionId === "private-collection" && !privateTypes.has(privateType)) throw new ApiError("请选择有效的私人类型。");
+  if (hiddenCollectionId === "private-collection" && !allowLegacyPrivateType && privateType === "other") {
+    throw new ApiError("新私人卡片必须选择已购应用、私人网站或备用资源。", 400, "LEGACY_PRIVATE_TYPE_NOT_ALLOWED");
+  }
   if (hiddenCollectionId !== "private-collection" && payload?.privateType != null) throw new ApiError("只有私人收藏卡片可以设置私人类型。");
   const appStoreRegions = new Set(["cn", "us"]);
   const appStoreRegion = hiddenCollectionId === "private-collection" && privateType === "app" ? optionalString(payload?.appStoreRegion, 10) : null;
@@ -589,6 +592,18 @@ function validateHiddenCollectionPayload(payload, { allowEmptyPassphrase = false
 function safeHiddenCollection(collection) {
   const { passphrase, createdAt, updatedAt, ...safe } = collection;
   return safe;
+}
+
+function publicHiddenCollection(collection) {
+  const data = {
+    id: collection.id,
+    name: collection.name,
+    icon: collection.icon,
+    eyebrow: collection.eyebrow,
+    welcome: collection.welcome
+  };
+  if (collection.id === "private-collection") data.privateTypes = collection.privateTypes;
+  return data;
 }
 
 async function readSettings(env) {
@@ -927,7 +942,7 @@ async function handleSiteMutation(request, env, pathname) {
     const [categories, hiddenCollections] = await Promise.all([listCategories(env, true), listHiddenCollections(env)]);
     const categoryIds = new Set(categories.map((category) => category.id));
     const hiddenCollectionIds = new Set(hiddenCollections.map((collection) => collection.id));
-    const site = validateSitePayload(payload, categoryIds, hiddenCollectionIds);
+    const site = validateSitePayload(payload, categoryIds, hiddenCollectionIds, { allowLegacyPrivateType: false });
     await ensureSiteUnique(env, site);
     const revision = await runContentMutation(request, env, [
       siteStatement(env, site),
@@ -936,13 +951,14 @@ async function handleSiteMutation(request, env, pathname) {
     return json({ ok: true, site, revision }, 201);
   }
   if (request.method === "PUT" && routeId) {
-    const existing = await env.DB.prepare("SELECT id FROM sites WHERE id=?").bind(routeId).first();
+    const existing = await env.DB.prepare("SELECT id, hidden_collection_id, private_type FROM sites WHERE id=?").bind(routeId).first();
     if (!existing) throw new ApiError("没有找到这张卡片。", 404, "NOT_FOUND");
     const payload = { ...(await readJson(request)), id: routeId };
     const [categories, hiddenCollections] = await Promise.all([listCategories(env, true), listHiddenCollections(env)]);
     const categoryIds = new Set(categories.map((category) => category.id));
     const hiddenCollectionIds = new Set(hiddenCollections.map((collection) => collection.id));
-    const site = validateSitePayload(payload, categoryIds, hiddenCollectionIds);
+    const allowLegacyPrivateType = existing.hidden_collection_id === "private-collection" && (existing.private_type || "other") === "other";
+    const site = validateSitePayload(payload, categoryIds, hiddenCollectionIds, { allowLegacyPrivateType });
     await ensureSiteUnique(env, site, routeId);
     const revision = await runContentMutation(request, env, [
       siteStatement(env, site, true, routeId),
@@ -985,7 +1001,7 @@ async function handleBatchSiteCreate(request, env) {
   const sites = payload.sites.map((item, index) => {
     let site;
     try {
-      site = validateSitePayload({ ...item, sortOrder: Number.isInteger(Number(item?.sortOrder)) ? Number(item.sortOrder) : 9999 + index }, categoryIds, hiddenCollectionIds);
+      site = validateSitePayload({ ...item, sortOrder: Number.isInteger(Number(item?.sortOrder)) ? Number(item.sortOrder) : 9999 + index }, categoryIds, hiddenCollectionIds, { allowLegacyPrivateType: false });
     } catch (error) {
       if (error instanceof ApiError) throw new ApiError(`第 ${index + 1} 条：${error.message}`, error.status, error.code);
       throw error;
@@ -1318,7 +1334,7 @@ async function handlePublic(request, env, pathname, ctx) {
     }
     await env.DB.prepare("DELETE FROM login_attempts WHERE key=?").bind(unlockKey).run();
     const sites = (await listSites(env, { hidden: true, hiddenCollectionId: collection.id })).map(({ isHidden, hiddenCollectionId, sortOrder, status, createdAt, updatedAt, ...site }) => site);
-    return json({ ok: true, data: { ...safeHiddenCollection(collection), sites } });
+    return json({ ok: true, data: { ...publicHiddenCollection(collection), sites } });
   }
   return errorResponse("接口不存在。", 404, "NOT_FOUND");
 }

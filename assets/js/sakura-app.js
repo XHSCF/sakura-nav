@@ -888,6 +888,12 @@
       }
     }
 
+    function cancelPendingHiddenUnlock() {
+      window.clearTimeout(hiddenUnlockTimer);
+      hiddenUnlockToken += 1;
+      automaticUnlockValue = "";
+    }
+
     function queueHiddenUnlock(value) {
       window.clearTimeout(hiddenUnlockTimer);
       const candidate = String(value || "").trim();
@@ -937,6 +943,7 @@
       state.hidden = false;
       state.terms = [];
       state.privateType = "all";
+      cancelPendingHiddenUnlock();
       if (privateTools) {
         privateTools.hidden = true;
         privateTools.setAttribute("aria-hidden", "true");
@@ -946,7 +953,6 @@
       hiddenPanel.hidden = true;
       hiddenSitesRoot?.replaceChildren();
       hiddenConfig = null;
-      automaticUnlockValue = "";
       if (hiddenNotice) hiddenNotice.hidden = false;
       if (search) {
         search.value = "";
@@ -1027,13 +1033,20 @@
     }
 
     function leaveHiddenSectionForNavigation() {
+      cancelPendingHiddenUnlock();
       if (!state.hidden) return;
       state.hidden = false;
+      state.privateType = "all";
       hiddenTransitionToken += 1;
       root.classList.remove("is-hidden-world");
       if (hiddenPanel) hiddenPanel.hidden = true;
       hiddenSitesRoot?.replaceChildren();
       hiddenConfig = null;
+      if (privateTools) {
+        privateTools.hidden = true;
+        privateTools.setAttribute("aria-hidden", "true");
+      }
+      if (hiddenNotice) hiddenNotice.hidden = false;
       if (search) {
         search.readOnly = false;
         search.placeholder = normalSearchPlaceholder;
@@ -1101,6 +1114,7 @@
       categoryBar.addEventListener("click", (event) => {
         const button = event.target.closest("[data-category]");
         if (!button) return;
+        cancelPendingHiddenUnlock();
         state.category = button.dataset.category;
         updatePressed(categoryBar, "category", state.category, true);
         updateUrlState();
@@ -1156,6 +1170,7 @@
     window.addEventListener("blur", clearPressedCardIcon);
     hiddenExit?.addEventListener("click", exitHiddenSection);
     resetFilters?.addEventListener("click", () => {
+      cancelPendingHiddenUnlock();
       if (search) search.value = "";
       state.terms = [];
       state.category = "all";
@@ -1172,6 +1187,7 @@
       search.addEventListener("input", () => {
         const value = search.value;
         if (state.hidden) return;
+        cancelPendingHiddenUnlock();
         state.terms = core.queryTerms(value);
         clear?.classList.toggle("is-visible", Boolean(state.terms.length));
         if (shortcut) shortcut.hidden = Boolean(state.terms.length);
@@ -1196,6 +1212,7 @@
           return;
         }
         search.value = "";
+        cancelPendingHiddenUnlock();
         state.terms = [];
         clear.classList.remove("is-visible");
         if (shortcut) shortcut.hidden = false;
@@ -1218,6 +1235,7 @@
           exitHiddenSection();
         } else if (event.key === "Escape" && (document.activeElement === search || search.value)) {
           search.value = "";
+          cancelPendingHiddenUnlock();
           state.terms = [];
           clear?.classList.remove("is-visible");
           if (shortcut) shortcut.hidden = false;

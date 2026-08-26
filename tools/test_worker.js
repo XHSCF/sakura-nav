@@ -107,6 +107,7 @@ test("worker validates public single-button and hidden dual-button cards", async
   assert.equal(privateCard.privateStatus, undefined);
   assert.equal(privateCard.lastVerifiedAt, undefined);
   assert.equal(validateSitePayload({ ...hidden, id: "private-other", hiddenCollectionId: "private-collection" }, categories, new Set(["new-world", "private-collection"])).privateType, "other");
+  assert.throws(() => validateSitePayload({ ...hidden, id: "new-private-other", hiddenCollectionId: "private-collection" }, categories, new Set(["new-world", "private-collection"]), { allowLegacyPrivateType: false }), /新私人卡片必须选择/);
   assert.throws(() => validateSitePayload({ ...single, privateType: "website" }, categories), /只有私人收藏/);
   assert.throws(() => validateSitePayload({ ...hidden, id: "bad-new-world", privateType: "other" }, categories), /只有私人收藏/);
   assert.throws(() => validateSitePayload({ ...hidden, id: "bad-region", hiddenCollectionId: "private-collection", privateType: "website", appStoreRegion: "cn" }, categories, new Set(["new-world", "private-collection"])), /已购应用/);
@@ -492,7 +493,7 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     method: "PUT",
     body: {
       ...privateCollection,
-      passphrase: "我的收藏",
+      passphrase: "MyPrivate收藏",
       enabled: true,
       privateTypes: privateCollection.privateTypes.map((item) => item.id === "app" ? { ...item, name: "我的应用", icon: "fa-shopping-bag" } : item)
     },
@@ -517,12 +518,23 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
     sortOrder: 0,
     status: "published"
   };
+  const rejectedLegacyPrivate = await module.default.fetch(request("/api/admin/sites", {
+    method: "POST",
+    body: { ...privateSite, id: "private-legacy-site", name: "错误旧类型卡片", privateType: "other", appStoreRegion: null, url: "https://example.test/private-legacy" },
+    cookie,
+    csrf: login.csrf,
+    revision: enabledRevision
+  }), env);
+  assert.equal(rejectedLegacyPrivate.status, 400);
+  assert.equal((await rejectedLegacyPrivate.json()).code, "LEGACY_PRIVATE_TYPE_NOT_ALLOWED");
   const createPrivate = await module.default.fetch(request("/api/admin/sites", {
     method: "POST", body: privateSite, cookie, csrf: login.csrf, revision: enabledRevision
   }), env);
   assert.equal(createPrivate.status, 201);
   assert.equal((await (await module.default.fetch(request("/api/public/data"), env)).json()).data.sites.some((site) => site.id === privateSite.id), false);
-  const privateUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: "我的收藏" } }), env);
+  const wrongCasePrivateUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: "myprivate收藏" } }), env);
+  assert.equal(wrongCasePrivateUnlock.status, 403);
+  const privateUnlock = await module.default.fetch(request("/api/public/hidden", { method: "POST", body: { passphrase: "MyPrivate收藏" } }), env);
   assert.equal(privateUnlock.status, 200);
   const privatePayload = (await privateUnlock.json()).data;
   assert.equal(privatePayload.id, "private-collection");
@@ -534,6 +546,8 @@ test("worker login, CRUD, public data and hidden unlock work against migrated D1
   assert.equal(privatePayload.sites[0].privateStatus, undefined);
   assert.equal(privatePayload.sites[0].lastVerifiedAt, undefined);
   assert.equal(privatePayload.passphrase, undefined);
+  assert.equal(privatePayload.enabled, undefined);
+  assert.equal(privatePayload.sortOrder, undefined);
   const privateBackup = await module.default.fetch(request("/api/admin/export", { cookie }), env);
   assert.equal(privateBackup.status, 200);
   const privateBackupPayload = await privateBackup.json();
