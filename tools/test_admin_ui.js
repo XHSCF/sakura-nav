@@ -74,6 +74,9 @@ test("admin layout keeps Apple-style alignment across desktop, tablet and phone"
   assert.match(css, /\.switch-control\s*\{[^}]*white-space:\s*nowrap;/s);
   assert.match(css, /\.switch-control input\s*\{[^}]*width:\s*42px !important;[^}]*appearance:\s*none;/s);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*?\.admin-panel\.settings-grid\s*\{[^}]*padding:\s*0;[^}]*border:\s*0;/s);
+  assert.match(css, /\.dashboard-actions \.secondary-button\s*\{[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*color-mix\(in srgb, var\(--primary\) 14%, var\(--surface-solid\)\);/s);
+  assert.match(css, /\.dashboard-actions\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\);/s);
+  assert.match(css, /@media \(max-width: 760px\)[\s\S]*?\.dashboard-heading\s*\{[^}]*flex-direction:\s*column;[\s\S]*?\.dashboard-actions > \*\s*\{[^}]*min-width:\s*0;[^}]*min-height:\s*40px;[^}]*flex:\s*1 1 0;/s);
   assert.match(css, /:root\s*\{[^}]*--radius-sm:\s*14px;[^}]*--radius-md:\s*18px;[^}]*--radius-lg:\s*22px;/s);
 });
 

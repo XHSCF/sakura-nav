@@ -113,6 +113,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .secondary-button, .table-action, .icon-close { color: var(--text); background: var(--surface-soft); }
 .secondary-button:hover, .table-action:hover, .icon-close:hover { color: var(--primary-strong); background: color-mix(in srgb, var(--primary) 10%, var(--surface-solid)); }
 .secondary-button:active, .table-action:active, .icon-close:active { background: color-mix(in srgb, var(--primary) 16%, var(--surface-solid)); }
+.dashboard-actions .secondary-button { color: var(--primary-strong); background: color-mix(in srgb, var(--primary) 14%, var(--surface-solid)); }
+.dashboard-actions .secondary-button:hover { background: color-mix(in srgb, var(--primary) 20%, var(--surface-solid)); }
+.dashboard-actions .secondary-button:active { background: color-mix(in srgb, var(--primary) 26%, var(--surface-solid)); }
 .danger-button { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--surface-solid)); }
 .danger-button:hover { background: color-mix(in srgb, var(--danger) 18%, var(--surface-solid)); }
 .danger-button:active { background: color-mix(in srgb, var(--danger) 24%, var(--surface-solid)); }
@@ -423,9 +426,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .login-form { gap: 14px; }
   .quiet-link { margin-top: 16px; }
 
-  .dashboard-actions { flex-wrap: nowrap; }
-  .dashboard-actions .secondary-button { flex: 0 0 auto; padding-inline: 12px; background: transparent; }
-  .dashboard-actions .primary-button { flex: 1 1 auto; }
   .backup-actions > * { flex: 1 1 150px; }
   .compact-heading .switch-control { margin-top: 1px; }
 }
@@ -437,8 +437,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .preview-copy strong { font-size: 14px; }
   .preview-copy p { font-size: 12px; line-height: 1.4; }
   .preview-actions span { padding-inline: 5px; font-size: 10.5px; }
-  .dashboard-actions { flex-wrap: wrap; }
-  .dashboard-actions > * { flex: 1 1 120px; }
   .panel-heading h2 { font-size: 18px; }
 }
 
@@ -599,6 +597,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.dashboard-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-actions > * {
+  min-width: 120px;
 }
 
 .data-table td[data-label="状态"] {
@@ -830,13 +837,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 @media (max-width: 760px) {
-  .dashboard-actions {
-    width: 100%;
-    flex-wrap: nowrap;
+  .dashboard-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .dashboard-actions .secondary-button { flex: 0 0 auto; padding-inline: 12px; background: transparent; }
-  .dashboard-actions .primary-button { flex: 1 1 auto; }
+  .dashboard-actions {
+    width: 100%;
+  }
+
+  .dashboard-actions > * {
+    min-width: 0;
+    min-height: 40px;
+    flex: 1 1 0;
+  }
 
   .version-item {
     grid-template-columns: 38px minmax(0, 1fr);
