@@ -1,5 +1,6 @@
 .git/
 .github/
+.gitattributes
 .wrangler/
 .d1-backups/
 admin-data/

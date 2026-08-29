@@ -1,0 +1,2 @@
+# Historical migration checksums are registered against LF bytes.
+migrations/*.sql text eol=lf

@@ -23,6 +23,11 @@ CONTENT_CHANGE = re.compile(
 )
 
 
+def canonical_migration_bytes(path: Path) -> bytes:
+    """Return repository-canonical LF bytes without weakening content checks."""
+    return path.read_bytes().replace(b"\r\n", b"\n")
+
+
 def sql_without_comments(sql: str) -> str:
     return re.sub(r"/\*.*?\*/|--[^\r\n]*", " ", sql, flags=re.DOTALL)
 
@@ -51,7 +56,7 @@ def main() -> int:
         extra = sorted(set(checksums) - migration_names)
         errors.append(f"Migration 校验清单不完整（缺少：{missing or '无'}；多余：{extra or '无'}）")
     for migration in migrations:
-        digest = hashlib.sha256(migration.read_bytes()).hexdigest()
+        digest = hashlib.sha256(canonical_migration_bytes(migration)).hexdigest()
         if checksums.get(migration.name) != digest:
             errors.append(f"历史 migration 已改变或校验值未登记：{migration.name}")
         sql = sql_without_comments(migration.read_text(encoding="utf-8"))
