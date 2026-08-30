@@ -267,11 +267,16 @@ test("private collection keeps only its managed type filter and App Store region
   assert.match(application, /fa-layer-group[\s\S]*fa-mobile-alt[\s\S]*fa-globe[\s\S]*fa-archive[\s\S]*fa-tags/);
   assert.match(application, /hiddenNotice\.hidden = isPrivate/);
   assert.match(application, /privateTypeDefinition\(site\.privateType \|\| "other"\)[\s\S]*privateCollection: isPrivate/);
+  assert.match(application, /const groupPrivateSites = isPrivate && state\.privateType === "all"/);
+  assert.match(application, /privateTypes\.filter\(\(type\) => type\.id !== "all"\)[\s\S]*if \(typeSites\.length\) fragment\.appendChild\(createPrivateTypeGroup\(type, typeSites\)\)/);
+  assert.match(application, /function createPrivateTypeGroup\(type, sites\)[\s\S]*privateCollection: true,[\s\S]*category: type/);
+  assert.match(application, /hiddenSitesRoot\.classList\.toggle\("is-grouped-private", groupPrivateSites\)/);
   assert.match(application, /appStoreRegionNames\[site\.appStoreRegion\] \|\| "地区未设置"/);
   assert.match(application, /privateTools\.hidden = !isPrivate/);
   const stylesheet = fs.readFileSync(path.join(repositoryRoot, "assets/css/sakura.css"), "utf8");
   assert.match(stylesheet, /\.private-collection-tools\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
   assert.match(stylesheet, /\.hidden-world-notice\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
+  assert.match(stylesheet, /\.hidden-world-grid\.is-grouped-private\s*\{\s*display:\s*block;/);
   assert.match(stylesheet, /\.site-card-private-meta\s*\{[^}]*color:\s*var\(--primary-strong\);[^}]*background:\s*var\(--action-bg\);/s);
   assert.match(stylesheet, /\.hidden-world-welcome\s*\{[^}]*border:\s*1px solid var\(--card-border\);[^}]*background:\s*var\(--card-bg\);[^}]*box-shadow:\s*var\(--card-shadow\);/s);
   assert.doesNotMatch(stylesheet, /\.hidden-world-welcome-icon|\.hidden-world-welcome::after/);

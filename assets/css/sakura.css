@@ -1130,6 +1130,14 @@ select {
   padding-right: 17px;
 }
 
+.hidden-world-grid.is-grouped-private {
+  display: block;
+}
+
+.hidden-world-grid.is-grouped-private .site-group:last-child {
+  margin-bottom: 0;
+}
+
 .hidden-world-empty {
   display: flex;
   min-height: 190px;

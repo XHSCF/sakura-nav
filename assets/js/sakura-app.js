@@ -767,6 +767,37 @@
       return section;
     }
 
+    function createPrivateTypeGroup(type, sites) {
+      const section = document.createElement("section");
+      section.className = "site-group private-type-group";
+      section.id = `private-type-${type.id}`;
+      const heading = document.createElement("h3");
+      heading.className = "group-heading";
+      heading.dataset.resultScrollTarget = `private-${type.id}`;
+      markContentReveal(heading, `private-heading:${type.id}`);
+      const icon = document.createElement("i");
+      icon.className = `fas ${type.icon}`;
+      icon.setAttribute("aria-hidden", "true");
+      const label = document.createElement("span");
+      label.textContent = type.name;
+      const count = document.createElement("span");
+      count.className = "group-count";
+      count.textContent = String(sites.length);
+      const grid = document.createElement("div");
+      grid.className = "site-grid";
+      sites.forEach((site, index) => {
+        grid.appendChild(createSiteCard(site, {
+          hidden: true,
+          privateCollection: true,
+          category: type,
+          revealIndex: index
+        }));
+      });
+      heading.append(icon, label, count);
+      section.append(heading, grid);
+      return section;
+    }
+
     function updateEmptyState(siteCount) {
       if (!empty) return;
       empty.classList.toggle("is-visible", siteCount === 0);
@@ -819,11 +850,20 @@
       const isPrivate = hiddenConfig.id === "private-collection";
       const privateTypes = privateTypeDefinitions();
       const sites = allSites.filter((site) => !isPrivate || state.privateType === "all" || (site.privateType || "other") === state.privateType);
+      const groupPrivateSites = isPrivate && state.privateType === "all";
       const fragment = document.createDocumentFragment();
-      sites.forEach((site, index) => {
-        const category = isPrivate ? privateTypeDefinition(site.privateType || "other") : hiddenConfig;
-        fragment.appendChild(createSiteCard(site, { hidden: true, privateCollection: isPrivate, category, revealIndex: index }));
-      });
+      if (groupPrivateSites) {
+        privateTypes.filter((type) => type.id !== "all").forEach((type) => {
+          const typeSites = allSites.filter((site) => (site.privateType || "other") === type.id);
+          if (typeSites.length) fragment.appendChild(createPrivateTypeGroup(type, typeSites));
+        });
+      } else {
+        sites.forEach((site, index) => {
+          const category = isPrivate ? privateTypeDefinition(site.privateType || "other") : hiddenConfig;
+          fragment.appendChild(createSiteCard(site, { hidden: true, privateCollection: isPrivate, category, revealIndex: index }));
+        });
+      }
+      hiddenSitesRoot.classList.toggle("is-grouped-private", groupPrivateSites);
       hiddenSitesRoot.replaceChildren(fragment);
       refreshContentReveals();
       if (hiddenEmpty) hiddenEmpty.hidden = sites.length > 0;
